@@ -7,6 +7,15 @@ QMainWindow, QDialog {
     font-family: "Segoe UI", "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
+/* 移除所有控件的焦点矩形 */
+*::focus {
+    outline: none;
+}
+*::focus-rect {
+    outline: none;
+    border: none;
+}
+
 /* 标签样式 */
 QLabel {
     color: #212529;
@@ -18,24 +27,49 @@ QPushButton {
     background-color: #4361EE;  /* 现代蓝色 */
     color: white;
     border: none;
-    padding: 10px 18px;
+    padding: 4px 16px;
     border-radius: 6px;
     font-weight: bold;
     font-size: 13px;
     min-height: 36px;
+    outline: none;
+    text-decoration: none;
+}
+
+QPushButton:focus {
+    outline: none;
+    border: none;
+}
+
+QPushButton::focus-rect {
+    border: none;
+    outline: none;
 }
 
 QPushButton:hover {
     background-color: #3A56D4;
+    outline: none;
+    border: none;
 }
 
 QPushButton:pressed {
     background-color: #2B44B8;
+    outline: none;
+    border: none;
 }
 
 QPushButton:disabled {
     background-color: #CFD2D9;
     color: #909090;
+    outline: none;
+    border: none;
+}
+
+/* 使特定按钮的样式更加明确 */
+QPushButton#startButton, QPushButton#cancelButton, QPushButton#pauseButton {
+    border: none;
+    outline: none;
+    text-decoration: none;
 }
 
 QPushButton#startButton {
@@ -304,6 +338,4 @@ QFileDialog QListView, QFileDialog QTreeView {
 QFileDialog QPushButton {
     min-width: 80px;
 }
-
-/* 按钮的水波纹效果可以通过属性动画在代码中实现 */
 """ 

@@ -25,6 +25,12 @@ class MainWindow(QMainWindow):
         # 初始化扫描器
         self.scanner = MediaScanner()
         
+        # 设置窗口样式
+        self.setStyleSheet(STYLE_SHEET)
+        
+        # 设置全局焦点策略
+        QApplication.setStyle("fusion")  # 使用Fusion样式，更一致的外观
+        
         # 初始化UI
         self.initUI()
         
@@ -32,9 +38,6 @@ class MainWindow(QMainWindow):
         self.uploader = None
         self.media_files = []
         self.scanner_thread = None
-        
-        # 设置窗口样式
-        self.setStyleSheet(STYLE_SHEET)
     
     def initUI(self):
         self.setWindowTitle('照片/视频 NAS上传工具')
@@ -48,15 +51,16 @@ class MainWindow(QMainWindow):
         # 源目录选择
         source_group = QGroupBox("源目录")
         source_layout = QHBoxLayout()
-        source_layout.setSpacing(8)
+        source_layout.setSpacing(16)
+        source_layout.setContentsMargins(16, 0, 16, 16)
         
         self.source_path = QLabel(self.config.source_dir or '未选择')
         self.source_path.setStyleSheet("""
             QLabel {
-                padding: 8px;
+                padding: 4px 12px;
                 background-color: #FFFFFF;
                 border: 2px solid #E0E0E0;
-                border-radius: 4px;
+                border-radius: 8px;
             }
         """)
         self.source_btn = QPushButton('选择文件夹')
@@ -69,15 +73,16 @@ class MainWindow(QMainWindow):
         # 目标目录选择
         target_group = QGroupBox("目标目录")
         target_layout = QHBoxLayout()
-        target_layout.setSpacing(8)
+        target_layout.setSpacing(16)
+        target_layout.setContentsMargins(16, 0, 16, 16)
         
         self.target_path = QLabel(self.config.target_dir or '未选择')
         self.target_path.setStyleSheet("""
             QLabel {
-                padding: 8px;
+                padding: 4px 12px;
                 background-color: #FFFFFF;
                 border: 2px solid #E0E0E0;
-                border-radius: 4px;
+                border-radius: 8px;
             }
         """)
         self.target_btn = QPushButton('选择文件夹')
@@ -90,7 +95,8 @@ class MainWindow(QMainWindow):
         # 选项
         options_group = QGroupBox("选项")
         options_layout = QHBoxLayout()
-        options_layout.setSpacing(8)
+        options_layout.setSpacing(16)
+        options_layout.setContentsMargins(16, 0, 16, 16)
         
         self.overwrite_check = QCheckBox('覆盖重复文件')
         self.overwrite_check.setChecked(self.config.overwrite_duplicates)
@@ -137,7 +143,8 @@ class MainWindow(QMainWindow):
         # 日志区域
         log_group = QGroupBox("日志")
         log_layout = QVBoxLayout()
-        log_layout.setSpacing(8)
+        log_layout.setSpacing(16)
+        log_layout.setContentsMargins(16, 0, 16, 16)
         
         self.log_area = QTextEdit()
         self.log_area.setReadOnly(True)

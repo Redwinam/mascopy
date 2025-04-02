@@ -143,7 +143,7 @@ class ScanResultDialog(QDialog):
         """)
         stats_layout = QHBoxLayout()
         stats_layout.setSpacing(16)
-        stats_layout.setContentsMargins(16, 24, 16, 16)
+        stats_layout.setContentsMargins(16, 0, 16, 16)
         
         # 创建现代化统计卡片
         stats_cards = [
@@ -192,12 +192,14 @@ class ScanResultDialog(QDialog):
                 color: {color};
                 font-size: 24px;
                 font-weight: bold;
+                border: none;
             """)
             
             title_label = QLabel(title)
             title_label.setStyleSheet(f"""
                 color: {color};
                 font-size: 14px;
+                border: none;
             """)
             
             info_layout.addWidget(value_label)
@@ -218,7 +220,7 @@ class ScanResultDialog(QDialog):
         # 所有文件
         all_files_tab = QWidget()
         all_files_layout = QVBoxLayout()
-        all_files_layout.setContentsMargins(0, 16, 0, 0)
+        all_files_layout.setContentsMargins(0, 0, 0, 0)
         all_files_table = self.create_file_table(self.files)
         all_files_layout.addWidget(all_files_table)
         all_files_tab.setLayout(all_files_layout)
@@ -228,7 +230,7 @@ class ScanResultDialog(QDialog):
         upload_files = [f for f in self.files if f.status == "将上传"]
         upload_tab = QWidget()
         upload_layout = QVBoxLayout()
-        upload_layout.setContentsMargins(0, 16, 0, 0)
+        upload_layout.setContentsMargins(0, 0, 0, 0)
         upload_table = self.create_file_table(upload_files)
         upload_layout.addWidget(upload_table)
         upload_tab.setLayout(upload_layout)
@@ -238,7 +240,7 @@ class ScanResultDialog(QDialog):
         overwrite_files = [f for f in self.files if f.status == "将覆盖"]
         overwrite_tab = QWidget()
         overwrite_layout = QVBoxLayout()
-        overwrite_layout.setContentsMargins(0, 16, 0, 0)
+        overwrite_layout.setContentsMargins(0, 0, 0, 0)
         overwrite_table = self.create_file_table(overwrite_files)
         overwrite_layout.addWidget(overwrite_table)
         overwrite_tab.setLayout(overwrite_layout)
@@ -248,7 +250,7 @@ class ScanResultDialog(QDialog):
         skip_files = [f for f in self.files if f.status == "将跳过"]
         skip_tab = QWidget()
         skip_layout = QVBoxLayout()
-        skip_layout.setContentsMargins(0, 16, 0, 0)
+        skip_layout.setContentsMargins(0, 0, 0, 0)
         skip_table = self.create_file_table(skip_files)
         skip_layout.addWidget(skip_table)
         skip_tab.setLayout(skip_layout)
@@ -265,12 +267,16 @@ class ScanResultDialog(QDialog):
         self.start_btn.setIcon(QIcon("images/upload_white.png"))  # 如果有图标的话
         self.start_btn.setIconSize(QSize(20, 20))  # 设置图标大小
         self.start_btn.clicked.connect(self.start_upload)
+        self.start_btn.setFlat(False)  # 确保不是平面按钮
+        self.start_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # 防止焦点边框
         
         self.cancel_btn = QPushButton('取消')
         self.cancel_btn.setObjectName("cancelButton")
         self.cancel_btn.setIcon(QIcon("images/cancel.png"))  # 如果有图标的话
         self.cancel_btn.setIconSize(QSize(20, 20))  # 设置图标大小
         self.cancel_btn.clicked.connect(self.reject)
+        self.cancel_btn.setFlat(False)  # 确保不是平面按钮
+        self.cancel_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # 防止焦点边框
         
         # 设置按钮大小
         self.start_btn.setFixedSize(160, 48)
@@ -303,10 +309,10 @@ class ScanResultDialog(QDialog):
         
         # 设置状态列的固定宽度
         table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)
-        table.setColumnWidth(4, 120)  # 设置第5列宽度为120像素
+        table.setColumnWidth(4, 90)  # 设置第5列宽度为120像素
         
         # 设置行高
-        table.verticalHeader().setDefaultSectionSize(46)  # 设置默认行高为46像素
+        table.verticalHeader().setDefaultSectionSize(42)  # 设置默认行高为46像素
         
         # 隐藏垂直表头
         table.verticalHeader().setVisible(False)
@@ -349,7 +355,7 @@ class ScanResultDialog(QDialog):
             # 状态 - 创建自定义的标签来显示状态
             status_cell = QWidget()
             status_layout = QHBoxLayout(status_cell)
-            status_layout.setContentsMargins(4, 4, 4, 4)
+            status_layout.setContentsMargins(0, 0, 0, 0)
             status_layout.setSpacing(0)
             
             if file.status == "将上传":
@@ -358,52 +364,52 @@ class ScanResultDialog(QDialog):
                 status_label.setStyleSheet("""
                     color: #00695C;
                     background-color: #E0F2F1;
-                    border-radius: 15px;
+                    border-radius: 6px;
                     border: 1px solid #B2DFDB;
-                    padding: 4px 12px;
+                    padding: 2px 6px;
                     font-weight: 500;
                     font-size: 12px;
-                    min-width: 80px;
-                    min-height: 24px;
+                    min-width: 48px;
+                    min-height: 16px;
                 """)
             elif file.status == "将覆盖":
                 status_label = QLabel("将覆盖")
                 status_label.setStyleSheet("""
                     color: #E65100;
                     background-color: #FFF3E0;
-                    border-radius: 15px;
+                    border-radius: 6px;
                     border: 1px solid #FFE0B2;
-                    padding: 4px 12px;
+                    padding: 2px 6px;
                     font-weight: 500;
                     font-size: 12px;
-                    min-width: 80px;
-                    min-height: 24px;
+                    min-width: 48px;
+                    min-height: 16px;
                 """)
             elif file.status == "将跳过":
                 status_label = QLabel("将跳过")
                 status_label.setStyleSheet("""
                     color: #546E7A;
                     background-color: #ECEFF1;
-                    border-radius: 15px;
+                    border-radius: 6px;
                     border: 1px solid #CFD8DC;
-                    padding: 4px 12px;
+                    padding: 2px 6px;
                     font-weight: 500;
                     font-size: 12px;
-                    min-width: 80px;
-                    min-height: 24px;
+                    min-width: 48px;
+                    min-height: 16px;
                 """)
             else:
                 status_label = QLabel(file.status)
                 status_label.setStyleSheet("""
                     color: #424242;
                     background-color: #F5F5F5;
-                    border-radius: 15px;
+                    border-radius: 6px;
                     border: 1px solid #E0E0E0;
-                    padding: 4px 12px;
+                    padding: 2px 6px;
                     font-weight: 500;
                     font-size: 12px;
-                    min-width: 80px;
-                    min-height: 24px;
+                    min-width: 48px;
+                    min-height: 16px;
                 """)
             
             # 设置标签文本居中
