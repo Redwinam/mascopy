@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (QMainWindow, QPushButton, QLabel, QFileDialog,
                             QMessageBox, QCheckBox, QTextEdit, QGroupBox,
                             QApplication)
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPalette, QColor
 
 from media_scanner import MediaScanner, ScannerThread
 from uploader import MediaUploader
@@ -25,6 +26,9 @@ class MainWindow(QMainWindow):
         # 初始化扫描器
         self.scanner = MediaScanner()
         
+        # 强制使用白天模式
+        self.force_light_mode()
+        
         # 设置窗口样式
         self.setStyleSheet(STYLE_SHEET)
         
@@ -38,6 +42,24 @@ class MainWindow(QMainWindow):
         self.uploader = None
         self.media_files = []
         self.scanner_thread = None
+    
+    def force_light_mode(self):
+        """强制应用程序使用白天模式"""
+        # 创建浅色调色板
+        light_palette = QPalette()
+        
+        # 设置基本颜色
+        light_palette.setColor(QPalette.ColorRole.Window, QColor(240, 240, 240))
+        light_palette.setColor(QPalette.ColorRole.WindowText, QColor(0, 0, 0))
+        light_palette.setColor(QPalette.ColorRole.Base, QColor(255, 255, 255))
+        light_palette.setColor(QPalette.ColorRole.AlternateBase, QColor(245, 245, 245))
+        light_palette.setColor(QPalette.ColorRole.Text, QColor(0, 0, 0))
+        light_palette.setColor(QPalette.ColorRole.Button, QColor(240, 240, 240))
+        light_palette.setColor(QPalette.ColorRole.ButtonText, QColor(0, 0, 0))
+        light_palette.setColor(QPalette.ColorRole.BrightText, QColor(255, 0, 0))
+        
+        # 应用调色板到应用程序
+        QApplication.setPalette(light_palette)
     
     def initUI(self):
         self.setWindowTitle('照片/视频 NAS上传工具')
