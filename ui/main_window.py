@@ -1,228 +1,17 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+"""主窗口类定义"""
 
 import os
 from PyQt6.QtWidgets import (QMainWindow, QPushButton, QLabel, QFileDialog, 
                             QVBoxLayout, QHBoxLayout, QWidget, QProgressBar, 
-                            QMessageBox, QCheckBox, QTextEdit, QDialog, 
-                            QTableWidget, QTableWidgetItem, QHeaderView, 
-                            QTabWidget, QSplitter, QGroupBox, QDialogButtonBox,
+                            QMessageBox, QCheckBox, QTextEdit, QGroupBox,
                             QApplication)
-from PyQt6.QtCore import Qt, pyqtSignal, QSize
-from PyQt6.QtGui import QIcon, QPixmap, QFont, QColor
+from PyQt6.QtCore import Qt
 
 from media_scanner import MediaScanner, ScannerThread
 from uploader import MediaUploader
 from config import AppConfig
-
-
-class ScanProgressDialog(QDialog):
-    """扫描进度对话框"""
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.initUI()
-        
-    def initUI(self):
-        self.setWindowTitle('扫描进度')
-        self.setGeometry(300, 300, 500, 150)
-        self.setModal(True)
-        
-        layout = QVBoxLayout()
-        
-        # 进度标签
-        self.status_label = QLabel("正在扫描文件...")
-        layout.addWidget(self.status_label)
-        
-        # 当前文件标签
-        self.file_label = QLabel("")
-        self.file_label.setWordWrap(True)  # 允许文本换行
-        layout.addWidget(self.file_label)
-        
-        # 进度条
-        self.progress_bar = QProgressBar()
-        layout.addWidget(self.progress_bar)
-        
-        # 取消按钮
-        self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
-        self.button_box.rejected.connect(self.reject)
-        layout.addWidget(self.button_box)
-        
-        self.setLayout(layout)
-    
-    def update_progress(self, current, total, message):
-        """更新进度状态"""
-        if total > 0:
-            percentage = int((current / total) * 100)
-            self.progress_bar.setValue(percentage)
-        
-        self.file_label.setText(message)
-
-
-class ScanResultDialog(QDialog):
-    """预扫描结果对话框"""
-    start_upload_signal = pyqtSignal(list)  # 开始上传的信号
-    
-    def __init__(self, scan_results, parent=None):
-        super().__init__(parent)
-        self.scan_results = scan_results
-        self.files = scan_results["files"]
-        self.stats = scan_results["stats"]
-        self.initUI()
-        
-    def initUI(self):
-        self.setWindowTitle('预扫描结果')
-        self.setGeometry(100, 100, 900, 600)
-        
-        layout = QVBoxLayout()
-        
-        # 添加统计信息
-        stats_box = QGroupBox("统计信息")
-        stats_layout = QHBoxLayout()
-        
-        total_label = QLabel(f"总文件数: {self.stats['total']}")
-        upload_label = QLabel(f"将上传: {self.stats['upload']}")
-        overwrite_label = QLabel(f"将覆盖: {self.stats['overwrite']}")
-        skip_label = QLabel(f"将跳过: {self.stats['skip']}")
-        
-        # 设置更大的字体
-        font = QFont()
-        font.setPointSize(12)
-        font.setBold(True)
-        total_label.setFont(font)
-        upload_label.setFont(font)
-        overwrite_label.setFont(font)
-        skip_label.setFont(font)
-        
-        stats_layout.addWidget(total_label)
-        stats_layout.addWidget(upload_label)
-        stats_layout.addWidget(overwrite_label)
-        stats_layout.addWidget(skip_label)
-        
-        stats_box.setLayout(stats_layout)
-        layout.addWidget(stats_box)
-        
-        # 创建标签页用于显示不同状态的文件
-        tab_widget = QTabWidget()
-        
-        # 所有文件
-        all_files_tab = QWidget()
-        all_files_layout = QVBoxLayout()
-        all_files_table = self.create_file_table(self.files)
-        all_files_layout.addWidget(all_files_table)
-        all_files_tab.setLayout(all_files_layout)
-        tab_widget.addTab(all_files_tab, f"所有文件 ({self.stats['total']})")
-        
-        # 将上传
-        upload_files = [f for f in self.files if f.status == "将上传"]
-        upload_tab = QWidget()
-        upload_layout = QVBoxLayout()
-        upload_table = self.create_file_table(upload_files)
-        upload_layout.addWidget(upload_table)
-        upload_tab.setLayout(upload_layout)
-        tab_widget.addTab(upload_tab, f"将上传 ({self.stats['upload']})")
-        
-        # 将覆盖
-        overwrite_files = [f for f in self.files if f.status == "将覆盖"]
-        overwrite_tab = QWidget()
-        overwrite_layout = QVBoxLayout()
-        overwrite_table = self.create_file_table(overwrite_files)
-        overwrite_layout.addWidget(overwrite_table)
-        overwrite_tab.setLayout(overwrite_layout)
-        tab_widget.addTab(overwrite_tab, f"将覆盖 ({self.stats['overwrite']})")
-        
-        # 将跳过
-        skip_files = [f for f in self.files if f.status == "将跳过"]
-        skip_tab = QWidget()
-        skip_layout = QVBoxLayout()
-        skip_table = self.create_file_table(skip_files)
-        skip_layout.addWidget(skip_table)
-        skip_tab.setLayout(skip_layout)
-        tab_widget.addTab(skip_tab, f"将跳过 ({self.stats['skip']})")
-        
-        layout.addWidget(tab_widget)
-        
-        # 底部按钮
-        buttons_layout = QHBoxLayout()
-        self.start_btn = QPushButton('开始上传')
-        self.start_btn.clicked.connect(self.start_upload)
-        self.cancel_btn = QPushButton('取消')
-        self.cancel_btn.clicked.connect(self.reject)
-        
-        # 设置按钮大小
-        self.start_btn.setMinimumHeight(40)
-        self.cancel_btn.setMinimumHeight(40)
-        
-        buttons_layout.addStretch(1)
-        buttons_layout.addWidget(self.cancel_btn)
-        buttons_layout.addWidget(self.start_btn)
-        
-        layout.addLayout(buttons_layout)
-        
-        self.setLayout(layout)
-    
-    def create_file_table(self, files):
-        """创建文件表格"""
-        table = QTableWidget()
-        table.setColumnCount(5)
-        table.setRowCount(len(files))
-        
-        headers = ["文件名", "类型", "大小", "拍摄日期", "状态"]
-        table.setHorizontalHeaderLabels(headers)
-        
-        # 调整表格外观
-        table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        for i in range(1, 5):
-            table.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
-        
-        for i, file in enumerate(files):
-            # 文件名
-            name_item = QTableWidgetItem(file.filename)
-            table.setItem(i, 0, name_item)
-            
-            # 类型
-            type_item = QTableWidgetItem(file.file_type)
-            table.setItem(i, 1, type_item)
-            
-            # 大小 (转换为更友好的格式)
-            size_str = self.format_size(file.file_size)
-            size_item = QTableWidgetItem(size_str)
-            table.setItem(i, 2, size_item)
-            
-            # 日期
-            date_str = file.date.strftime('%Y-%m-%d %H:%M:%S')
-            date_item = QTableWidgetItem(date_str)
-            table.setItem(i, 3, date_item)
-            
-            # 状态
-            status_item = QTableWidgetItem(file.status)
-            
-            # 根据状态设置颜色
-            if file.status == "将上传":
-                status_item.setForeground(QColor(0, 128, 0))  # 绿色
-            elif file.status == "将覆盖":
-                status_item.setForeground(QColor(255, 165, 0))  # 橙色
-            elif file.status == "将跳过":
-                status_item.setForeground(QColor(128, 128, 128))  # 灰色
-                
-            table.setItem(i, 4, status_item)
-        
-        return table
-    
-    def format_size(self, size_bytes):
-        """格式化文件大小"""
-        if size_bytes < 1024:
-            return f"{size_bytes} B"
-        elif size_bytes < 1024 * 1024:
-            return f"{size_bytes/1024:.1f} KB"
-        elif size_bytes < 1024 * 1024 * 1024:
-            return f"{size_bytes/(1024*1024):.1f} MB"
-        else:
-            return f"{size_bytes/(1024*1024*1024):.2f} GB"
-    
-    def start_upload(self):
-        """发出开始上传信号"""
-        self.start_upload_signal.emit(self.files)
-        self.accept()
+from .styles import STYLE_SHEET
+from .dialogs import ScanProgressDialog, ScanResultDialog
 
 
 class MainWindow(QMainWindow):
@@ -243,6 +32,9 @@ class MainWindow(QMainWindow):
         self.uploader = None
         self.media_files = []
         self.scanner_thread = None
+        
+        # 设置窗口样式
+        self.setStyleSheet(STYLE_SHEET)
     
     def initUI(self):
         self.setWindowTitle('照片/视频 NAS上传工具')
@@ -250,38 +42,65 @@ class MainWindow(QMainWindow):
         
         # 主布局
         main_layout = QVBoxLayout()
+        main_layout.setSpacing(12)
+        main_layout.setContentsMargins(20, 20, 20, 20)
         
         # 源目录选择
+        source_group = QGroupBox("源目录")
         source_layout = QHBoxLayout()
-        self.source_label = QLabel('源目录:')
+        source_layout.setSpacing(8)
+        
         self.source_path = QLabel(self.config.source_dir or '未选择')
+        self.source_path.setStyleSheet("""
+            QLabel {
+                padding: 8px;
+                background-color: #FFFFFF;
+                border: 2px solid #E0E0E0;
+                border-radius: 4px;
+            }
+        """)
         self.source_btn = QPushButton('选择文件夹')
         self.source_btn.clicked.connect(self.select_source_dir)
         
-        source_layout.addWidget(self.source_label)
         source_layout.addWidget(self.source_path, 1)
         source_layout.addWidget(self.source_btn)
+        source_group.setLayout(source_layout)
         
         # 目标目录选择
+        target_group = QGroupBox("目标目录")
         target_layout = QHBoxLayout()
-        self.target_label = QLabel('NAS目录:')
+        target_layout.setSpacing(8)
+        
         self.target_path = QLabel(self.config.target_dir or '未选择')
+        self.target_path.setStyleSheet("""
+            QLabel {
+                padding: 8px;
+                background-color: #FFFFFF;
+                border: 2px solid #E0E0E0;
+                border-radius: 4px;
+            }
+        """)
         self.target_btn = QPushButton('选择文件夹')
         self.target_btn.clicked.connect(self.select_target_dir)
         
-        target_layout.addWidget(self.target_label)
         target_layout.addWidget(self.target_path, 1)
         target_layout.addWidget(self.target_btn)
+        target_group.setLayout(target_layout)
         
         # 选项
+        options_group = QGroupBox("选项")
         options_layout = QHBoxLayout()
+        options_layout.setSpacing(8)
+        
         self.overwrite_check = QCheckBox('覆盖重复文件')
         self.overwrite_check.setChecked(self.config.overwrite_duplicates)
         options_layout.addWidget(self.overwrite_check)
         options_layout.addStretch(1)
+        options_group.setLayout(options_layout)
         
         # 动作按钮布局
         action_layout = QHBoxLayout()
+        action_layout.setSpacing(8)
         
         # 预扫描按钮
         self.scan_btn = QPushButton('预扫描')
@@ -295,11 +114,13 @@ class MainWindow(QMainWindow):
         
         # 暂停按钮
         self.pause_btn = QPushButton('暂停')
+        self.pause_btn.setObjectName("pauseButton")
         self.pause_btn.clicked.connect(self.toggle_pause)
         self.pause_btn.setEnabled(False)
         
         # 取消按钮
         self.cancel_btn = QPushButton('取消')
+        self.cancel_btn.setObjectName("cancelButton")
         self.cancel_btn.clicked.connect(self.cancel_upload)
         self.cancel_btn.setEnabled(False)
         
@@ -310,20 +131,28 @@ class MainWindow(QMainWindow):
         
         # 进度条
         self.progress_bar = QProgressBar()
+        self.progress_bar.setMinimumHeight(20)
         self.progress_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         # 日志区域
+        log_group = QGroupBox("日志")
+        log_layout = QVBoxLayout()
+        log_layout.setSpacing(8)
+        
         self.log_area = QTextEdit()
         self.log_area.setReadOnly(True)
+        self.log_area.setMinimumHeight(200)
+        log_layout.addWidget(self.log_area)
+        
+        log_group.setLayout(log_layout)
         
         # 添加所有布局
-        main_layout.addLayout(source_layout)
-        main_layout.addLayout(target_layout)
-        main_layout.addLayout(options_layout)
+        main_layout.addWidget(source_group)
+        main_layout.addWidget(target_group)
+        main_layout.addWidget(options_group)
         main_layout.addLayout(action_layout)
         main_layout.addWidget(self.progress_bar)
-        main_layout.addWidget(QLabel('日志:'))
-        main_layout.addWidget(self.log_area)
+        main_layout.addWidget(log_group)
         
         # 设置主窗口
         container = QWidget()
