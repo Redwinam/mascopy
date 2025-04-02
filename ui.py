@@ -334,7 +334,10 @@ class MainWindow(QMainWindow):
         self.check_buttons_state()
     
     def select_source_dir(self):
-        dir_path = QFileDialog.getExistingDirectory(self, '选择源目录')
+        """选择源目录"""
+        # 获取上次选择的目录，如果不存在则使用用户主目录
+        last_dir = self.config.source_dir if self.config.source_dir and os.path.exists(self.config.source_dir) else os.path.expanduser('~')
+        dir_path = QFileDialog.getExistingDirectory(self, '选择源目录', last_dir)
         if dir_path:
             self.source_path.setText(dir_path)
             self.config.source_dir = dir_path
@@ -342,7 +345,10 @@ class MainWindow(QMainWindow):
             self.check_buttons_state()
     
     def select_target_dir(self):
-        dir_path = QFileDialog.getExistingDirectory(self, '选择NAS目录')
+        """选择目标目录"""
+        # 获取上次选择的目录，如果不存在则使用用户主目录
+        last_dir = self.config.target_dir if self.config.target_dir and os.path.exists(self.config.target_dir) else os.path.expanduser('~')
+        dir_path = QFileDialog.getExistingDirectory(self, '选择NAS目录', last_dir)
         if dir_path:
             self.target_path.setText(dir_path)
             self.config.target_dir = dir_path
