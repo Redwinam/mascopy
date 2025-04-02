@@ -4,8 +4,8 @@ from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                             QProgressBar, QDialogButtonBox, QTableWidget,
                             QTableWidgetItem, QHeaderView, QTabWidget,
                             QWidget, QGroupBox, QFrame, QPushButton)
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont, QColor
+from PyQt6.QtCore import Qt, pyqtSignal, QSize
+from PyQt6.QtGui import QFont, QColor, QIcon, QPixmap
 
 from .styles import STYLE_SHEET
 
@@ -17,34 +17,91 @@ class ScanProgressDialog(QDialog):
         
     def initUI(self):
         self.setWindowTitle('扫描进度')
-        self.setGeometry(300, 300, 500, 150)
+        self.setGeometry(300, 300, 560, 200)
         self.setModal(True)
         self.setStyleSheet(STYLE_SHEET)
         
         layout = QVBoxLayout()
-        layout.setSpacing(12)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(16)
+        layout.setContentsMargins(24, 24, 24, 24)
         
-        # 进度标签
-        self.status_label = QLabel("正在扫描文件...")
-        self.status_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        layout.addWidget(self.status_label)
+        # 标题和图标
+        title_layout = QHBoxLayout()
+        title_layout.setSpacing(16)
         
-        # 当前文件标签
+        # 如果有图标可以添加
+        # scan_icon = QLabel()
+        # scan_icon.setPixmap(QPixmap("images/scan.png").scaled(36, 36, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+        # title_layout.addWidget(scan_icon)
+        
+        # 标题标签
+        self.status_label = QLabel("正在扫描媒体文件...")
+        self.status_label.setStyleSheet("""
+            font-size: 18px;
+            font-weight: 600;
+            color: #3949AB;
+        """)
+        title_layout.addWidget(self.status_label)
+        title_layout.addStretch(1)
+        
+        layout.addLayout(title_layout)
+        
+        # 当前文件信息卡片
+        file_card = QFrame()
+        file_card.setFrameStyle(QFrame.Shape.StyledPanel)
+        file_card.setStyleSheet("""
+            background-color: #F8F9FA;
+            border-radius: 8px;
+            border: 1px solid #E9ECEF;
+        """)
+        
+        file_layout = QVBoxLayout(file_card)
+        file_layout.setSpacing(8)
+        file_layout.setContentsMargins(16, 16, 16, 16)
+        
+        # 文件标签
+        file_header = QLabel("当前处理文件")
+        file_header.setStyleSheet("color: #6C757D; font-size: 12px;")
+        
         self.file_label = QLabel("")
         self.file_label.setWordWrap(True)
-        self.file_label.setStyleSheet("color: #666666;")
-        layout.addWidget(self.file_label)
+        self.file_label.setStyleSheet("color: #212529; font-size: 13px; font-weight: 500;")
+        self.file_label.setMinimumHeight(40)
+        
+        file_layout.addWidget(file_header)
+        file_layout.addWidget(self.file_label)
+        
+        layout.addWidget(file_card)
         
         # 进度条
+        progress_layout = QVBoxLayout()
+        progress_layout.setSpacing(8)
+        
+        progress_header = QLabel("扫描进度")
+        progress_header.setStyleSheet("color: #6C757D; font-size: 12px;")
+        progress_layout.addWidget(progress_header)
+        
         self.progress_bar = QProgressBar()
-        self.progress_bar.setMinimumHeight(20)
-        layout.addWidget(self.progress_bar)
+        self.progress_bar.setMinimumHeight(12)
+        progress_layout.addWidget(self.progress_bar)
+        
+        layout.addLayout(progress_layout)
         
         # 取消按钮
-        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
-        button_box.rejected.connect(self.reject)
-        layout.addWidget(button_box)
+        button_layout = QHBoxLayout()
+        button_layout.addStretch(1)
+        
+        cancel_btn = QPushButton('取消扫描')
+        cancel_btn.setObjectName("cancelButton")
+        # 如果有图标可以添加
+        # cancel_btn.setIcon(QIcon("images/cancel.png"))
+        # cancel_btn.setIconSize(QSize(16, 16))
+        cancel_btn.setFixedSize(120, 40)
+        cancel_btn.clicked.connect(self.reject)
+        
+        button_layout.addWidget(cancel_btn)
+        
+        layout.addLayout(button_layout)
         
         self.setLayout(layout)
     
@@ -71,61 +128,86 @@ class ScanResultDialog(QDialog):
         
     def initUI(self):
         self.setWindowTitle('预扫描结果')
-        self.setGeometry(100, 100, 900, 600)
+        self.setGeometry(100, 100, 960, 680)
         
         layout = QVBoxLayout()
-        layout.setSpacing(12)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(16)
+        layout.setContentsMargins(24, 24, 24, 24)
         
         # 添加统计信息
-        stats_box = QGroupBox("统计信息")
+        stats_box = QGroupBox("扫描统计")
+        stats_box.setStyleSheet("""
+            QGroupBox {
+                font-size: 15px;
+            }
+        """)
         stats_layout = QHBoxLayout()
-        stats_layout.setSpacing(20)
-        stats_layout.setContentsMargins(15, 15, 15, 15)
+        stats_layout.setSpacing(16)
+        stats_layout.setContentsMargins(16, 24, 16, 16)
         
-        # 创建统计卡片
+        # 创建现代化统计卡片
         stats_cards = [
-            ("总文件数", self.stats['total'], "#2196F3"),
-            ("将上传", self.stats['upload'], "#4CAF50"),
-            ("将覆盖", self.stats['overwrite'], "#FF9800"),
-            ("将跳过", self.stats['skip'], "#9E9E9E")
+            ("总文件数", self.stats['total'], "#3949AB", "#E8EAF6", "images/file.png"),
+            ("将上传", self.stats['upload'], "#00897B", "#E0F2F1", "images/upload.png"),
+            ("将覆盖", self.stats['overwrite'], "#F57C00", "#FFF3E0", "images/refresh.png"),
+            ("将跳过", self.stats['skip'], "#757575", "#EEEEEE", "images/skip.png")
         ]
         
-        for title, value, color in stats_cards:
+        for title, value, color, bg_color, icon_path in stats_cards:
             card = QFrame()
-            card.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
+            card.setFrameStyle(QFrame.Shape.StyledPanel)
             card.setStyleSheet(f"""
                 QFrame {{
-                    background-color: {color};
-                    border-radius: 8px;
-                    padding: 10px;
+                    background-color: {bg_color};
+                    border-radius: 12px;
+                    border: 1px solid {color}20;
                 }}
             """)
-            card_layout = QVBoxLayout()
-            card_layout.setSpacing(5)
+            
+            card_layout = QHBoxLayout()
+            card_layout.setSpacing(12)
+            card_layout.setContentsMargins(16, 16, 16, 16)
+            
+            # 图标区域
+            icon_container = QFrame()
+            icon_container.setFixedSize(48, 48)
+            icon_container.setStyleSheet(f"""
+                background-color: {color}15;
+                border-radius: 24px;
+            """)
+            
+            # 如果有图标的话可以加载
+            # icon_label = QLabel()
+            # icon_pixmap = QPixmap(icon_path)
+            # icon_label.setPixmap(icon_pixmap.scaled(24, 24, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+            # icon_layout = QVBoxLayout(icon_container)
+            # icon_layout.addWidget(icon_label, alignment=Qt.AlignmentFlag.AlignCenter)
+            
+            # 信息区域
+            info_layout = QVBoxLayout()
+            info_layout.setSpacing(4)
             
             value_label = QLabel(str(value))
-            value_label.setStyleSheet("""
-                QLabel {
-                    color: white;
-                    font-size: 24px;
-                    font-weight: bold;
-                }
+            value_label.setStyleSheet(f"""
+                color: {color};
+                font-size: 24px;
+                font-weight: bold;
             """)
             
             title_label = QLabel(title)
-            title_label.setStyleSheet("""
-                QLabel {
-                    color: white;
-                    font-size: 14px;
-                }
+            title_label.setStyleSheet(f"""
+                color: {color};
+                font-size: 14px;
             """)
             
-            card_layout.addWidget(value_label, alignment=Qt.AlignmentFlag.AlignCenter)
-            card_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
+            info_layout.addWidget(value_label)
+            info_layout.addWidget(title_label)
+            
+            card_layout.addWidget(icon_container)
+            card_layout.addLayout(info_layout, 1)
             card.setLayout(card_layout)
             
-            stats_layout.addWidget(card)
+            stats_layout.addWidget(card, 1)
         
         stats_box.setLayout(stats_layout)
         layout.addWidget(stats_box)
@@ -136,7 +218,7 @@ class ScanResultDialog(QDialog):
         # 所有文件
         all_files_tab = QWidget()
         all_files_layout = QVBoxLayout()
-        all_files_layout.setContentsMargins(0, 10, 0, 0)
+        all_files_layout.setContentsMargins(0, 16, 0, 0)
         all_files_table = self.create_file_table(self.files)
         all_files_layout.addWidget(all_files_table)
         all_files_tab.setLayout(all_files_layout)
@@ -146,7 +228,7 @@ class ScanResultDialog(QDialog):
         upload_files = [f for f in self.files if f.status == "将上传"]
         upload_tab = QWidget()
         upload_layout = QVBoxLayout()
-        upload_layout.setContentsMargins(0, 10, 0, 0)
+        upload_layout.setContentsMargins(0, 16, 0, 0)
         upload_table = self.create_file_table(upload_files)
         upload_layout.addWidget(upload_table)
         upload_tab.setLayout(upload_layout)
@@ -156,7 +238,7 @@ class ScanResultDialog(QDialog):
         overwrite_files = [f for f in self.files if f.status == "将覆盖"]
         overwrite_tab = QWidget()
         overwrite_layout = QVBoxLayout()
-        overwrite_layout.setContentsMargins(0, 10, 0, 0)
+        overwrite_layout.setContentsMargins(0, 16, 0, 0)
         overwrite_table = self.create_file_table(overwrite_files)
         overwrite_layout.addWidget(overwrite_table)
         overwrite_tab.setLayout(overwrite_layout)
@@ -166,7 +248,7 @@ class ScanResultDialog(QDialog):
         skip_files = [f for f in self.files if f.status == "将跳过"]
         skip_tab = QWidget()
         skip_layout = QVBoxLayout()
-        skip_layout.setContentsMargins(0, 10, 0, 0)
+        skip_layout.setContentsMargins(0, 16, 0, 0)
         skip_table = self.create_file_table(skip_files)
         skip_layout.addWidget(skip_table)
         skip_tab.setLayout(skip_layout)
@@ -176,18 +258,23 @@ class ScanResultDialog(QDialog):
         
         # 底部按钮
         buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(10)
+        buttons_layout.setSpacing(16)
         
         self.start_btn = QPushButton('开始上传')
         self.start_btn.setObjectName("startButton")
+        self.start_btn.setIcon(QIcon("images/upload_white.png"))  # 如果有图标的话
+        self.start_btn.setIconSize(QSize(20, 20))  # 设置图标大小
         self.start_btn.clicked.connect(self.start_upload)
+        
         self.cancel_btn = QPushButton('取消')
         self.cancel_btn.setObjectName("cancelButton")
+        self.cancel_btn.setIcon(QIcon("images/cancel.png"))  # 如果有图标的话
+        self.cancel_btn.setIconSize(QSize(20, 20))  # 设置图标大小
         self.cancel_btn.clicked.connect(self.reject)
         
         # 设置按钮大小
-        self.start_btn.setMinimumHeight(40)
-        self.cancel_btn.setMinimumHeight(40)
+        self.start_btn.setFixedSize(160, 48)
+        self.cancel_btn.setFixedSize(120, 48)
         
         buttons_layout.addStretch(1)
         buttons_layout.addWidget(self.cancel_btn)
@@ -206,6 +293,9 @@ class ScanResultDialog(QDialog):
         headers = ["文件名", "类型", "大小", "拍摄日期", "状态"]
         table.setHorizontalHeaderLabels(headers)
         
+        # 设置表格交替行颜色
+        table.setAlternatingRowColors(True)
+        
         # 调整表格外观
         table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         for i in range(1, 4):  # 前4列自适应内容
@@ -216,25 +306,10 @@ class ScanResultDialog(QDialog):
         table.setColumnWidth(4, 120)  # 设置第5列宽度为120像素
         
         # 设置行高
-        table.verticalHeader().setDefaultSectionSize(40)  # 设置默认行高为40像素
+        table.verticalHeader().setDefaultSectionSize(46)  # 设置默认行高为46像素
         
-        # 强制设置表格样式
-        table.setStyleSheet("""
-            QTableWidget {
-                border: 2px solid #E0E0E0;
-                border-radius: 4px;
-                background-color: #FFFFFF;
-                gridline-color: #E0E0E0;
-            }
-            QTableWidget::item {
-                padding: 8px;
-                color: #333333;
-            }
-            QTableWidget::item:selected {
-                background-color: #E3F2FD;
-                color: #1976D2;
-            }
-        """)
+        # 隐藏垂直表头
+        table.verticalHeader().setVisible(False)
         
         for i, file in enumerate(files):
             # 文件名
@@ -258,49 +333,62 @@ class ScanResultDialog(QDialog):
             # 状态 - 创建自定义的标签来显示状态
             status_cell = QWidget()
             status_layout = QHBoxLayout(status_cell)
-            status_layout.setContentsMargins(4, 2, 4, 2)
+            status_layout.setContentsMargins(4, 4, 4, 4)
+            status_layout.setSpacing(0)
             
             if file.status == "将上传":
+                # 现代风格的状态标签
                 status_label = QLabel("将上传")
                 status_label.setStyleSheet("""
-                    color: white;
-                    background-color: #4CAF50; 
-                    border-radius: 4px;
-                    padding: 5px 10px;
-                    font-weight: bold;
+                    color: #00695C;
+                    background-color: #E0F2F1;
+                    border-radius: 15px;
+                    border: 1px solid #B2DFDB;
+                    padding: 4px 12px;
+                    font-weight: 500;
                     font-size: 12px;
-                    min-width: 60px;
-                    min-height: 20px;
-                    text-align: center;
+                    min-width: 80px;
+                    min-height: 24px;
                 """)
             elif file.status == "将覆盖":
                 status_label = QLabel("将覆盖")
                 status_label.setStyleSheet("""
-                    color: white;
-                    background-color: #FF9800; 
-                    border-radius: 4px;
-                    padding: 5px 10px;
-                    font-weight: bold;
+                    color: #E65100;
+                    background-color: #FFF3E0;
+                    border-radius: 15px;
+                    border: 1px solid #FFE0B2;
+                    padding: 4px 12px;
+                    font-weight: 500;
                     font-size: 12px;
-                    min-width: 60px;
-                    min-height: 20px;
-                    text-align: center;
+                    min-width: 80px;
+                    min-height: 24px;
                 """)
             elif file.status == "将跳过":
                 status_label = QLabel("将跳过")
                 status_label.setStyleSheet("""
-                    color: white;
-                    background-color: #9E9E9E; 
-                    border-radius: 4px;
-                    padding: 5px 10px;
-                    font-weight: bold;
+                    color: #546E7A;
+                    background-color: #ECEFF1;
+                    border-radius: 15px;
+                    border: 1px solid #CFD8DC;
+                    padding: 4px 12px;
+                    font-weight: 500;
                     font-size: 12px;
-                    min-width: 60px;
-                    min-height: 20px;
-                    text-align: center;
+                    min-width: 80px;
+                    min-height: 24px;
                 """)
             else:
                 status_label = QLabel(file.status)
+                status_label.setStyleSheet("""
+                    color: #424242;
+                    background-color: #F5F5F5;
+                    border-radius: 15px;
+                    border: 1px solid #E0E0E0;
+                    padding: 4px 12px;
+                    font-weight: 500;
+                    font-size: 12px;
+                    min-width: 80px;
+                    min-height: 24px;
+                """)
             
             # 设置标签文本居中
             status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
