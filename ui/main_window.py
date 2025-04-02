@@ -94,14 +94,27 @@ class MainWindow(QMainWindow):
         
         # 选项
         options_group = QGroupBox("选项")
-        options_layout = QHBoxLayout()
-        options_layout.setSpacing(16)
+        options_layout = QVBoxLayout()
+        options_layout.setSpacing(10)
         options_layout.setContentsMargins(16, 0, 16, 16)
         
+        # 覆盖选项
+        overwrite_layout = QHBoxLayout()
         self.overwrite_check = QCheckBox('覆盖重复文件')
         self.overwrite_check.setChecked(self.config.overwrite_duplicates)
-        options_layout.addWidget(self.overwrite_check)
-        options_layout.addStretch(1)
+        overwrite_description = QLabel("（当目标位置存在同名但大小不同的文件时覆盖，大小相同的文件将始终被视为相同文件而跳过）")
+        overwrite_description.setStyleSheet("color: #666666; font-size: 12px;")
+        overwrite_layout.addWidget(self.overwrite_check)
+        overwrite_layout.addWidget(overwrite_description)
+        overwrite_layout.addStretch(1)
+        
+        # 添加文件夹说明
+        folder_info = QLabel("文件将按照拍摄日期（格式：YYYY-MM-DD）自动归类到相应的子文件夹中")
+        folder_info.setStyleSheet("color: #666666; font-size: 12px; padding: 5px 0;")
+        
+        # 添加到主布局
+        options_layout.addLayout(overwrite_layout)
+        options_layout.addWidget(folder_info)
         options_group.setLayout(options_layout)
         
         # 动作按钮布局
