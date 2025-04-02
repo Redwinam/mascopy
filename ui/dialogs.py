@@ -311,23 +311,39 @@ class ScanResultDialog(QDialog):
         # 隐藏垂直表头
         table.verticalHeader().setVisible(False)
         
+        # 添加表格整体样式，包括默认文字颜色
+        table.setStyleSheet("""
+            QTableWidget {
+                color: #212529;
+                gridline-color: #E9ECEF;
+            }
+            QTableWidget::item {
+                color: #212529;
+                border-bottom: 1px solid #E9ECEF;
+            }
+        """)
+        
         for i, file in enumerate(files):
             # 文件名
             name_item = QTableWidgetItem(file.filename)
+            name_item.setForeground(QColor("#212529"))  # 深灰色，接近黑色
             table.setItem(i, 0, name_item)
             
             # 类型
             type_item = QTableWidgetItem(file.file_type)
+            type_item.setForeground(QColor("#212529"))
             table.setItem(i, 1, type_item)
             
             # 大小 (转换为更友好的格式)
             size_str = self.format_size(file.file_size)
             size_item = QTableWidgetItem(size_str)
+            size_item.setForeground(QColor("#212529"))
             table.setItem(i, 2, size_item)
             
             # 日期
             date_str = file.date.strftime('%Y-%m-%d %H:%M:%S')
             date_item = QTableWidgetItem(date_str)
+            date_item.setForeground(QColor("#212529"))
             table.setItem(i, 3, date_item)
             
             # 状态 - 创建自定义的标签来显示状态
