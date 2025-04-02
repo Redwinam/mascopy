@@ -82,7 +82,7 @@ class ScanProgressDialog(QDialog):
         progress_layout.addWidget(progress_header)
         
         self.progress_bar = QProgressBar()
-        self.progress_bar.setMinimumHeight(12)
+        self.progress_bar.setMinimumHeight(16)
         progress_layout.addWidget(self.progress_bar)
         
         layout.addLayout(progress_layout)
