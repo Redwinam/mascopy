@@ -140,26 +140,22 @@ class MainWindow(QMainWindow):
         self.progress_bar.setMinimumHeight(20)
         self.progress_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        # 日志区域
-        log_group = QGroupBox("日志")
-        log_layout = QVBoxLayout()
-        log_layout.setSpacing(16)
-        log_layout.setContentsMargins(16, 0, 16, 16)
-        
-        self.log_area = QTextEdit()
-        self.log_area.setReadOnly(True)
-        self.log_area.setMinimumHeight(200)
-        log_layout.addWidget(self.log_area)
-        
-        log_group.setLayout(log_layout)
-        
         # 添加所有布局
         main_layout.addWidget(source_group)
         main_layout.addWidget(target_group)
         main_layout.addWidget(options_group)
         main_layout.addLayout(action_layout)
         main_layout.addWidget(self.progress_bar)
-        main_layout.addWidget(log_group)
+        
+        # 日志区域 - 移除QGroupBox嵌套
+        log_label = QLabel("日志")
+        log_label.setStyleSheet("font-weight: bold; font-size: 14px;")
+        main_layout.addWidget(log_label)
+        
+        self.log_area = QTextEdit()
+        self.log_area.setReadOnly(True)
+        self.log_area.setMinimumHeight(200)
+        main_layout.addWidget(self.log_area)
         
         # 设置主窗口
         container = QWidget()
