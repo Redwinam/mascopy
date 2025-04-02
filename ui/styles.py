@@ -27,7 +27,6 @@ QPushButton {
 
 QPushButton:hover {
     background-color: #3A56D4;
-    transition: background-color 0.2s ease;
 }
 
 QPushButton:pressed {
@@ -104,7 +103,7 @@ QTextEdit {
     border-radius: 8px;
     padding: 12px;
     background-color: #FFFFFF;
-    font-family: "Consolas", "Menlo", "Monaco", "Courier New", monospace;
+    font-family: "Menlo", "Courier New", "Monaco", "DejaVu Sans Mono";
     color: #212529;
     line-height: 1.5;
     selection-background-color: #CED4DA;
