@@ -26,7 +26,7 @@ class MediaFile:
 class MediaScanner:
     """媒体扫描器，负责扫描和分析媒体文件"""
     def __init__(self):
-        self.photo_extensions = ['.jpg', '.jpeg', '.png', '.heic', '.nef', '.cr2', '.arw']
+        self.photo_extensions = ['.jpg', '.jpeg', '.png', '.heic', '.nef', '.cr2', '.arw', '.dng', '.cr3']
         self.video_extensions = ['.mp4', '.mov', '.avi', '.m4v', '.3gp', '.mkv']
         self.supported_extensions = self.photo_extensions + self.video_extensions
         

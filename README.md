@@ -24,6 +24,8 @@
 - NEF (尼康 RAW 格式)
 - CR2 (佳能 RAW 格式)
 - ARW (索尼 RAW 格式)
+- DNG (徕卡及其他 RAW 格式)
+- CR3 (佳能新 RAW 格式)
 
 ### 视频格式
 
