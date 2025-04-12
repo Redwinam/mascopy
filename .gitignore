@@ -61,3 +61,6 @@ uploads/
 # 用户数据或配置
 user_config.json
 last_paths.json 
+
+# 构建产物
+*.dmg
