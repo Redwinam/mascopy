@@ -93,7 +93,6 @@ class MasCopierUI {
 
   setupIpcListeners() {
     window.electronAPI.on("scan:progress", (progress) => {
-      console.log('[app.js] scan:progress event received:', progress);
       if (!progress || typeof progress.current !== 'number' || typeof progress.total !== 'number') return;
       
       const percentage = progress.total > 0 ? (progress.current / progress.total) * 100 : 0;

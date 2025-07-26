@@ -83,7 +83,6 @@ class MasCopyApp {
       console.log('IPC `media:scan` received:', { sourceDir, targetDir, overwrite });
 
       const progressListener = (progress) => {
-        console.log('[main.js] Progress event received:', progress);
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
           this.mainWindow.webContents.send('scan:progress', progress);
         }
