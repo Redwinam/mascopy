@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 设置版本号和发布说明
-VERSION="v1.0.0"
+VERSION="v1.0.1"
 RELEASE_FILE="release.md"
 
 # 1. 创建tag
