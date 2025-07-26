@@ -1,207 +1,201 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MasCopy - 照片/视频 NAS 上传工具</title>
-    <link rel="stylesheet" href="styles/main.css">
-    <link rel="stylesheet" href="styles/components.css">
-</head>
-<body>
+    <link rel="stylesheet" href="styles/main.css" />
+    <link rel="stylesheet" href="styles/components.css" />
+  </head>
+  <body>
     <div id="app">
-        <!-- 标题栏 -->
-        <header class="title-bar">
-            <div class="title-bar-content">
-                <div class="app-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                    </svg>
-                </div>
-                <h1 class="app-title">MasCopy</h1>
-                <div class="title-bar-controls"></div>
-            </div>
-        </header>
-
-        <!-- 主内容区域 -->
-        <main class="main-content">
-            <!-- 配置区域 -->
-            <section class="config-section">
-                <!-- 源目录选择 -->
-                <div class="config-group">
-                    <label class="config-label">源目录</label>
-                    <div class="path-selector">
-                        <div class="path-display" id="sourcePath">未选择</div>
-                        <button class="btn btn-secondary" id="selectSourceBtn">选择文件夹</button>
-                    </div>
-                </div>
-
-                <!-- 目标目录选择 -->
-                <div class="config-group">
-                    <label class="config-label">目标目录 (NAS)</label>
-                    <div class="path-selector">
-                        <div class="path-display" id="targetPath">未选择</div>
-                        <button class="btn btn-secondary" id="selectTargetBtn">选择文件夹</button>
-                    </div>
-                </div>
-
-                <!-- 选项 -->
-                <div class="config-group">
-                    <label class="config-label">选项</label>
-                    <div class="options-container">
-                        <label class="checkbox-container">
-                            <input type="checkbox" id="overwriteCheck">
-                            <span class="checkmark"></span>
-                            <span class="checkbox-text">覆盖重复文件</span>
-                        </label>
-                        <p class="option-description">
-                            当目标位置存在同名但大小不同的文件时覆盖，大小相同的文件将始终被视为相同文件而跳过
-                        </p>
-                        <p class="folder-info">
-                            文件将按照拍摄日期（格式：YYYY-MM-DD）自动归类到相应的子文件夹中
-                        </p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 操作按钮区域 -->
-            <section class="action-section">
-                <div class="action-buttons">
-                    <button class="btn btn-outline" id="scanBtn" disabled>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M21 21L16.514 16.506L21 21ZM18 10.5C18 15.194 14.194 19 9.5 19C4.806 19 1 15.194 1 10.5C1 5.806 4.806 2 9.5 2C14.194 2 18 5.806 18 10.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        预扫描
-                    </button>
-                    <button class="btn btn-primary" id="startBtn" disabled>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8 5V19L19 12L8 5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                        </svg>
-                        开始上传
-                    </button>
-                    <button class="btn btn-warning" id="pauseBtn" disabled>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="6" y="4" width="4" height="16" fill="currentColor"/>
-                            <rect x="14" y="4" width="4" height="16" fill="currentColor"/>
-                        </svg>
-                        暂停
-                    </button>
-                    <button class="btn btn-danger" id="cancelBtn" disabled>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        取消
-                    </button>
-                </div>
-
-                <!-- 进度条 -->
-                <div class="progress-container">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
-                        <div class="progress-text" id="progressText">0%</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 日志区域 -->
-            <section class="log-section">
-                <div class="log-header">
-                    <h3 class="log-title">日志</h3>
-                    <button class="btn btn-ghost btn-sm" id="clearLogBtn">清空</button>
-                </div>
-                <div class="log-container" id="logContainer">
-                    <div class="log-placeholder">准备就绪，请选择源目录和目标目录开始扫描...</div>
-                </div>
-            </section>
-        </main>
-
-        <!-- 扫描进度对话框 -->
-        <div class="modal" id="scanModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">扫描进度</h3>
-                </div>
-                <div class="modal-body">
-                    <div class="scan-status">
-                        <div class="scan-icon">
-                            <svg class="spin" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2"/>
-                                <path d="M12 3C16.9706 3 21 7.02944 21 12" stroke="url(#gradient)" stroke-width="2" stroke-linecap="round"/>
-                                <defs>
-                                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                        <stop offset="0%" style="stop-color:#4361EE;stop-opacity:1" />
-                                        <stop offset="100%" style="stop-color:#4361EE;stop-opacity:0" />
-                                    </linearGradient>
-                                </defs>
-                            </svg>
-                        </div>
-                        <div class="scan-info">
-                            <div class="scan-message" id="scanMessage">正在扫描媒体文件...</div>
-                            <div class="scan-file" id="scanFile">准备中...</div>
-                        </div>
-                    </div>
-                    <div class="progress-container">
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="scanProgressFill"></div>
-                            <div class="progress-text" id="scanProgressText">0%</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-danger" id="cancelScanBtn">取消扫描</button>
-                </div>
-            </div>
+      <!-- 标题栏 -->
+      <header class="title-bar">
+        <div class="title-bar-content">
+          <div class="app-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+              <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+              <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            </svg>
+          </div>
+          <h1 class="app-title">MasCopy</h1>
+          <div class="title-bar-controls"></div>
         </div>
+      </header>
 
-        <!-- 扫描结果对话框 -->
-        <div class="modal" id="resultModal">
-            <div class="modal-content modal-large">
-                <div class="modal-header">
-                    <h3 class="modal-title">预扫描结果</h3>
-                    <button class="modal-close" id="closeResultBtn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <!-- 统计卡片 -->
-                    <div class="stats-grid" id="statsGrid">
-                        <!-- 统计卡片将通过JavaScript动态生成 -->
-                    </div>
-                    
-                    <!-- 文件列表 -->
-                    <div class="file-list-container">
-                        <div class="file-list-header">
-                            <h4>文件列表</h4>
-                            <div class="file-list-controls">
-                                <select class="filter-select" id="statusFilter">
-                                    <option value="all">全部文件</option>
-                                    <option value="将上传">将上传</option>
-                                    <option value="将覆盖">将覆盖</option>
-                                    <option value="将跳过">将跳过</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="file-list" id="fileList">
-                            <!-- 文件列表将通过JavaScript动态生成 -->
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" id="closeResultModalBtn">关闭</button>
-                    <button class="btn btn-primary" id="startUploadFromResultBtn">开始上传</button>
-                </div>
+      <!-- 主内容区域 -->
+      <main class="main-content">
+        <!-- 配置区域 -->
+        <section class="config-section">
+          <!-- 源目录选择 -->
+          <div class="config-group">
+            <label class="config-label">源目录</label>
+            <div class="path-selector">
+              <div class="path-display" id="sourcePath">未选择</div>
+              <button class="btn btn-secondary" id="selectSourceBtn">选择文件夹</button>
             </div>
+          </div>
+
+          <!-- 目标目录选择 -->
+          <div class="config-group">
+            <label class="config-label">目标目录 (NAS)</label>
+            <div class="path-selector">
+              <div class="path-display" id="targetPath">未选择</div>
+              <button class="btn btn-secondary" id="selectTargetBtn">选择文件夹</button>
+            </div>
+          </div>
+
+          <!-- 选项 -->
+          <div class="config-group">
+            <label class="config-label">选项</label>
+            <div class="options-container">
+              <label class="checkbox-container">
+                <input type="checkbox" id="overwriteCheck" />
+                <span class="checkmark"></span>
+                <span class="checkbox-text">覆盖重复文件</span>
+              </label>
+              <p class="option-description">当目标位置存在同名但大小不同的文件时覆盖，大小相同的文件将始终被视为相同文件而跳过</p>
+              <p class="folder-info">文件将按照拍摄日期（格式：YYYY-MM-DD）自动归类到相应的子文件夹中</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 操作按钮区域 -->
+        <section class="action-section">
+          <div class="action-buttons">
+            <button class="btn btn-outline" id="scanBtn" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 21L16.514 16.506L21 21ZM18 10.5C18 15.194 14.194 19 9.5 19C4.806 19 1 15.194 1 10.5C1 5.806 4.806 2 9.5 2C14.194 2 18 5.806 18 10.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              预扫描
+            </button>
+            <button class="btn btn-primary" id="startBtn" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 5V19L19 12L8 5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+              </svg>
+              开始上传
+            </button>
+            <button class="btn btn-warning" id="pauseBtn" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="6" y="4" width="4" height="16" fill="currentColor" />
+                <rect x="14" y="4" width="4" height="16" fill="currentColor" />
+              </svg>
+              暂停
+            </button>
+            <button class="btn btn-danger" id="cancelBtn" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              取消
+            </button>
+          </div>
+
+          <!-- 进度条 -->
+          <div class="progress-container">
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill"></div>
+              <div class="progress-text" id="progressText">0%</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 日志区域 -->
+        <section class="log-section">
+          <div class="log-header">
+            <h3 class="log-title">日志</h3>
+            <button class="btn btn-ghost btn-sm" id="clearLogBtn">清空</button>
+          </div>
+          <div class="log-container" id="logContainer">
+            <div class="log-placeholder">准备就绪，请选择源目录和目标目录开始扫描...</div>
+          </div>
+        </section>
+      </main>
+
+      <!-- 扫描进度对话框 -->
+      <div class="modal" id="scanModal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">扫描进度</h3>
+          </div>
+          <div class="modal-body">
+            <div class="scan-status">
+              <div class="scan-icon">
+                <svg class="spin" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" />
+                  <path d="M12 3C16.9706 3 21 7.02944 21 12" stroke="url(#gradient)" stroke-width="2" stroke-linecap="round" />
+                  <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" style="stop-color: #4361ee; stop-opacity: 1" />
+                      <stop offset="100%" style="stop-color: #4361ee; stop-opacity: 0" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+              <div class="scan-info">
+                <div class="scan-message" id="scanMessage">正在扫描媒体文件...</div>
+                <div class="scan-file" id="scanFile">准备中...</div>
+              </div>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar">
+                <div class="progress-fill" id="scanProgressFill"></div>
+                <div class="progress-text" id="scanProgressText">0%</div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-danger" id="cancelScanBtn">取消扫描</button>
+          </div>
         </div>
+      </div>
 
-        <!-- 遮罩层 -->
-        <div class="modal-overlay" id="modalOverlay"></div>
-    <script src="app.js"></script>
+      <!-- 扫描结果对话框 -->
+      <div class="modal" id="resultModal">
+        <div class="modal-content modal-large">
+          <div class="modal-header">
+            <h3 class="modal-title">预扫描结果</h3>
+            <button class="modal-close" id="closeResultBtn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <!-- 统计卡片 -->
+            <div class="stats-grid" id="statsGrid">
+              <!-- 统计卡片将通过JavaScript动态生成 -->
+            </div>
 
+            <!-- 文件列表 -->
+            <div class="file-list-container">
+              <div class="file-list-header">
+                <h4>文件列表</h4>
+                <div class="file-list-controls">
+                  <select class="filter-select" id="statusFilter">
+                    <option value="all">全部文件</option>
+                    <option value="将上传">将上传</option>
+                    <option value="将覆盖">将覆盖</option>
+                    <option value="将跳过">将跳过</option>
+                  </select>
+                </div>
+              </div>
+              <div class="file-list" id="fileList">
+                <!-- 文件列表将通过JavaScript动态生成 -->
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" id="closeResultModalBtn">关闭</button>
+            <button class="btn btn-primary" id="startUploadFromResultBtn">开始上传</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 遮罩层 -->
+      <div class="modal-overlay" id="modalOverlay"></div>
     </div>
 
     <script src="app.js"></script>
-</body>
+  </body>
 </html>

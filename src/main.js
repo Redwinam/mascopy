@@ -8,14 +8,20 @@ const { ConfigManager } = require('./services/configManager');
 class MasCopyApp {
   constructor() {
     this.mainWindow = null;
+    this.configManager = new ConfigManager();
     this.mediaScanner = new MediaScanner();
     this.mediaUploader = new MediaUploader();
-    this.configManager = new ConfigManager();
+    this.mediaService = {
+      scan: (...args) => this.mediaScanner.scan(...args),
+      upload: (...args) => this.mediaUploader.upload(...args),
+      pauseUpload: () => this.mediaUploader.pause(),
+      resumeUpload: () => this.mediaUploader.resume(),
+      cancelUpload: () => this.mediaUploader.cancel(),
+    };
     this.isDev = process.argv.includes('--dev');
   }
 
   async createWindow() {
-    // 创建主窗口
     this.mainWindow = new BrowserWindow({
       width: 1200,
       height: 800,
@@ -28,36 +34,34 @@ class MasCopyApp {
         preload: path.join(__dirname, 'preload.js')
       },
       titleBarStyle: 'hiddenInset',
-      show: false,
-      icon: path.join(__dirname, '../assets/icon.png')
+      show: true,
+      icon: path.join(__dirname, '..', 'assets', 'icon.png')
     });
 
-    // 加载应用页面
-    await this.mainWindow.loadFile(path.join(__dirname, 'renderer/index.html'));
+    try {
+      await this.mainWindow.loadFile(path.join(__dirname, 'renderer/index.html'));
 
-    // 开发模式下打开开发者工具
-    this.mainWindow.webContents.openDevTools();
+      if (this.isDev) {
+        this.mainWindow.webContents.openDevTools();
+      }
 
-    // 窗口准备好后显示
-    this.mainWindow.once('ready-to-show', () => {
-      this.mainWindow.show();
-    });
 
-    // 页面加载完成后，根据操作系统添加CSS类
+    } catch (error) {
+      console.error('Failed to load renderer:', error);
+    }
+
     this.mainWindow.webContents.on('did-finish-load', () => {
       const platform = process.platform;
       const js = `document.body.classList.add('platform-${platform}')`;
       this.mainWindow.webContents.executeJavaScript(js);
     });
 
-    // 处理窗口关闭
     this.mainWindow.on('closed', () => {
       this.mainWindow = null;
     });
   }
 
   setupIpcHandlers() {
-    // 配置相关
     ipcMain.handle('config:load', async () => {
       return await this.configManager.loadConfig();
     });
@@ -66,7 +70,6 @@ class MasCopyApp {
       return await this.configManager.saveConfig(config);
     });
 
-    // 文件夹选择
     ipcMain.handle('dialog:selectFolder', async () => {
       const result = await dialog.showOpenDialog(this.mainWindow, {
         title: '选择文件夹',
@@ -75,43 +78,26 @@ class MasCopyApp {
       return result;
     });
 
-    // 媒体扫描
     ipcMain.handle('media:scan', async (event, sourceDir, targetDir, overwrite) => {
-      try {
-        const result = await this.mediaService.scan(sourceDir, targetDir, overwrite);
-        return { success: true, data: result };
-      } catch (error) {
-        return { success: false, error: error.message };
-      }
+      return this.mediaService.scan(sourceDir, targetDir, overwrite);
     });
 
-    // 媒体上传
     ipcMain.handle('media:upload', async (event, files, targetDir, overwrite) => {
-      try {
-        await this.mediaService.upload(files, targetDir, overwrite);
-        return { success: true };
-      } catch (error) {
-        return { success: false, error: error.message };
-      }
+      return this.mediaService.upload(files, targetDir, overwrite);
     });
 
-    // 上传控制
     ipcMain.handle('upload:pause', () => {
-      this.mediaService.pauseUpload();
-      return { success: true };
+      return this.mediaService.pauseUpload();
     });
 
     ipcMain.handle('upload:resume', () => {
-      this.mediaService.resumeUpload();
-      return { success: true };
+      return this.mediaService.resumeUpload();
     });
 
     ipcMain.handle('upload:cancel', () => {
-      this.mediaService.cancelUpload();
-      return { success: true };
+      return this.mediaService.cancelUpload();
     });
 
-    // 系统相关
     ipcMain.handle('system:openPath', async (event, filePath) => {
       try {
         await shell.openPath(filePath);
@@ -135,7 +121,6 @@ class MasCopyApp {
     try {
       await fs.access(this.configManager.configPath);
     } catch (error) {
-      // 如果文件不存在，则创建一个默认的
       if (error.code === 'ENOENT') {
         console.log('配置文件不存在，正在创建默认配置文件...');
         await this.configManager.saveConfig(this.configManager.defaultConfig);
@@ -144,19 +129,14 @@ class MasCopyApp {
   }
 
   async initialize() {
-    // 等待应用准备就绪
     await app.whenReady();
 
-    // 确保配置文件存在
     await this.ensureConfigFileExists();
 
-    // 设置IPC处理器
     this.setupIpcHandlers();
 
-    // 创建主窗口
     await this.createWindow();
 
-    // macOS特定处理
     app.on('window-all-closed', () => {
       if (process.platform !== 'darwin') {
         app.quit();
@@ -171,9 +151,7 @@ class MasCopyApp {
   }
 }
 
-// 创建应用实例并初始化
 const masCopyApp = new MasCopyApp();
 masCopyApp.initialize().catch(console.error);
 
-// 导出应用实例（用于测试）
 module.exports = masCopyApp;
