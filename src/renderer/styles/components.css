@@ -190,7 +190,7 @@
 /* 文件列表项 */
 .file-list-item {
     display: grid;
-    grid-template-columns: 2fr 3fr 1fr 1fr;
+    grid-template-columns: 2fr 3fr 1fr 1fr 2fr; /* 更新以适应新的进度条列 */
     gap: var(--spacing-md);
     padding: var(--spacing-sm) var(--spacing-md);
     border-bottom: 1px solid var(--border-color);

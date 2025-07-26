@@ -114,10 +114,10 @@ class MasCopierUI {
     });
 
     window.electronAPI.on("upload:progress", (progress) => {
-      const percentage = progress.totalFiles > 0 ? (progress.processedFiles / progress.totalFiles) * 100 : 0;
+      const percentage = progress.total > 0 ? (progress.current / progress.total) * 100 : 0;
       this.elements.progressFill.style.width = `${percentage}%`;
       this.elements.progressText.textContent = `${Math.round(percentage)}%`;
-      this.log("info", `总进度: ${progress.processedFiles}/${progress.totalFiles} | 当前文件: ${progress.currentFile} (${Math.round(progress.fileProgress)}%)`);
+      this.log("info", `总进度: ${progress.current}/${progress.total}`);
     });
 
     window.electronAPI.on('upload:fileProcessed', (result) => {

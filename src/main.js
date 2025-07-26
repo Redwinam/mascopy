@@ -29,6 +29,12 @@ class MasCopyApp {
         this.mainWindow.webContents.send("upload:file-start", data);
       }
     });
+
+    this.mediaUploader.on("progress", (progress) => {
+      if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+        this.mainWindow.webContents.send("upload:progress", progress);
+      }
+    });
     this.mediaService = {
       scan: (...args) => this.mediaScanner.scanDirectory(...args),
       upload: (...args) => this.mediaUploader.uploadFiles(...args),
