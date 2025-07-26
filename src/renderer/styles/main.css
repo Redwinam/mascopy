@@ -215,15 +215,12 @@ body {
     padding: var(--spacing-sm) 0;
 }
 
-/* 操作区域 */
+/* 操作按钮区域 */
 .action-section {
     background: var(--bg-primary);
     border-radius: var(--border-radius-lg);
     padding: var(--spacing-lg);
     box-shadow: var(--shadow);
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-lg);
 }
 
 .action-buttons {
@@ -232,37 +229,81 @@ body {
     flex-wrap: wrap;
 }
 
-/* 进度条 */
-.progress-container {
-    width: 100%;
-    margin-bottom: var(--spacing-md);
+/* 进度条区域 */
+.progress-section {
+    background: var(--bg-primary);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    animation: slideDown 0.3s ease-out;
 }
 
-.progress-container:last-child {
-    margin-bottom: 0;
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
 }
 
 .progress-label {
-    font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
 }
 
 .progress-bar {
     position: relative;
-    height: 24px;
+    height: 22px;
     background: var(--gray-200);
-    border-radius: var(--border-radius-lg);
+    border-radius: 6px;
     overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .progress-fill {
     height: 100%;
     background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
-    border-radius: var(--border-radius-lg);
+    border-radius: 6px;
     transition: width 0.3s ease;
-    width: 0%;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
 }
 
 .progress-text {
@@ -273,6 +314,7 @@ body {
     font-size: var(--font-size-xs);
     font-weight: 600;
     color: var(--text-primary);
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
     z-index: 1;
 }
 
@@ -280,8 +322,11 @@ body {
     font-size: var(--font-size-xs);
     color: var(--text-secondary);
     margin-top: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-sm);
+    border-left: 3px solid var(--primary-color);
     word-break: break-all;
-    line-height: 1.4;
 }
 
 /* 日志区域 */
@@ -289,63 +334,143 @@ body {
     background: var(--bg-primary);
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow);
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 200px;
+    /* overflow: hidden; */
+    transition: var(--transition);
 }
 
 .log-header {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-lg) var(--spacing-lg) 0;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    transition: var(--transition);
+    background: var(--bg-primary);
+}
+
+.log-header:hover {
+    background: var(--bg-secondary);
+}
+
+.log-header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex: 1;
+}
+
+.log-header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.log-toggle-icon {
+    color: var(--text-secondary);
+    transition: var(--transition);
+    flex-shrink: 0;
+}
+
+.log-section.expanded .log-toggle-icon {
+    transform: rotate(90deg);
 }
 
 .log-title {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-base);
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
 }
 
-.log-container {
-    flex: 1;
-    padding: var(--spacing-lg);
-    overflow-y: auto;
-    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-    font-size: var(--font-size-sm);
-    line-height: 1.6;
+.log-status {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
     background: var(--bg-secondary);
-    margin: var(--spacing-md) var(--spacing-lg) var(--spacing-lg);
-    border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
+    padding: 2px var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    font-weight: 500;
+}
+
+.log-container {
+    max-height: 300px;
+    overflow-y: auto;
+    background: var(--bg-secondary);
+    transition: var(--transition);
+}
+
+.log-container.show {
+    display: block !important;
+    animation: slideDown 0.3s ease-out;
+}
+
+.log-container.hide {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
 }
 
 .log-placeholder {
-    color: var(--text-muted);
+    padding: var(--spacing-lg);
+    text-align: center;
+    color: var(--text-secondary);
     font-style: italic;
 }
 
 .log-entry {
-    margin-bottom: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    line-height: 1.4;
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-entry.log-info {
+    background: var(--bg-primary);
+}
+
+.log-entry.log-success {
+    background: rgba(40, 167, 69, 0.05);
+    border-left: 3px solid var(--success-color);
+}
+
+.log-entry.log-warning {
+    background: rgba(255, 193, 7, 0.05);
+    border-left: 3px solid var(--warning-color);
+}
+
+.log-entry.log-error {
+    background: rgba(220, 53, 69, 0.05);
+    border-left: 3px solid var(--danger-color);
+}
+
+.log-time {
+    color: var(--text-muted);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+}
+
+.log-message {
+    flex: 1;
     color: var(--text-primary);
-}
-
-.log-entry.success {
-    color: var(--success-color);
-}
-
-.log-entry.error {
-    color: var(--danger-color);
-}
-
-.log-entry.warning {
-    color: var(--warning-color);
-}
-
-.log-entry.info {
-    color: var(--info-color);
+    word-break: break-word;
 }
 
 /* 响应式设计 */

@@ -28,6 +28,8 @@ class MasCopierUI {
       startBtn: document.getElementById("startBtn"),
       pauseBtn: document.getElementById("pauseBtn"),
       cancelBtn: document.getElementById("cancelBtn"),
+      progressSection: document.getElementById("progressSection"),
+      overallProgressContainer: document.getElementById("overallProgressContainer"),
       progressFill: document.getElementById("progressFill"),
       progressText: document.getElementById("progressText"),
       currentFileProgressContainer: document.getElementById("currentFileProgressContainer"),
@@ -35,6 +37,9 @@ class MasCopierUI {
       currentFileProgressText: document.getElementById("currentFileProgressText"),
       currentFileName: document.getElementById("currentFileName"),
       logContainer: document.getElementById("logContainer"),
+      logHeader: document.getElementById("logHeader"),
+      logToggleIcon: document.getElementById("logToggleIcon"),
+      logStatus: document.getElementById("logStatus"),
       clearLogBtn: document.getElementById("clearLogBtn"),
       scanModal: document.getElementById("scanModal"),
       scanMessage: document.getElementById("scanMessage"),
@@ -83,6 +88,11 @@ class MasCopierUI {
 
     this.elements.clearLogBtn.addEventListener("click", () => this.clearLogs());
 
+    // Log toggle functionality
+    if (this.elements.logHeader) {
+      this.elements.logHeader.addEventListener("click", () => this.toggleLogVisibility());
+    }
+
     // Modal listeners
     this.elements.cancelScanBtn.addEventListener("click", () => this.cancelScan());
     this.elements.closeResultBtn.addEventListener("click", () => this.closeResultModal());
@@ -122,7 +132,7 @@ class MasCopierUI {
       this.elements.progressFill.style.width = `${percentage}%`;
       this.elements.progressText.textContent = `${Math.round(percentage)}%`;
       this.log("info", `总进度: ${progress.current}/${progress.total}`);
-      
+
       // 如果上传完成，隐藏当前文件进度条
       if (percentage >= 100) {
         setTimeout(() => {
@@ -137,17 +147,17 @@ class MasCopierUI {
 
     window.electronAPI.on("upload:file-start", ({ file }) => {
       this.log("info", `开始复制: ${file.filename}`);
-      
+
       // 显示当前文件进度条
-      this.elements.currentFileProgressContainer.style.display = "block";
-      
+      this.elements.currentFileProgressContainer.style.display = "flex";
+
       // 更新当前文件名
       this.elements.currentFileName.textContent = file.filename || "未知文件";
-      
+
       // 重置当前文件进度
       this.elements.currentFileProgressFill.style.width = "0%";
       this.elements.currentFileProgressText.textContent = "0%";
-      
+
       const fileRow = document.querySelector(`[data-file-path="${file.filePath}"]`);
       if (fileRow) {
         fileRow.classList.add("uploading");
@@ -157,25 +167,25 @@ class MasCopierUI {
     window.electronAPI.on("upload:file-progress", (progress) => {
       if (progress.current !== undefined && progress.total !== undefined) {
         const percentage = Math.round((progress.current / progress.total) * 100);
-        
+
         // 更新当前文件进度条
         this.elements.currentFileProgressFill.style.width = `${percentage}%`;
         this.elements.currentFileProgressText.textContent = `${percentage}%`;
-        
+
         // 更新当前文件名（如果有变化）
         if (progress.file && progress.file.filename !== this.elements.currentFileName.textContent) {
           this.elements.currentFileName.textContent = progress.file.filename;
         }
       }
-      
+
       const fileRow = document.querySelector(`[data-file-path="${progress.file.filePath}"]`);
       if (fileRow) {
         const progressBar = fileRow.querySelector(".file-progress-bar");
         const progressFill = fileRow.querySelector(".file-progress-fill");
         const progressText = fileRow.querySelector(".file-progress-text");
-        
+
         if (progressBar) {
-          progressBar.style.display = "block";
+          progressBar.style.display = "flex";
           if (progressFill) {
             progressFill.style.width = `${progress.percentage}%`;
           }
@@ -270,6 +280,10 @@ class MasCopierUI {
     this.elements.scanBtn.disabled = true;
     this.elements.pauseBtn.disabled = false;
     this.elements.cancelBtn.disabled = false;
+
+    // Show progress section
+    this.showProgressSection();
+
     try {
       const { targetDir, overwrite } = this.config;
       const result = await window.electronAPI.media.upload(filesToUpload, targetDir, overwrite);
@@ -313,9 +327,14 @@ class MasCopierUI {
     this.elements.cancelBtn.disabled = true;
     this.elements.progressFill.style.width = "0%";
     this.elements.progressText.textContent = "0%";
-    
+
     // 隐藏当前文件进度条
     this.elements.currentFileProgressContainer.style.display = "none";
+
+    // Hide progress section after a delay
+    setTimeout(() => {
+      this.hideProgressSection();
+    }, 3000);
   }
 
   log(type, message) {
@@ -475,6 +494,43 @@ class MasCopierUI {
         return "skip";
       default:
         return "unknown";
+    }
+  }
+
+  showProgressSection() {
+    if (this.elements.progressSection) {
+      this.elements.progressSection.style.display = "flex";
+    }
+  }
+
+  hideProgressSection() {
+    if (this.elements.progressSection) {
+      this.elements.progressSection.style.display = "none";
+    }
+  }
+
+  toggleLogVisibility() {
+    const logContent = this.elements.logContainer;
+    const logSection = document.querySelector(".log-section");
+
+    if (logContent && logSection) {
+      const isCollapsed = logContent.style.display === "none";
+
+      if (isCollapsed) {
+        logContent.style.display = "block";
+        logSection.classList.add("expanded");
+        this.updateLogStatus("展开");
+      } else {
+        logContent.style.display = "none";
+        logSection.classList.remove("expanded");
+        this.updateLogStatus("已收起");
+      }
+    }
+  }
+
+  updateLogStatus(status) {
+    if (this.elements.logStatus) {
+      this.elements.logStatus.textContent = status;
     }
   }
 }
