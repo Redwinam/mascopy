@@ -124,6 +124,17 @@ class MasCopierUI {
       this.updateFileStatusInUI(result.file, result.success, result.message);
     });
 
+    window.electronAPI.on('upload:file-start', ({ file }) => {
+      this.log('info', `开始复制: ${file.filename}`);
+      const fileRow = document.querySelector(`[data-file-path="${file.filePath}"]`);
+      if (fileRow) {
+        const progressBar = fileRow.querySelector('.file-progress-bar');
+        if (progressBar) {
+          progressBar.style.display = 'block';
+        }
+      }
+    });
+
     window.electronAPI.on("upload:file-progress", (progress) => {
       const fileRow = document.querySelector(`[data-file-path="${progress.file.filePath}"]`);
       if (fileRow) {

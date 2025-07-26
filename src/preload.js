@@ -40,7 +40,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       'scan:progress',
       'upload:progress', 
       'upload:fileProcessed',
-      'upload:file-progress'
+      'upload:file-progress',
+      'upload:file-start'
     ];
     
     if (validChannels.includes(channel)) {

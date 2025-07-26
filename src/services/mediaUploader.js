@@ -51,6 +51,7 @@ class MediaUploader extends EventEmitter {
 
         try {
           if (mediaFile.status === '将上传' || mediaFile.status === '将覆盖') {
+            this.emit('file-start', { file: mediaFile }); // 新增的事件
             await this.copyFile(mediaFile);
             
             this.emit('fileProcessed', {
