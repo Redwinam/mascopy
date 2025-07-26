@@ -458,7 +458,7 @@ class MasCopierUI {
     let filesToRender = [];
 
     if (!this.scanResult || !this.scanResult.files) {
-      this.elements.fileList.innerHTML = '<div class="file-list-empty">📁 没有文件可显示</div>';
+      this.elements.fileList.innerHTML = '<div class="file-list-empty">没有文件可显示</div>';
       return;
     }
 
@@ -471,7 +471,7 @@ class MasCopierUI {
     }
 
     if (filesToRender.length === 0) {
-      this.elements.fileList.innerHTML = '<div class="file-list-empty">📁 没有符合条件的文件</div>';
+      this.elements.fileList.innerHTML = '<div class="file-list-empty">没有符合条件的文件</div>';
       return;
     }
 
@@ -483,7 +483,7 @@ class MasCopierUI {
     const header = document.createElement("div");
     header.classList.add("file-list-header", "file-list-item");
     header.innerHTML = `
-        <div class="file-info">文件信息</div>
+        <div class="file-path-combined">文件路径</div>
         <div class="file-size">大小</div>
         <div class="file-status">状态</div>
     `;
@@ -498,10 +498,14 @@ class MasCopierUI {
       const fileSizeMB = (file.fileSize / 1024 / 1024).toFixed(2);
       const statusClass = this.getStatusClass(file.status);
 
+      // 分离路径和文件名
+      const pathParts = relativePath.split('/');
+      const fileName = pathParts.pop(); // 获取文件名
+      const dirPath = pathParts.length > 0 ? pathParts.join('/') + '/' : '';
+
       fileElement.innerHTML = `
-            <div class="file-info">
-              <div class="file-name">${file.filename}</div>
-              <div class="file-path">${relativePath}</div>
+            <div class="file-path-combined">
+              <span class="path-directory">${dirPath}</span><span class="path-filename">${fileName}</span>
             </div>
             <div class="file-size">${fileSizeMB} MB</div>
             <div class="file-status file-status-${statusClass}">${file.status}</div>
