@@ -30,6 +30,10 @@ class MasCopierUI {
       cancelBtn: document.getElementById("cancelBtn"),
       progressFill: document.getElementById("progressFill"),
       progressText: document.getElementById("progressText"),
+      currentFileProgressContainer: document.getElementById("currentFileProgressContainer"),
+      currentFileProgressFill: document.getElementById("currentFileProgressFill"),
+      currentFileProgressText: document.getElementById("currentFileProgressText"),
+      currentFileName: document.getElementById("currentFileName"),
       logContainer: document.getElementById("logContainer"),
       clearLogBtn: document.getElementById("clearLogBtn"),
       scanModal: document.getElementById("scanModal"),
@@ -93,55 +97,97 @@ class MasCopierUI {
 
   setupIpcListeners() {
     window.electronAPI.on("scan:progress", (progress) => {
-      if (!progress || typeof progress.current !== 'number' || typeof progress.total !== 'number') return;
-      
-      if (progress.phase === 'collecting') {
-        this.elements.scanMessage.textContent = '正在收集文件列表...';
-        this.elements.scanFile.textContent = progress.message || '';
-        this.elements.scanProgressFill.style.width = '100%'; // Or some other indeterminate state
-        this.elements.scanProgressFill.classList.add('indeterminate');
-        this.elements.scanProgressText.textContent = '...';
+      if (!progress || typeof progress.current !== "number" || typeof progress.total !== "number") return;
+
+      if (progress.phase === "collecting") {
+        this.elements.scanMessage.textContent = "正在收集文件列表...";
+        this.elements.scanFile.textContent = progress.message || "";
+        this.elements.scanProgressFill.style.width = "100%"; // Or some other indeterminate state
+        this.elements.scanProgressFill.classList.add("indeterminate");
+        this.elements.scanProgressText.textContent = "...";
       } else {
-        this.elements.scanProgressFill.classList.remove('indeterminate');
+        this.elements.scanProgressFill.classList.remove("indeterminate");
         const percentage = progress.total > 0 ? (progress.current / progress.total) * 100 : 0;
-        const message = progress.phase === 'analyzing' ? '正在分析文件...' : '正在扫描文件...';
+        const message = progress.phase === "analyzing" ? "正在分析文件..." : "正在扫描文件...";
 
         this.elements.scanMessage.textContent = `${message} (${progress.current}/${progress.total})`;
-        this.elements.scanFile.textContent = progress.message || '';
+        this.elements.scanFile.textContent = progress.message || "";
         this.elements.scanProgressFill.style.width = `${percentage}%`;
         this.elements.scanProgressText.textContent = `${Math.round(percentage)}%`;
       }
     });
 
     window.electronAPI.on("upload:progress", (progress) => {
+      console.log("收到upload:progress事件:", progress);
       const percentage = progress.total > 0 ? (progress.current / progress.total) * 100 : 0;
+      console.log("计算的百分比:", percentage);
+      console.log("进度条元素:", this.elements.progressFill);
       this.elements.progressFill.style.width = `${percentage}%`;
       this.elements.progressText.textContent = `${Math.round(percentage)}%`;
       this.log("info", `总进度: ${progress.current}/${progress.total}`);
+      
+      // 如果上传完成，隐藏当前文件进度条
+      if (percentage >= 100) {
+        setTimeout(() => {
+          this.elements.currentFileProgressContainer.style.display = "none";
+        }, 2000); // 2秒后隐藏
+      }
     });
 
-    window.electronAPI.on('upload:fileProcessed', (result) => {
+    window.electronAPI.on("upload:fileProcessed", (result) => {
       this.updateFileStatusInUI(result.file, result.success, result.message);
     });
 
-    window.electronAPI.on('upload:file-start', ({ file }) => {
-      this.log('info', `开始复制: ${file.filename}`);
+    window.electronAPI.on("upload:file-start", ({ file }) => {
+      console.log("收到file-start事件:", file);
+      this.log("info", `开始复制: ${file.filename}`);
+      
+      // 显示当前文件进度条
+      this.elements.currentFileProgressContainer.style.display = "block";
+      
+      // 更新当前文件名
+      this.elements.currentFileName.textContent = file.filename || "未知文件";
+      
+      // 重置当前文件进度
+      this.elements.currentFileProgressFill.style.width = "0%";
+      this.elements.currentFileProgressText.textContent = "0%";
+      
       const fileRow = document.querySelector(`[data-file-path="${file.filePath}"]`);
+      console.log("找到的文件行:", fileRow);
       if (fileRow) {
-        const progressBar = fileRow.querySelector('.file-progress-bar');
+        const progressBar = fileRow.querySelector(".file-progress-bar");
+        console.log("找到的进度条:", progressBar);
         if (progressBar) {
-          progressBar.style.display = 'block';
+          progressBar.style.display = "block";
         }
       }
     });
 
     window.electronAPI.on("upload:file-progress", (progress) => {
+      console.log("收到file-progress事件:", progress);
+      
+      if (progress.current !== undefined && progress.total !== undefined) {
+        const percentage = Math.round((progress.current / progress.total) * 100);
+        
+        // 更新当前文件进度条
+        this.elements.currentFileProgressFill.style.width = `${percentage}%`;
+        this.elements.currentFileProgressText.textContent = `${percentage}%`;
+        
+        // 更新当前文件名（如果有变化）
+        if (progress.file && progress.file.filename !== this.elements.currentFileName.textContent) {
+          this.elements.currentFileName.textContent = progress.file.filename;
+        }
+      }
+      
       const fileRow = document.querySelector(`[data-file-path="${progress.file.filePath}"]`);
+      console.log("找到的文件行:", fileRow);
       if (fileRow) {
         const progressBar = fileRow.querySelector(".file-progress-bar");
         const progressFill = fileRow.querySelector(".file-progress-fill");
+        console.log("找到的进度条元素:", { progressBar, progressFill });
         if (progressBar && progressFill) {
           const percentage = (progress.current / progress.total) * 100;
+          console.log("文件进度百分比:", percentage);
           progressFill.style.width = `${percentage}%`;
           progressBar.style.display = "block";
         }
@@ -175,7 +221,7 @@ class MasCopierUI {
 
     let filesToUpload = 0;
     if (this.scanResult && this.scanResult.files) {
-      filesToUpload = this.scanResult.files.filter(f => f.status === '将上传' || f.status === '将覆盖').length;
+      filesToUpload = this.scanResult.files.filter((f) => f.status === "将上传" || f.status === "将覆盖").length;
     }
     this.elements.startBtn.disabled = filesToUpload === 0;
   }
@@ -187,7 +233,7 @@ class MasCopierUI {
       const { sourceDir, targetDir } = this.config;
       const overwrite = !!this.config.overwrite;
       const result = await window.electronAPI.media.scan(sourceDir, targetDir, overwrite);
-      
+
       if (result.success && result.data) {
         this.hideScanModal();
         this.scanResult = result.data;
@@ -198,14 +244,14 @@ class MasCopierUI {
         this.updateActionButtons();
       } else {
         // Don't hide modal on error, so user can see the message
-        this.elements.scanMessage.textContent = '扫描失败';
-        this.elements.scanFile.textContent = result.error || '未知错误';
+        this.elements.scanMessage.textContent = "扫描失败";
+        this.elements.scanFile.textContent = result.error || "未知错误";
         this.log("error", `扫描出错: ${result.error}`);
       }
     } catch (error) {
-      this.elements.scanMessage.textContent = '扫描失败';
-      this.elements.scanFile.textContent = error.message || '未知错误';
-      console.error('Full error object received in renderer:', error);
+      this.elements.scanMessage.textContent = "扫描失败";
+      this.elements.scanFile.textContent = error.message || "未知错误";
+      console.error("Full error object received in renderer:", error);
       this.log("error", `扫描时发生未知错误: ${error.message || JSON.stringify(error)}`);
     }
   }
@@ -221,7 +267,7 @@ class MasCopierUI {
       this.log("error", "请先执行预扫描");
       return;
     }
-    const filesToUpload = this.scanResult.files.filter(f => f.status === '将上传' || f.status === '将覆盖');
+    const filesToUpload = this.scanResult.files.filter((f) => f.status === "将上传" || f.status === "将覆盖");
     if (filesToUpload.length === 0) {
       this.log("info", "没有需要上传的文件。");
       return;
@@ -275,6 +321,9 @@ class MasCopierUI {
     this.elements.cancelBtn.disabled = true;
     this.elements.progressFill.style.width = "0%";
     this.elements.progressText.textContent = "0%";
+    
+    // 隐藏当前文件进度条
+    this.elements.currentFileProgressContainer.style.display = "none";
   }
 
   log(type, message) {
@@ -367,13 +416,13 @@ class MasCopierUI {
       return;
     }
 
-    const sourceDir = this.config.sourceDir || '';
+    const sourceDir = this.config.sourceDir || "";
 
     const fileListContainer = this.elements.fileList;
-    fileListContainer.innerHTML = ''; // Clear existing list
+    fileListContainer.innerHTML = ""; // Clear existing list
 
-    const header = document.createElement('div');
-    header.classList.add('file-list-header', 'file-list-item');
+    const header = document.createElement("div");
+    header.classList.add("file-list-header", "file-list-item");
     header.innerHTML = `
         <div class="file-name">文件名</div>
         <div class="file-path">相对路径</div>
@@ -383,16 +432,16 @@ class MasCopierUI {
     `;
     fileListContainer.appendChild(header);
 
-    filesToRender.forEach(file => {
-        const fileElement = document.createElement('div');
-        fileElement.classList.add('file-list-item');
-        fileElement.dataset.filePath = file.filePath;
+    filesToRender.forEach((file) => {
+      const fileElement = document.createElement("div");
+      fileElement.classList.add("file-list-item");
+      fileElement.dataset.filePath = file.filePath;
 
-        const relativePath = sourceDir ? file.filePath.replace(sourceDir, '') : file.filePath;
-        const fileSizeMB = (file.fileSize / 1024 / 1024).toFixed(2);
-        const statusClass = this.getStatusClass(file.status);
+      const relativePath = sourceDir ? file.filePath.replace(sourceDir, "") : file.filePath;
+      const fileSizeMB = (file.fileSize / 1024 / 1024).toFixed(2);
+      const statusClass = this.getStatusClass(file.status);
 
-        fileElement.innerHTML = `
+      fileElement.innerHTML = `
             <div class="file-name">${file.filename}</div>
             <div class="file-path">${relativePath}</div>
             <div class="file-size">${fileSizeMB} MB</div>
@@ -403,25 +452,25 @@ class MasCopierUI {
               </div>
             </div>
         `;
-        fileListContainer.appendChild(fileElement);
+      fileListContainer.appendChild(fileElement);
     });
   }
 
   updateFileStatusInUI(file, success, message) {
     const fileRow = document.querySelector(`[data-file-path="${file.filePath}"]`);
     if (fileRow) {
-      const statusEl = fileRow.querySelector('.file-status');
+      const statusEl = fileRow.querySelector(".file-status");
       if (statusEl) {
-        statusEl.textContent = success ? '已完成' : '失败';
-        statusEl.classList.remove('file-status-upload', 'file-status-overwrite', 'file-status-skip');
-        statusEl.classList.add(success ? 'file-status-success' : 'file-status-error');
+        statusEl.textContent = success ? "已完成" : "失败";
+        statusEl.classList.remove("file-status-upload", "file-status-overwrite", "file-status-skip");
+        statusEl.classList.add(success ? "file-status-success" : "file-status-error");
       }
-      const progressEl = fileRow.querySelector('.file-progress-bar');
+      const progressEl = fileRow.querySelector(".file-progress-bar");
       if (progressEl) {
-        progressEl.style.display = 'none';
+        progressEl.style.display = "none";
       }
     }
-    this.log(success ? 'success' : 'error', `${file.filename}: ${message}`);
+    this.log(success ? "success" : "error", `${file.filename}: ${message}`);
   }
 
   getStatusClass(status) {

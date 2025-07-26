@@ -235,6 +235,18 @@ body {
 /* 进度条 */
 .progress-container {
     width: 100%;
+    margin-bottom: var(--spacing-md);
+}
+
+.progress-container:last-child {
+    margin-bottom: 0;
+}
+
+.progress-label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
 }
 
 .progress-bar {
@@ -262,6 +274,14 @@ body {
     font-weight: 600;
     color: var(--text-primary);
     z-index: 1;
+}
+
+.current-file-name {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    margin-top: var(--spacing-xs);
+    word-break: break-all;
+    line-height: 1.4;
 }
 
 /* 日志区域 */
