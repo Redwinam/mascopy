@@ -202,17 +202,35 @@ body {
     gap: var(--spacing-sm);
 }
 
+.options-group {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    margin-top: var(--spacing-xs);
+}
+
+.options-group .options-container {
+    gap: var(--spacing-xs);
+}
+
 .option-description {
     color: var(--text-secondary);
     font-size: var(--font-size-xs);
     margin: 0;
+    margin-left: 32px; /* 与checkbox文本对齐 */
+    line-height: 1.4;
 }
 
 .folder-info {
     color: var(--text-secondary);
     font-size: var(--font-size-xs);
-    margin: 0;
-    padding: var(--spacing-sm) 0;
+    margin: var(--spacing-xs) 0 0 0;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-sm);
+    border-left: 3px solid var(--primary-color);
+    line-height: 1.4;
 }
 
 /* 操作按钮区域 */

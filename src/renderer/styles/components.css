@@ -132,11 +132,12 @@
 /* 复选框组件 */
 .checkbox-container {
     display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
+    align-items: flex-start;
+    gap: var(--spacing-sm);
     cursor: pointer;
     user-select: none;
     position: relative;
+    padding: var(--spacing-xs) 0;
 }
 
 .checkbox-container input[type="checkbox"] {
@@ -146,24 +147,25 @@
 }
 
 .checkmark {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     border: 2px solid var(--border-color);
     border-radius: var(--border-radius-sm);
     background: var(--bg-primary);
     transition: var(--transition);
     position: relative;
     flex-shrink: 0;
+    margin-top: 1px; /* 微调对齐 */
 }
 
 .checkmark::after {
     content: '';
     position: absolute;
     display: none;
-    left: 6px;
-    top: 2px;
-    width: 6px;
-    height: 10px;
+    left: 5px;
+    top: 1px;
+    width: 5px;
+    height: 9px;
     border: solid white;
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
@@ -185,6 +187,7 @@
 .checkbox-text {
     font-size: var(--font-size-sm);
     color: var(--text-primary);
+    line-height: 1.4;
 }
 
 /* 文件列表项 */
