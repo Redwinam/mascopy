@@ -118,10 +118,7 @@ class MasCopierUI {
     });
 
     window.electronAPI.on("upload:progress", (progress) => {
-      console.log("收到upload:progress事件:", progress);
       const percentage = progress.total > 0 ? (progress.current / progress.total) * 100 : 0;
-      console.log("计算的百分比:", percentage);
-      console.log("进度条元素:", this.elements.progressFill);
       this.elements.progressFill.style.width = `${percentage}%`;
       this.elements.progressText.textContent = `${Math.round(percentage)}%`;
       this.log("info", `总进度: ${progress.current}/${progress.total}`);
@@ -139,7 +136,6 @@ class MasCopierUI {
     });
 
     window.electronAPI.on("upload:file-start", ({ file }) => {
-      console.log("收到file-start事件:", file);
       this.log("info", `开始复制: ${file.filename}`);
       
       // 显示当前文件进度条
@@ -153,19 +149,12 @@ class MasCopierUI {
       this.elements.currentFileProgressText.textContent = "0%";
       
       const fileRow = document.querySelector(`[data-file-path="${file.filePath}"]`);
-      console.log("找到的文件行:", fileRow);
       if (fileRow) {
-        const progressBar = fileRow.querySelector(".file-progress-bar");
-        console.log("找到的进度条:", progressBar);
-        if (progressBar) {
-          progressBar.style.display = "block";
-        }
+        fileRow.classList.add("uploading");
       }
     });
 
     window.electronAPI.on("upload:file-progress", (progress) => {
-      console.log("收到file-progress事件:", progress);
-      
       if (progress.current !== undefined && progress.total !== undefined) {
         const percentage = Math.round((progress.current / progress.total) * 100);
         
@@ -180,16 +169,19 @@ class MasCopierUI {
       }
       
       const fileRow = document.querySelector(`[data-file-path="${progress.file.filePath}"]`);
-      console.log("找到的文件行:", fileRow);
       if (fileRow) {
         const progressBar = fileRow.querySelector(".file-progress-bar");
         const progressFill = fileRow.querySelector(".file-progress-fill");
-        console.log("找到的进度条元素:", { progressBar, progressFill });
-        if (progressBar && progressFill) {
-          const percentage = (progress.current / progress.total) * 100;
-          console.log("文件进度百分比:", percentage);
-          progressFill.style.width = `${percentage}%`;
+        const progressText = fileRow.querySelector(".file-progress-text");
+        
+        if (progressBar) {
           progressBar.style.display = "block";
+          if (progressFill) {
+            progressFill.style.width = `${progress.percentage}%`;
+          }
+          if (progressText) {
+            progressText.textContent = `${progress.percentage}%`;
+          }
         }
       }
     });
