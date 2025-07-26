@@ -158,10 +158,8 @@ class MasCopierUI {
       this.elements.currentFileProgressFill.style.width = "0%";
       this.elements.currentFileProgressText.textContent = "0%";
 
-      const fileRow = document.querySelector(`[data-file-path="${file.filePath}"]`);
-      if (fileRow) {
-        fileRow.classList.add("uploading");
-      }
+      // 设置文件为上传中状态
+      this.setFileUploading(file);
     });
 
     window.electronAPI.on("upload:file-progress", (progress) => {
@@ -230,6 +228,7 @@ class MasCopierUI {
 
   async startScan() {
     this.log("info", "开始预扫描...");
+    this.elements.overallProgressContainer.style.display = 'none';
     this.showScanProgress();
     try {
       const { sourceDir, targetDir } = this.config;
@@ -403,6 +402,54 @@ class MasCopierUI {
       .join("");
   }
 
+  updateStats() {
+    if (!this.scanResults || !this.scanResults.files) return;
+
+    const stats = {
+      total: this.scanResults.files.length,
+      upload: 0,
+      overwrite: 0,
+      skip: 0,
+      uploading: 0,
+      success: 0,
+      error: 0
+    };
+
+    this.scanResults.files.forEach(file => {
+      switch (file.status) {
+        case "将上传":
+          stats.upload++;
+          break;
+        case "将覆盖":
+          stats.overwrite++;
+          break;
+        case "将跳过":
+          stats.skip++;
+          break;
+        case "上传中":
+          stats.uploading++;
+          break;
+        case "已完成":
+          stats.success++;
+          break;
+        case "失败":
+          stats.error++;
+          break;
+      }
+    });
+
+    // 更新统计卡片
+    const totalCard = document.querySelector('.stat-card.blue .stat-value');
+    const uploadCard = document.querySelector('.stat-card.orange .stat-value');
+    const skipCard = document.querySelector('.stat-card.gray .stat-value');
+    const successCard = document.querySelector('.stat-card.green .stat-value');
+
+    if (totalCard) totalCard.textContent = stats.total;
+    if (uploadCard) uploadCard.textContent = stats.upload + stats.overwrite + stats.uploading;
+    if (skipCard) skipCard.textContent = stats.skip;
+    if (successCard) successCard.textContent = stats.success;
+  }
+
   renderFileList() {
     const filter = this.elements.statusFilter.value;
     let filesToRender = [];
@@ -465,14 +512,30 @@ class MasCopierUI {
       const statusEl = fileRow.querySelector(".file-status");
       if (statusEl) {
         statusEl.textContent = success ? "已完成" : "失败";
-        statusEl.classList.remove("file-status-upload", "file-status-overwrite", "file-status-skip");
+        statusEl.classList.remove("file-status-upload", "file-status-overwrite", "file-status-skip", "file-status-uploading");
         statusEl.classList.add(success ? "file-status-success" : "file-status-error");
       }
+      
+      // 移除上传中的样式
+      fileRow.classList.remove("uploading");
+      
       const progressEl = fileRow.querySelector(".file-progress-bar");
       if (progressEl) {
         progressEl.style.display = "none";
       }
     }
+
+    // 更新文件状态
+    if (this.scanResults && this.scanResults.files) {
+      const fileIndex = this.scanResults.files.findIndex(f => f.filePath === file.filePath);
+      if (fileIndex !== -1) {
+        this.scanResults.files[fileIndex].status = success ? "已完成" : "失败";
+      }
+    }
+
+    // 更新统计信息
+    this.updateStats();
+    
     this.log(success ? "success" : "error", `${file.filename}: ${message}`);
   }
 
@@ -484,9 +547,40 @@ class MasCopierUI {
         return "overwrite";
       case "将跳过":
         return "skip";
+      case "上传中":
+        return "uploading";
+      case "已完成":
+        return "success";
+      case "失败":
+        return "error";
       default:
         return "unknown";
     }
+  }
+
+  // 新增方法：设置文件为上传中状态
+  setFileUploading(file) {
+    const fileRow = document.querySelector(`[data-file-path="${file.filePath}"]`);
+    if (fileRow) {
+      const statusEl = fileRow.querySelector(".file-status");
+      if (statusEl) {
+        statusEl.textContent = "上传中";
+        statusEl.classList.remove("file-status-upload", "file-status-overwrite", "file-status-skip", "file-status-success", "file-status-error");
+        statusEl.classList.add("file-status-uploading");
+      }
+      fileRow.classList.add("uploading");
+    }
+
+    // 更新文件状态
+    if (this.scanResults && this.scanResults.files) {
+      const fileIndex = this.scanResults.files.findIndex(f => f.filePath === file.filePath);
+      if (fileIndex !== -1) {
+        this.scanResults.files[fileIndex].status = "上传中";
+      }
+    }
+
+    // 更新统计信息
+    this.updateStats();
   }
 
   showProgressSection() {
