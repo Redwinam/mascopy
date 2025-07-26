@@ -15,6 +15,9 @@ class MasCopierUI {
     this.loadConfig();
     this.setupEventListeners();
     this.setupIpcListeners();
+    
+    // 初始化tab控件显示状态
+    this.switchTab("results");
   }
 
   selectDOMElements() {
@@ -455,7 +458,7 @@ class MasCopierUI {
     let filesToRender = [];
 
     if (!this.scanResult || !this.scanResult.files) {
-      this.elements.fileList.innerHTML = '<div class="file-list-empty">没有文件可显示</div>';
+      this.elements.fileList.innerHTML = '<div class="file-list-empty">📁 没有文件可显示</div>';
       return;
     }
 
@@ -468,7 +471,7 @@ class MasCopierUI {
     }
 
     if (filesToRender.length === 0) {
-      this.elements.fileList.innerHTML = '<div class="file-list-empty">没有符合条件的文件</div>';
+      this.elements.fileList.innerHTML = '<div class="file-list-empty">📁 没有符合条件的文件</div>';
       return;
     }
 
@@ -480,8 +483,7 @@ class MasCopierUI {
     const header = document.createElement("div");
     header.classList.add("file-list-header", "file-list-item");
     header.innerHTML = `
-        <div class="file-name">文件名</div>
-        <div class="file-path">相对路径</div>
+        <div class="file-info">文件信息</div>
         <div class="file-size">大小</div>
         <div class="file-status">状态</div>
     `;
@@ -497,8 +499,10 @@ class MasCopierUI {
       const statusClass = this.getStatusClass(file.status);
 
       fileElement.innerHTML = `
-            <div class="file-name">${file.filename}</div>
-            <div class="file-path">${relativePath}</div>
+            <div class="file-info">
+              <div class="file-name">${file.filename}</div>
+              <div class="file-path">${relativePath}</div>
+            </div>
             <div class="file-size">${fileSizeMB} MB</div>
             <div class="file-status file-status-${statusClass}">${file.status}</div>
         `;
@@ -608,6 +612,20 @@ class MasCopierUI {
 
     document.getElementById(tabId + 'Tab').classList.add('active');
     document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+
+    // 控制右侧按钮的显示
+    const statusFilter = document.getElementById("statusFilter");
+    const clearLogBtn = document.getElementById("clearLogBtn");
+
+    if (tabId === "results") {
+      // 显示筛选器，隐藏清空按钮
+      statusFilter.style.display = "block";
+      clearLogBtn.style.display = "none";
+    } else if (tabId === "logs") {
+      // 隐藏筛选器，显示清空按钮
+      statusFilter.style.display = "none";
+      clearLogBtn.style.display = "flex";
+    }
   }
 
 

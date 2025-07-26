@@ -128,13 +128,32 @@
         <!-- 结果/日志 Tab 区域 -->
         <section class="info-section">
           <div class="tab-nav">
-            <button class="tab-btn active" data-tab="results">扫描结果</button>
-            <button class="tab-btn" data-tab="logs">日志</button>
+            <div class="tab-buttons">
+              <button class="tab-btn active" data-tab="results">📊 扫描结果</button>
+              <button class="tab-btn" data-tab="logs">📝 日志</button>
+            </div>
+            <div class="tab-controls">
+              <select class="tab-filter-select" id="statusFilter" style="display: none;">
+                <option value="all">全部文件</option>
+                <option value="将上传">将上传</option>
+                <option value="将覆盖">将覆盖</option>
+                <option value="将跳过">将跳过</option>
+                <option value="上传中">上传中</option>
+                <option value="已完成">已完成</option>
+                <option value="失败">失败</option>
+              </select>
+              <button class="tab-action-btn" id="clearLogBtn" style="display: none;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 6H5H21M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                清空
+              </button>
+            </div>
           </div>
 
           <!-- 扫描结果面板 -->
           <div class="tab-content active" id="resultsTab">
-             <div class="results-placeholder">尚未扫描，请先执行预扫描操作。</div>
+             <div class="results-placeholder">🔍 尚未扫描，请先执行预扫描操作。</div>
              <div class="results-content" style="display: none;">
                 <!-- 统计卡片 -->
                 <div class="stats-grid" id="statsGrid">
@@ -143,20 +162,6 @@
 
                 <!-- 文件列表 -->
                 <div class="file-list-container">
-                  <div class="file-list-header">
-                    <h4>文件列表</h4>
-                    <div class="file-list-controls">
-                      <select class="filter-select" id="statusFilter">
-                        <option value="all">全部文件</option>
-                        <option value="将上传">将上传</option>
-                        <option value="将覆盖">将覆盖</option>
-                        <option value="将跳过">将跳过</option>
-                        <option value="上传中">上传中</option>
-                        <option value="已完成">已完成</option>
-                        <option value="失败">失败</option>
-                      </select>
-                    </div>
-                  </div>
                   <div class="file-list" id="fileList">
                     <!-- 文件列表将通过JavaScript动态生成 -->
                   </div>
@@ -166,17 +171,8 @@
 
           <!-- 日志面板 -->
           <div class="tab-content" id="logsTab">
-              <div class="info-header">
-                  <h4>日志</h4>
-                  <button class="btn btn-ghost btn-sm" id="clearLogBtn">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M3 6H5H21M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                      清空
-                  </button>
-              </div>
               <div class="log-container" id="logContainer">
-                  <div class="log-placeholder">准备就绪，请选择源目录和目标目录开始扫描...</div>
+                  <div class="log-placeholder">📝 准备就绪，请选择源目录和目标目录开始扫描...</div>
               </div>
           </div>
         </section>
