@@ -117,7 +117,14 @@ class MasCopyApp {
         await shell.openPath(filePath);
         return { success: true };
       } catch (error) {
-        return { success: false, error: error.message };
+        return { 
+      success: false, 
+      error: errorMessage,
+      data: {
+        files: [],
+        stats: { total: 0, upload: 0, overwrite: 0, skip: 0 }
+      }
+    };
       }
     });
 

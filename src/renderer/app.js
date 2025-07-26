@@ -141,7 +141,12 @@ class MasCopierUI {
   updateActionButtons() {
     const canScan = this.config.sourceDir && this.config.targetDir;
     this.elements.scanBtn.disabled = !canScan;
-    this.elements.startBtn.disabled = !this.scanResult || this.scanResult.toUpload.length === 0;
+
+    let filesToUpload = 0;
+    if (this.scanResult && this.scanResult.toUpload) {
+      filesToUpload = this.scanResult.toUpload.length;
+    }
+    this.elements.startBtn.disabled = filesToUpload === 0;
   }
 
   async startScan() {
@@ -152,10 +157,10 @@ class MasCopierUI {
       const overwrite = !!this.config.overwrite;
       const result = await window.electronAPI.media.scan(sourceDir, targetDir, overwrite);
       this.hideScanModal();
-      if (result.success && result.data && result.data.files) {
+      if (result.success && result.data) {
         this.scanResult = result.data;
-        const { files, stats } = result.data;
-        this.log("success", `扫描完成: 发现 ${stats.total} 个文件, ${stats.upload} 个待上传, ${stats.overwrite} 个待覆盖, ${stats.skip} 个将跳过.`);
+        const { total, toUpload, toOverwrite, toSkip } = result.data;
+        this.log("success", `扫描完成: 发现 ${total || 0} 个文件, ${(toUpload || []).length} 个待上传, ${(toOverwrite || []).length} 个待覆盖, ${(toSkip || []).length} 个将跳过.`);
         this.renderFileList();
         this.showResultModal();
         this.updateActionButtons();
@@ -284,10 +289,10 @@ class MasCopierUI {
 
   renderStats() {
     const stats = [
-      { label: "待上传", value: this.scanResult.toUpload.length, color: "blue" },
-      { label: "待覆盖", value: this.scanResult.toOverwrite.length, color: "orange" },
-      { label: "将跳过", value: this.scanResult.toSkip.length, color: "gray" },
-      { label: "总计", value: this.scanResult.total, color: "green" },
+      { label: "待上传", value: (this.scanResult.toUpload || []).length, color: "blue" },
+      { label: "待覆盖", value: (this.scanResult.toOverwrite || []).length, color: "orange" },
+      { label: "将跳过", value: (this.scanResult.toSkip || []).length, color: "gray" },
+      { label: "总计", value: this.scanResult.total || 0, color: "green" },
     ];
 
     this.elements.statsGrid.innerHTML = stats
@@ -306,7 +311,11 @@ class MasCopierUI {
     const filter = this.elements.statusFilter.value;
     let filesToRender = [];
 
-    const allFiles = [...this.scanResult.toUpload.map((f) => ({ ...f, status: "将上传" })), ...this.scanResult.toOverwrite.map((f) => ({ ...f, status: "将覆盖" })), ...this.scanResult.toSkip.map((f) => ({ ...f, status: "将跳过" }))];
+    const toUpload = this.scanResult.toUpload || [];
+    const toOverwrite = this.scanResult.toOverwrite || [];
+    const toSkip = this.scanResult.toSkip || [];
+
+    const allFiles = [...toUpload.map((f) => ({ ...f, status: "将上传" })), ...toOverwrite.map((f) => ({ ...f, status: "将覆盖" })), ...toSkip.map((f) => ({ ...f, status: "将跳过" }))];
 
     if (filter === "all") {
       filesToRender = allFiles;

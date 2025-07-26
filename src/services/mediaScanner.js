@@ -46,20 +46,34 @@ class MediaScanner extends EventEmitter {
       }
     } catch (sharpError) {
       // 如果 sharp 失败（例如，对于 .CR3 文件），则回退到 exiftool
-      // console.log(`Sharp failed for ${filePath}: ${sharpError.message}. Falling back to ExifTool.`);
+      console.log(`[getPhotoDate] Sharp failed for ${filePath}: ${sharpError.message}. Falling back to ExifTool.`);
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('exiftool timeout after 5s')), 5000)
+      );
+
       try {
-        const exifData = await exiftool.read(filePath);
-        const createDate = exifData.DateTimeOriginal?.toDate() || exifData.CreateDate?.toDate();
-        if (createDate) {
-          return createDate;
+        const readPromise = exiftool.read(filePath);
+        console.log(`[getPhotoDate] Running exiftool for ${filePath}`);
+        const exifData = await Promise.race([readPromise, timeoutPromise]);
+
+        if (!exifData) {
+          console.log(`[getPhotoDate] exiftool returned no tags for: ${filePath}`);
+        } else {
+          const createDate = exifData.DateTimeOriginal?.toDate() || exifData.CreateDate?.toDate();
+          if (createDate) {
+            console.log(`[getPhotoDate] Found date via exiftool: ${createDate}`);
+            return createDate;
+          }
         }
       } catch (exiftoolError) {
-        console.log(`ExifTool also failed for ${filePath}: ${exiftoolError.message}`);
+        console.log(`[getPhotoDate] ExifTool failed for ${filePath}: ${exiftoolError.message}`);
       }
     }
 
     // 如果所有 EXIF 方法都失败，则回退到文件修改时间
     try {
+      console.log(`[getPhotoDate] Falling back to file modification time for ${filePath}`);
       const stats = await fs.stat(filePath);
       return stats.mtime;
     } catch (statError) {
@@ -112,21 +126,39 @@ class MediaScanner extends EventEmitter {
   }
 
   async getMediaDate(filePath) {
-    const ext = path.extname(filePath).toLowerCase();
-    
-    if (this.photoExtensions.includes(ext)) {
-      return await this.getPhotoDate(filePath);
-    } else if (this.videoExtensions.includes(ext)) {
-      return await this.getVideoDate(filePath);
-    } else {
-      // 默认使用文件修改时间
-      try {
+    console.log(`[getMediaDate] Getting date for: ${filePath}`);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error(`exiftool timeout for ${filePath}`)), 10000) // 10秒超时
+    );
+
+    try {
+      const readPromise = exiftool.read(filePath);
+      const tags = await Promise.race([readPromise, timeoutPromise]);
+
+      if (!tags) {
+        console.log(`[getMediaDate] exiftool returned no tags for: ${filePath}. Falling back to file stats.`);
         const stats = await fs.stat(filePath);
         return stats.mtime;
-      } catch (error) {
-        console.error(`无法获取文件统计信息: ${filePath}`, error);
-        return new Date();
       }
+
+      // 尝试从最常见的日期标签中获取日期
+      const date = tags.DateTimeOriginal || tags.CreateDate || tags.MediaCreateDate || tags.TrackCreateDate || tags.ModifyDate;
+      
+      if (date) {
+        // exiftool 返回的日期对象可能需要转换
+        const parsedDate = date.toDate ? date.toDate() : new Date(date);
+        console.log(`[getMediaDate] Found date for ${filePath}: ${parsedDate}`);
+        return parsedDate;
+      } else {
+        console.log(`[getMediaDate] No common date tags found for: ${filePath}. Falling back to file stats.`);
+        const stats = await fs.stat(filePath);
+        return stats.mtime;
+      }
+    } catch (err) {
+      console.error(`[getMediaDate] Error processing ${filePath}:`, err);
+      // 发生任何错误（包括超时），都回退到文件修改时间
+      const stats = await fs.stat(filePath);
+      return stats.mtime;
     }
   }
 
@@ -161,7 +193,10 @@ class MediaScanner extends EventEmitter {
         if (this.shouldStop) break;
 
         const ext = path.extname(filePath).toLowerCase();
+        console.log(`[scanDirectory] Processing file: ${filePath} with extension: ${ext}`);
+
         if (this.supportedExtensions.includes(ext)) {
+          console.log(`[scanDirectory] Supported extension found. Creating MediaFile object for: ${filePath}`);
           try {
             const stats = await fs.stat(filePath);
             const fileType = this.photoExtensions.includes(ext) ? '照片' : '视频';
@@ -170,6 +205,7 @@ class MediaScanner extends EventEmitter {
             const mediaFile = new MediaFile(filePath, mediaDate, fileType);
             mediaFile.fileSize = stats.size;
             mediaFiles.push(mediaFile);
+            console.log(`[scanDirectory] Successfully created MediaFile: ${mediaFile.filename}`);
 
             this.emit('progress', {
               phase: 'processing',
@@ -178,8 +214,10 @@ class MediaScanner extends EventEmitter {
               message: `正在处理: ${path.basename(filePath)}`
             });
           } catch (error) {
-            console.error(`处理文件失败: ${filePath}`, error);
+            console.error(`[scanDirectory] Error processing file: ${filePath}`, error);
           }
+        } else {
+          console.log(`[scanDirectory] Unsupported extension. Skipping file: ${filePath}`);
         }
 
         processed++;
@@ -222,27 +260,33 @@ class MediaScanner extends EventEmitter {
   }
 
   async collectFiles(dir) {
+    console.log(`[collectFiles] Starting collection in: ${dir}`);
     const files = [];
     
     async function walk(currentDir) {
+      console.log(`[collectFiles] Walking directory: ${currentDir}`);
       try {
         const entries = await fs.readdir(currentDir, { withFileTypes: true });
+        console.log(`[collectFiles] Found ${entries.length} entries in ${currentDir}`);
         
         for (const entry of entries) {
           const fullPath = path.join(currentDir, entry.name);
           
           if (entry.isDirectory()) {
+            console.log(`[collectFiles] Found directory: ${entry.name}. Recursing...`);
             await walk(fullPath);
           } else if (entry.isFile()) {
+            console.log(`[collectFiles] Found file: ${entry.name}`);
             files.push(fullPath);
           }
         }
       } catch (error) {
-        console.error(`无法读取目录: ${currentDir}`, error);
+        console.error(`[collectFiles] Error reading directory: ${currentDir}`, error);
       }
     }
 
     await walk(dir);
+    console.log(`[collectFiles] Finished collection. Found a total of ${files.length} files.`);
     return files;
   }
 
