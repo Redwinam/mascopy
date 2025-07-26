@@ -95,13 +95,22 @@ class MasCopierUI {
     window.electronAPI.on("scan:progress", (progress) => {
       if (!progress || typeof progress.current !== 'number' || typeof progress.total !== 'number') return;
       
-      const percentage = progress.total > 0 ? (progress.current / progress.total) * 100 : 0;
-      const message = progress.phase === 'analyzing' ? '正在分析文件...' : '正在扫描文件...';
+      if (progress.phase === 'collecting') {
+        this.elements.scanMessage.textContent = '正在收集文件列表...';
+        this.elements.scanFile.textContent = progress.message || '';
+        this.elements.scanProgressFill.style.width = '100%'; // Or some other indeterminate state
+        this.elements.scanProgressFill.classList.add('indeterminate');
+        this.elements.scanProgressText.textContent = '...';
+      } else {
+        this.elements.scanProgressFill.classList.remove('indeterminate');
+        const percentage = progress.total > 0 ? (progress.current / progress.total) * 100 : 0;
+        const message = progress.phase === 'analyzing' ? '正在分析文件...' : '正在扫描文件...';
 
-      this.elements.scanMessage.textContent = `${message} (${progress.current}/${progress.total})`;
-      this.elements.scanFile.textContent = progress.message || '';
-      this.elements.scanProgressFill.style.width = `${percentage}%`;
-      this.elements.scanProgressText.textContent = `${Math.round(percentage)}%`;
+        this.elements.scanMessage.textContent = `${message} (${progress.current}/${progress.total})`;
+        this.elements.scanFile.textContent = progress.message || '';
+        this.elements.scanProgressFill.style.width = `${percentage}%`;
+        this.elements.scanProgressText.textContent = `${Math.round(percentage)}%`;
+      }
     });
 
     window.electronAPI.on("upload:progress", (progress) => {
