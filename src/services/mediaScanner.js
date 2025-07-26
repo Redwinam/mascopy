@@ -145,8 +145,23 @@ class MediaScanner extends EventEmitter {
       const date = tags.DateTimeOriginal || tags.CreateDate || tags.MediaCreateDate || tags.TrackCreateDate || tags.ModifyDate;
       
       if (date) {
-        // exiftool 返回的日期对象可能需要转换
-        const parsedDate = date.toDate ? date.toDate() : new Date(date);
+        // exiftool-vendored 返回一个带有 toDate() 方法的 ExifDateTime 对象
+        // 它在转换时会使用系统的本地时区。如果 EXIF 时间本身没有时区，
+        // JS Date() 构造函数也会假定为本地时间。我们需要补偿这个行为。
+        let parsedDate;
+        if (date.toDate) {
+          parsedDate = date.toDate();
+        } else {
+          // 对于纯字符串日期，手动解析以避免时区问题
+          // 格式通常是 'YYYY:MM:DD HH:mm:ss'
+          const parts = String(date).split(/[: ]/);
+          if (parts.length >= 6) {
+            parsedDate = new Date(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]);
+          } else {
+            parsedDate = new Date(date); // 回退到标准解析
+          }
+        }
+
         console.log(`[getMediaDate] Found date for ${filePath}: ${parsedDate}`);
         return parsedDate;
       } else {
@@ -291,6 +306,7 @@ class MediaScanner extends EventEmitter {
   }
 
   async analyzeFiles(mediaFiles, targetDir, overwriteDuplicates) {
+    console.log(`[analyzeFiles] Starting analysis of ${mediaFiles.length} files. Target: ${targetDir}, Overwrite: ${overwriteDuplicates}`);
     let uploadCount = 0;
     let overwriteCount = 0;
     let skipCount = 0;
@@ -305,26 +321,32 @@ class MediaScanner extends EventEmitter {
       const targetDateDir = path.join(targetDir, dateFolder);
       const targetFilePath = path.join(targetDateDir, mediaFile.filename);
       mediaFile.targetPath = targetFilePath;
+      console.log(`[analyzeFiles] Analyzing: ${mediaFile.filename}. Target path: ${targetFilePath}`);
 
       // 检查目标文件是否存在
       try {
         const targetStats = await fs.stat(targetFilePath);
+        console.log(`[analyzeFiles] File exists at target: ${targetFilePath}`);
         
         if (mediaFile.fileSize === targetStats.size) {
           // 文件大小相同，跳过
+          console.log(`[analyzeFiles] Same size. Marking to skip.`);
           mediaFile.status = '将跳过';
           skipCount++;
         } else if (overwriteDuplicates) {
           // 设置为覆盖
+          console.log(`[analyzeFiles] Size mismatch (${mediaFile.fileSize} vs ${targetStats.size}) and overwrite is enabled. Marking for overwrite.`);
           mediaFile.status = '将覆盖';
           overwriteCount++;
         } else {
           // 不覆盖，跳过
+          console.log(`[analyzeFiles] Size mismatch but overwrite is disabled. Marking to skip.`);
           mediaFile.status = '将跳过';
           skipCount++;
         }
       } catch (error) {
         // 目标文件不存在，将上传
+        console.log(`[analyzeFiles] File does not exist at target. Marking for upload.`);
         mediaFile.status = '将上传';
         uploadCount++;
       }
@@ -340,6 +362,7 @@ class MediaScanner extends EventEmitter {
       }
     }
 
+    console.log(`[analyzeFiles] Analysis complete. Upload: ${uploadCount}, Overwrite: ${overwriteCount}, Skip: ${skipCount}`);
     return {
       files: mediaFiles,
       stats: {

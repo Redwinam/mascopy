@@ -93,9 +93,13 @@ class MasCopierUI {
 
   setupIpcListeners() {
     window.electronAPI.on("scan:progress", (progress) => {
-      this.elements.scanMessage.textContent = `正在扫描第 ${progress.processed} / ${progress.total} 个文件`;
-      this.elements.scanFile.textContent = progress.currentFile;
-      const percentage = progress.total > 0 ? (progress.processed / progress.total) * 100 : 0;
+      if (!progress || typeof progress.current !== 'number' || typeof progress.total !== 'number') return;
+      
+      const percentage = progress.total > 0 ? (progress.current / progress.total) * 100 : 0;
+      const message = progress.phase === 'analyzing' ? '正在分析文件...' : '正在扫描文件...';
+
+      this.elements.scanMessage.textContent = `${message} (${progress.current}/${progress.total})`;
+      this.elements.scanFile.textContent = progress.message || '';
       this.elements.scanProgressFill.style.width = `${percentage}%`;
       this.elements.scanProgressText.textContent = `${Math.round(percentage)}%`;
     });
@@ -156,19 +160,24 @@ class MasCopierUI {
       const { sourceDir, targetDir } = this.config;
       const overwrite = !!this.config.overwrite;
       const result = await window.electronAPI.media.scan(sourceDir, targetDir, overwrite);
-      this.hideScanModal();
+      
       if (result.success && result.data) {
+        this.hideScanModal();
         this.scanResult = result.data;
-        const { total, toUpload, toOverwrite, toSkip } = result.data;
-        this.log("success", `扫描完成: 发现 ${total || 0} 个文件, ${(toUpload || []).length} 个待上传, ${(toOverwrite || []).length} 个待覆盖, ${(toSkip || []).length} 个将跳过.`);
+        const { total, toUpload, toOverwrite, toSkip } = result.data.stats;
+        this.log("success", `扫描完成: 发现 ${total || 0} 个文件, ${toUpload || 0} 个待上传, ${toOverwrite || 0} 个待覆盖, ${toSkip || 0} 个将跳过.`);
         this.renderFileList();
         this.showResultModal();
         this.updateActionButtons();
       } else {
+        // Don't hide modal on error, so user can see the message
+        this.elements.scanMessage.textContent = '扫描失败';
+        this.elements.scanFile.textContent = result.error || '未知错误';
         this.log("error", `扫描出错: ${result.error}`);
       }
     } catch (error) {
-      this.hideScanModal();
+      this.elements.scanMessage.textContent = '扫描失败';
+      this.elements.scanFile.textContent = error.message || '未知错误';
       console.error('Full error object received in renderer:', error);
       this.log("error", `扫描时发生未知错误: ${error.message || JSON.stringify(error)}`);
     }

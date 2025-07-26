@@ -81,6 +81,13 @@ class MasCopyApp {
 
     ipcMain.handle('media:scan', async (event, sourceDir, targetDir, overwrite) => {
       console.log('IPC `media:scan` received:', { sourceDir, targetDir, overwrite });
+
+      const progressListener = (progress) => {
+        event.sender.send('scan:progress', progress);
+      };
+
+      this.mediaScanner.on('progress', progressListener);
+
       try {
         const results = await this.mediaService.scan(sourceDir, targetDir, overwrite);
         return { success: true, data: results };
@@ -92,7 +99,16 @@ class MasCopyApp {
         console.error('Error stack:', error ? error.stack : 'N/A');
         console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
         const errorMessage = error ? (error.message || String(error)) : 'An undefined error occurred';
-        throw new Error(`扫描出错: ${errorMessage}`);
+        return {
+          success: false,
+          error: `扫描出错: ${errorMessage}`,
+          data: {
+            files: [],
+            stats: { total: 0, upload: 0, overwrite: 0, skip: 0 }
+          }
+        };
+      } finally {
+        this.mediaScanner.removeListener('progress', progressListener);
       }
     });
 
