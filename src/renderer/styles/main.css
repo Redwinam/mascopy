@@ -203,11 +203,11 @@ body {
 }
 
 .options-group {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    background: rgba(var(--bg-secondary-rgb, 248, 249, 250), 0.5);
+    border: 1px solid rgba(var(--border-color-rgb, 229, 231, 235), 0.6);
     border-radius: var(--border-radius);
-    padding: var(--spacing-md);
-    margin-top: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    /* margin-top: var(--spacing-xs); */
 }
 
 .options-group .options-container {
@@ -218,8 +218,9 @@ body {
     color: var(--text-secondary);
     font-size: var(--font-size-xs);
     margin: 0;
-    margin-left: 32px; /* 与checkbox文本对齐 */
+    margin-left: 24px; /* 与checkbox文本对齐 */
     line-height: 1.4;
+    opacity: 0.8;
 }
 
 .folder-info {
@@ -239,6 +240,8 @@ body {
     border-radius: var(--border-radius-lg);
     padding: var(--spacing-lg);
     box-shadow: var(--shadow);
+    display: flex;
+    gap: var(--spacing-lg);
 }
 
 .action-buttons {

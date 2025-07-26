@@ -439,7 +439,6 @@ class MasCopierUI {
         <div class="file-path">相对路径</div>
         <div class="file-size">大小</div>
         <div class="file-status">状态</div>
-        <div class="file-progress">进度</div>
     `;
     fileListContainer.appendChild(header);
 
@@ -457,11 +456,6 @@ class MasCopierUI {
             <div class="file-path">${relativePath}</div>
             <div class="file-size">${fileSizeMB} MB</div>
             <div class="file-status file-status-${statusClass}">${file.status}</div>
-            <div class="file-progress">
-              <div class="file-progress-bar" style="display: none;">
-                <div class="file-progress-fill"></div>
-              </div>
-            </div>
         `;
       fileListContainer.appendChild(fileElement);
     });

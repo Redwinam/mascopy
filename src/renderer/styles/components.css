@@ -147,25 +147,25 @@
 }
 
 .checkmark {
-    width: 18px;
-    height: 18px;
-    border: 2px solid var(--border-color);
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--border-color);
     border-radius: var(--border-radius-sm);
     background: var(--bg-primary);
     transition: var(--transition);
     position: relative;
     flex-shrink: 0;
-    margin-top: 1px; /* 微调对齐 */
+    margin-top: 2px; /* 与文本基线对齐 */
 }
 
 .checkmark::after {
     content: '';
     position: absolute;
     display: none;
-    left: 5px;
+    left: 4px;
     top: 1px;
-    width: 5px;
-    height: 9px;
+    width: 4px;
+    height: 8px;
     border: solid white;
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
@@ -193,7 +193,7 @@
 /* 文件列表项 */
 .file-list-item {
     display: grid;
-    grid-template-columns: 2fr 3fr 1fr 1fr 2fr; /* 更新以适应新的进度条列 */
+    grid-template-columns: 2fr 3fr 1fr 1fr; /* 移除进度列，只保留4列 */
     gap: var(--spacing-md);
     padding: var(--spacing-sm) var(--spacing-md);
     border-bottom: 1px solid var(--border-color);
