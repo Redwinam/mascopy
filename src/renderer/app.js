@@ -147,8 +147,8 @@ class MasCopierUI {
     this.elements.scanBtn.disabled = !canScan;
 
     let filesToUpload = 0;
-    if (this.scanResult && this.scanResult.toUpload) {
-      filesToUpload = this.scanResult.toUpload.length;
+    if (this.scanResult && this.scanResult.files) {
+      filesToUpload = this.scanResult.files.filter(f => f.status === '将上传' || f.status === '将覆盖').length;
     }
     this.elements.startBtn.disabled = filesToUpload === 0;
   }
@@ -164,8 +164,8 @@ class MasCopierUI {
       if (result.success && result.data) {
         this.hideScanModal();
         this.scanResult = result.data;
-        const { total, toUpload, toOverwrite, toSkip } = result.data.stats;
-        this.log("success", `扫描完成: 发现 ${total || 0} 个文件, ${toUpload || 0} 个待上传, ${toOverwrite || 0} 个待覆盖, ${toSkip || 0} 个将跳过.`);
+        const { total, upload, overwrite, skip } = result.data.stats;
+        this.log("success", `扫描完成: 发现 ${total || 0} 个文件, ${upload || 0} 个待上传, ${overwrite || 0} 个待覆盖, ${skip || 0} 个将跳过.`);
         this.renderFileList();
         this.showResultModal();
         this.updateActionButtons();
@@ -194,7 +194,7 @@ class MasCopierUI {
       this.log("error", "请先执行预扫描");
       return;
     }
-    const filesToUpload = [...this.scanResult.toUpload, ...this.scanResult.toOverwrite];
+    const filesToUpload = this.scanResult.files.filter(f => f.status === '将上传' || f.status === '将覆盖');
     if (filesToUpload.length === 0) {
       this.log("info", "没有需要上传的文件。");
       return;
@@ -297,11 +297,13 @@ class MasCopierUI {
   }
 
   renderStats() {
+    if (!this.scanResult || !this.scanResult.stats) return;
+    const { upload, overwrite, skip, total } = this.scanResult.stats;
     const stats = [
-      { label: "待上传", value: (this.scanResult.toUpload || []).length, color: "blue" },
-      { label: "待覆盖", value: (this.scanResult.toOverwrite || []).length, color: "orange" },
-      { label: "将跳过", value: (this.scanResult.toSkip || []).length, color: "gray" },
-      { label: "总计", value: this.scanResult.total || 0, color: "green" },
+      { label: "待上传", value: upload || 0, color: "blue" },
+      { label: "待覆盖", value: overwrite || 0, color: "orange" },
+      { label: "将跳过", value: skip || 0, color: "gray" },
+      { label: "总计", value: total || 0, color: "green" },
     ];
 
     this.elements.statsGrid.innerHTML = stats
@@ -320,11 +322,12 @@ class MasCopierUI {
     const filter = this.elements.statusFilter.value;
     let filesToRender = [];
 
-    const toUpload = this.scanResult.toUpload || [];
-    const toOverwrite = this.scanResult.toOverwrite || [];
-    const toSkip = this.scanResult.toSkip || [];
+    if (!this.scanResult || !this.scanResult.files) {
+      this.elements.fileList.innerHTML = '<div class="file-list-empty">没有文件可显示</div>';
+      return;
+    }
 
-    const allFiles = [...toUpload.map((f) => ({ ...f, status: "将上传" })), ...toOverwrite.map((f) => ({ ...f, status: "将覆盖" })), ...toSkip.map((f) => ({ ...f, status: "将跳过" }))];
+    const allFiles = this.scanResult.files;
 
     if (filter === "all") {
       filesToRender = allFiles;

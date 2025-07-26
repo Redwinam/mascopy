@@ -13,7 +13,7 @@ class MasCopyApp {
     this.mediaUploader = new MediaUploader();
     this.mediaService = {
       scan: (...args) => this.mediaScanner.scanDirectory(...args),
-      upload: (...args) => this.mediaUploader.upload(...args),
+      upload: (...args) => this.mediaUploader.uploadFiles(...args),
       pauseUpload: () => this.mediaUploader.pause(),
       resumeUpload: () => this.mediaUploader.resume(),
       cancelUpload: () => this.mediaUploader.cancel(),
@@ -90,7 +90,13 @@ class MasCopyApp {
 
       try {
         const results = await this.mediaService.scan(sourceDir, targetDir, overwrite);
-        return { success: true, data: results };
+        return {
+          success: true,
+          data: {
+            files: results.files,
+            stats: results.stats
+          }
+        };
       } catch (error) {
         console.error('!!!!!!!!!!!!!!!!!! IPC media:scan FAILED !!!!!!!!!!!!!!!!!!');
         console.error('Caught error object type:', typeof error);
