@@ -187,6 +187,66 @@
     color: var(--text-primary);
 }
 
+/* 文件列表项 */
+.file-list-item {
+    display: grid;
+    grid-template-columns: 2fr 3fr 1fr 1fr;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    align-items: center;
+}
+
+.file-list-item:last-child {
+    border-bottom: none;
+}
+
+.file-list-header {
+    font-weight: 600;
+    color: var(--text-secondary);
+    background-color: var(--bg-tertiary);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.file-name {
+    font-weight: 500;
+    word-break: break-all;
+}
+
+.file-path {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    word-break: break-all;
+}
+
+.file-size {
+    font-size: var(--font-size-sm);
+    text-align: right;
+}
+
+.file-status {
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: var(--border-radius-sm);
+    text-align: center;
+}
+
+.file-status-upload {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.file-status-overwrite {
+    background-color: var(--warning-color);
+    color: var(--text-primary);
+}
+
+.file-status-skip {
+    background-color: var(--gray-200);
+    color: var(--text-secondary);
+}
+
 /* 模态框组件 */
 .modal {
     position: fixed;

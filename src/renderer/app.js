@@ -342,22 +342,35 @@ class MasCopierUI {
 
     const sourceDir = this.config.sourceDir || '';
 
-    this.elements.fileList.innerHTML = filesToRender
-      .map(
-        (file) => {
-          const relativePath = sourceDir ? file.filePath.replace(sourceDir, '') : file.filePath;
-          const fileSizeMB = (file.fileSize / 1024 / 1024).toFixed(2);
+    const fileListContainer = this.elements.fileList;
+    fileListContainer.innerHTML = ''; // Clear existing list
 
-          return `
-            <div class="file-list-item">
-                <div class="file-name">${file.filename}</div>
-                <div class="file-path">${relativePath}</div>
-                <div class="file-size">${fileSizeMB} MB</div>
-                <div class="file-status file-status-${this.getStatusClass(file.status)}">${file.status}</div>
-            </div>
-        `}
-      )
-      .join("");
+    const header = document.createElement('div');
+    header.classList.add('file-list-header', 'file-list-item');
+    header.innerHTML = `
+        <div class="file-name">文件名</div>
+        <div class="file-path">相对路径</div>
+        <div class="file-size">大小</div>
+        <div class="file-status">状态</div>
+    `;
+    fileListContainer.appendChild(header);
+
+    filesToRender.forEach(file => {
+        const fileElement = document.createElement('div');
+        fileElement.classList.add('file-list-item');
+
+        const relativePath = sourceDir ? file.filePath.replace(sourceDir, '') : file.filePath;
+        const fileSizeMB = (file.fileSize / 1024 / 1024).toFixed(2);
+        const statusClass = this.getStatusClass(file.status);
+
+        fileElement.innerHTML = `
+            <div class="file-name">${file.filename}</div>
+            <div class="file-path">${relativePath}</div>
+            <div class="file-size">${fileSizeMB} MB</div>
+            <div class="file-status file-status-${statusClass}">${file.status}</div>
+        `;
+        fileListContainer.appendChild(fileElement);
+    });
   }
 
   getStatusClass(status) {
