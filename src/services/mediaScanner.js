@@ -147,7 +147,11 @@ class MediaScanner extends EventEmitter {
       });
 
       // 收集所有文件
-      const allFiles = await this.collectFiles(sourceDir);
+      let allFiles = await this.collectFiles(sourceDir);
+      if (!Array.isArray(allFiles)) {
+        console.warn('collectFiles did not return an array. Defaulting to an empty array.');
+        allFiles = [];
+      }
       
       // 过滤媒体文件
       const mediaFiles = [];

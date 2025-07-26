@@ -80,12 +80,19 @@ class MasCopyApp {
     });
 
     ipcMain.handle('media:scan', async (event, sourceDir, targetDir, overwrite) => {
+      console.log('IPC `media:scan` received:', { sourceDir, targetDir, overwrite });
       try {
-        return await this.mediaService.scan(sourceDir, targetDir, overwrite);
+        const results = await this.mediaService.scan(sourceDir, targetDir, overwrite);
+        return { success: true, data: results };
       } catch (error) {
-        console.error('扫描媒体文件时出错:', error);
-        // 向渲染器进程抛出一个包含有用信息的新错误
-        throw new Error(error.message || '发生未知扫描错误');
+        console.error('!!!!!!!!!!!!!!!!!! IPC media:scan FAILED !!!!!!!!!!!!!!!!!!');
+        console.error('Caught error object type:', typeof error);
+        console.error('Caught error object:', error);
+        console.error('Error message:', error ? error.message : 'N/A');
+        console.error('Error stack:', error ? error.stack : 'N/A');
+        console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+        const errorMessage = error ? (error.message || String(error)) : 'An undefined error occurred';
+        throw new Error(`扫描出错: ${errorMessage}`);
       }
     });
 

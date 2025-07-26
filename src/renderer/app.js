@@ -148,13 +148,15 @@ class MasCopierUI {
     this.log("info", "开始预扫描...");
     this.showScanModal();
     try {
-      const { sourceDir, targetDir, overwrite } = this.config;
+      const { sourceDir, targetDir } = this.config;
+      const overwrite = !!this.config.overwrite;
       const result = await window.electronAPI.media.scan(sourceDir, targetDir, overwrite);
       this.hideScanModal();
-      if (result.success) {
+      if (result.success && result.data && result.data.files) {
         this.scanResult = result.data;
-        const { total, toUpload, toOverwrite, toSkip } = result.data;
-        this.log("success", `扫描完成: 发现 ${total} 个文件, ${toUpload.length} 个待上传, ${toOverwrite.length} 个待覆盖, ${toSkip.length} 个将跳过.`);
+        const { files, stats } = result.data;
+        this.log("success", `扫描完成: 发现 ${stats.total} 个文件, ${stats.upload} 个待上传, ${stats.overwrite} 个待覆盖, ${stats.skip} 个将跳过.`);
+        this.renderFileList();
         this.showResultModal();
         this.updateActionButtons();
       } else {
