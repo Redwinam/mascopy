@@ -2,6 +2,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const { EventEmitter } = require('events');
 const sharp = require('sharp');
+const { exiftool } = require('exiftool-vendored');
 const exifParser = require('exif-parser');
 const ffprobe = require('ffprobe');
 const ffprobeStatic = require('ffprobe-static');
@@ -34,28 +35,36 @@ class MediaScanner extends EventEmitter {
 
   async getPhotoDate(filePath) {
     try {
-      // 使用sharp读取EXIF数据
+      // 优先尝试使用 sharp，因为它可能更快
       const metadata = await sharp(filePath).metadata();
-      
       if (metadata.exif) {
         const parser = exifParser.create(metadata.exif);
         const result = parser.parse();
-        
         if (result.tags && result.tags.DateTimeOriginal) {
           return new Date(result.tags.DateTimeOriginal * 1000);
         }
       }
-    } catch (error) {
-      console.log(`无法读取照片EXIF数据: ${filePath}`, error.message);
+    } catch (sharpError) {
+      // 如果 sharp 失败（例如，对于 .CR3 文件），则回退到 exiftool
+      // console.log(`Sharp failed for ${filePath}: ${sharpError.message}. Falling back to ExifTool.`);
+      try {
+        const exifData = await exiftool.read(filePath);
+        const createDate = exifData.DateTimeOriginal?.toDate() || exifData.CreateDate?.toDate();
+        if (createDate) {
+          return createDate;
+        }
+      } catch (exiftoolError) {
+        console.log(`ExifTool also failed for ${filePath}: ${exiftoolError.message}`);
+      }
     }
 
-    // 如果无法从EXIF获取日期，使用文件修改时间
+    // 如果所有 EXIF 方法都失败，则回退到文件修改时间
     try {
       const stats = await fs.stat(filePath);
       return stats.mtime;
-    } catch (error) {
-      console.error(`无法获取文件统计信息: ${filePath}`, error);
-      return new Date();
+    } catch (statError) {
+      console.error(`无法获取文件统计信息: ${filePath}`, statError);
+      return new Date(); // 最后的备用方案
     }
   }
 
@@ -189,13 +198,20 @@ class MediaScanner extends EventEmitter {
       return results;
 
     } catch (error) {
+      console.error('!!!!!!!!!!!!!!!!! SCAN METHOD TOP LEVEL ERROR !!!!!!!!!!!!!!!!');
+      console.error('Error object:', error);
+      console.error('Error message:', error ? error.message : 'N/A');
+      console.error('Error stack:', error ? error.stack : 'N/A');
+      console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+      const errorMessage = error instanceof Error ? error.message : String(error);
       this.emit('progress', {
         phase: 'error',
         current: 0,
         total: 100,
-        message: `扫描失败: ${error.message}`
+        message: `扫描失败: ${errorMessage}`
       });
-      throw error;
+      // 抛出一个带有清晰信息的新错误对象
+      throw new Error(`扫描过程中发生错误: ${errorMessage}`);
     } finally {
       this.isScanning = false;
     }

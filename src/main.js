@@ -12,7 +12,7 @@ class MasCopyApp {
     this.mediaScanner = new MediaScanner();
     this.mediaUploader = new MediaUploader();
     this.mediaService = {
-      scan: (...args) => this.mediaScanner.scan(...args),
+      scan: (...args) => this.mediaScanner.scanDirectory(...args),
       upload: (...args) => this.mediaUploader.upload(...args),
       pauseUpload: () => this.mediaUploader.pause(),
       resumeUpload: () => this.mediaUploader.resume(),
@@ -70,16 +70,23 @@ class MasCopyApp {
       return await this.configManager.saveConfig(config);
     });
 
-    ipcMain.handle('dialog:selectFolder', async () => {
+    ipcMain.handle('dialog:selectFolder', async (event, options) => {
       const result = await dialog.showOpenDialog(this.mainWindow, {
-        title: '选择文件夹',
-        properties: ['openDirectory']
+        title: options.title || '选择文件夹',
+        properties: ['openDirectory'],
+        defaultPath: options.defaultPath
       });
       return result;
     });
 
     ipcMain.handle('media:scan', async (event, sourceDir, targetDir, overwrite) => {
-      return this.mediaService.scan(sourceDir, targetDir, overwrite);
+      try {
+        return await this.mediaService.scan(sourceDir, targetDir, overwrite);
+      } catch (error) {
+        console.error('扫描媒体文件时出错:', error);
+        // 向渲染器进程抛出一个包含有用信息的新错误
+        throw new Error(error.message || '发生未知扫描错误');
+      }
     });
 
     ipcMain.handle('media:upload', async (event, files, targetDir, overwrite) => {

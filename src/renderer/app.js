@@ -119,7 +119,11 @@ class MasCopierUI {
   }
 
   async selectFolder(type) {
-    const result = await window.electronAPI.dialog.selectFolder();
+    const options = {
+      title: type === "source" ? "选择源文件夹" : "选择目标文件夹",
+      defaultPath: type === "source" ? this.config.sourceDir : this.config.targetDir,
+    };
+    const result = await window.electronAPI.dialog.selectFolder(options);
     if (result.canceled || result.filePaths.length === 0) return;
 
     const path = result.filePaths[0];
@@ -158,7 +162,8 @@ class MasCopierUI {
       }
     } catch (error) {
       this.hideScanModal();
-      this.log("error", `扫描时发生未知错误: ${error.message}`);
+      console.error('Full error object received in renderer:', error);
+      this.log("error", `扫描时发生未知错误: ${error.message || JSON.stringify(error)}`);
     }
   }
 

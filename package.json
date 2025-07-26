@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "exif-parser": "^0.1.12",
+    "exiftool-vendored": "^30.3.0",
     "ffprobe": "^1.1.2",
     "ffprobe-static": "^3.1.0",
     "fluent-ffmpeg": "^2.1.3",
