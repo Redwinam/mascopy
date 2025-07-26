@@ -340,16 +340,22 @@ class MasCopierUI {
       return;
     }
 
+    const sourceDir = this.config.sourceDir || '';
+
     this.elements.fileList.innerHTML = filesToRender
       .map(
-        (file) => `
+        (file) => {
+          const relativePath = sourceDir ? file.filePath.replace(sourceDir, '') : file.filePath;
+          const fileSizeMB = (file.fileSize / 1024 / 1024).toFixed(2);
+
+          return `
             <div class="file-list-item">
-                <div class="file-name">${file.name}</div>
-                <div class="file-path">${file.relativePath}</div>
-                <div class="file-size">${(file.size / 1024 / 1024).toFixed(2)} MB</div>
+                <div class="file-name">${file.filename}</div>
+                <div class="file-path">${relativePath}</div>
+                <div class="file-size">${fileSizeMB} MB</div>
                 <div class="file-status file-status-${this.getStatusClass(file.status)}">${file.status}</div>
             </div>
-        `
+        `}
       )
       .join("");
   }

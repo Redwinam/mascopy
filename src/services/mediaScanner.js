@@ -194,7 +194,9 @@ class MediaScanner extends EventEmitter {
       });
 
       // 收集所有文件
-      let allFiles = await this.collectFiles(sourceDir);
+      let allFiles = await this.collectFiles(sourceDir, (progress) => {
+        this.emit('progress', { ...progress, phase: 'collecting' });
+      });
       if (!Array.isArray(allFiles)) {
         console.warn('collectFiles did not return an array. Defaulting to an empty array.');
         allFiles = [];
@@ -243,7 +245,9 @@ class MediaScanner extends EventEmitter {
       }
 
       // 分析文件状态
-      const results = await this.analyzeFiles(mediaFiles, targetDir, overwriteDuplicates);
+      const results = await this.analyzeFiles(mediaFiles, targetDir, overwriteDuplicates, (progress) => {
+        this.emit('progress', { ...progress, phase: 'analyzing' });
+      });
       
       this.emit('progress', {
         phase: 'completed',
@@ -274,7 +278,7 @@ class MediaScanner extends EventEmitter {
     }
   }
 
-  async collectFiles(dir) {
+  async collectFiles(dir, onProgress) {
     console.log(`[collectFiles] Starting collection in: ${dir}`);
     const files = [];
     
@@ -284,6 +288,7 @@ class MediaScanner extends EventEmitter {
         const entries = await fs.readdir(currentDir, { withFileTypes: true });
         console.log(`[collectFiles] Found ${entries.length} entries in ${currentDir}`);
         
+        let i = 0;
         for (const entry of entries) {
           const fullPath = path.join(currentDir, entry.name);
           
@@ -294,6 +299,15 @@ class MediaScanner extends EventEmitter {
             console.log(`[collectFiles] Found file: ${entry.name}`);
             files.push(fullPath);
           }
+
+          if (onProgress && i % 10 === 0) {
+            onProgress({
+              current: i + 1,
+              total: entries.length,
+              message: `正在扫描: ${entry.name}`
+            });
+          }
+          i++;
         }
       } catch (error) {
         console.error(`[collectFiles] Error reading directory: ${currentDir}`, error);
@@ -305,7 +319,7 @@ class MediaScanner extends EventEmitter {
     return files;
   }
 
-  async analyzeFiles(mediaFiles, targetDir, overwriteDuplicates) {
+  async analyzeFiles(mediaFiles, targetDir, overwriteDuplicates, onProgress) {
     console.log(`[analyzeFiles] Starting analysis of ${mediaFiles.length} files. Target: ${targetDir}, Overwrite: ${overwriteDuplicates}`);
     let uploadCount = 0;
     let overwriteCount = 0;
@@ -352,9 +366,8 @@ class MediaScanner extends EventEmitter {
       }
 
       // 发送进度更新
-      if (i % 10 === 0) {
-        this.emit('progress', {
-          phase: 'analyzing',
+      if (onProgress && i % 10 === 0) {
+        onProgress({
           current: i + 1,
           total: mediaFiles.length,
           message: `正在分析: ${mediaFile.filename}`
