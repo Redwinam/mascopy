@@ -113,21 +113,45 @@ class MediaUploader extends EventEmitter {
   }
 
   async copyFile(mediaFile) {
-    const targetDir = path.dirname(mediaFile.targetPath);
-    
-    // 确保目标目录存在
-    await fs.mkdir(targetDir, { recursive: true });
-    
-    // 复制文件
-    await fs.copyFile(mediaFile.filePath, mediaFile.targetPath);
-    
-    // 复制文件时间戳
-    try {
-      const stats = await fs.stat(mediaFile.filePath);
-      await fs.utimes(mediaFile.targetPath, stats.atime, stats.mtime);
-    } catch (error) {
-      console.warn(`无法复制文件时间戳: ${mediaFile.filename}`, error.message);
-    }
+    return new Promise(async (resolve, reject) => {
+      try {
+        const targetDir = path.dirname(mediaFile.targetPath);
+        await fs.mkdir(targetDir, { recursive: true });
+
+        const stats = await fs.stat(mediaFile.filePath);
+        const totalBytes = stats.size;
+        let copiedBytes = 0;
+
+        const readStream = require('fs').createReadStream(mediaFile.filePath);
+        const writeStream = require('fs').createWriteStream(mediaFile.targetPath);
+
+        readStream.on('data', (chunk) => {
+          copiedBytes += chunk.length;
+          this.emit('file-progress', {
+            file: mediaFile,
+            total: totalBytes,
+            current: copiedBytes
+          });
+        });
+
+        readStream.on('error', reject);
+        writeStream.on('error', reject);
+        writeStream.on('finish', async () => {
+          try {
+            await fs.utimes(mediaFile.targetPath, stats.atime, stats.mtime);
+            resolve();
+          } catch (error) {
+            console.warn(`无法复制文件时间戳: ${mediaFile.filename}`, error.message);
+            resolve(); // Resolve even if setting times fails
+          }
+        });
+
+        readStream.pipe(writeStream);
+
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 
   pause() {

@@ -11,6 +11,18 @@ class MasCopyApp {
     this.configManager = new ConfigManager();
     this.mediaScanner = new MediaScanner();
     this.mediaUploader = new MediaUploader();
+
+    this.mediaUploader.on('fileProcessed', (result) => {
+      if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+        this.mainWindow.webContents.send('upload:fileProcessed', result);
+      }
+    });
+
+    this.mediaUploader.on('file-progress', (progress) => {
+      if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+        this.mainWindow.webContents.send('upload:file-progress', progress);
+      }
+    });
     this.mediaService = {
       scan: (...args) => this.mediaScanner.scanDirectory(...args),
       upload: (...args) => this.mediaUploader.uploadFiles(...args),

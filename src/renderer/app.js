@@ -120,13 +120,20 @@ class MasCopierUI {
       this.log("info", `总进度: ${progress.processedFiles}/${progress.totalFiles} | 当前文件: ${progress.currentFile} (${Math.round(progress.fileProgress)}%)`);
     });
 
-    window.electronAPI.on("upload:fileProcessed", ({ filePath, status, error }) => {
-      if (status === "uploaded") {
-        this.log("success", `上传成功: ${filePath}`);
-      } else if (status === "skipped") {
-        this.log("warn", `跳过文件: ${filePath}`);
-      } else if (status === "error") {
-        this.log("error", `上传失败: ${filePath} - ${error}`);
+    window.electronAPI.on('upload:fileProcessed', (result) => {
+      this.updateFileStatusInUI(result.file, result.success, result.message);
+    });
+
+    window.electronAPI.on("upload:file-progress", (progress) => {
+      const fileRow = document.querySelector(`[data-file-path="${progress.file.filePath}"]`);
+      if (fileRow) {
+        const progressBar = fileRow.querySelector(".file-progress-bar");
+        const progressFill = fileRow.querySelector(".file-progress-fill");
+        if (progressBar && progressFill) {
+          const percentage = (progress.current / progress.total) * 100;
+          progressFill.style.width = `${percentage}%`;
+          progressBar.style.display = "block";
+        }
       }
     });
   }
@@ -361,12 +368,14 @@ class MasCopierUI {
         <div class="file-path">相对路径</div>
         <div class="file-size">大小</div>
         <div class="file-status">状态</div>
+        <div class="file-progress">进度</div>
     `;
     fileListContainer.appendChild(header);
 
     filesToRender.forEach(file => {
         const fileElement = document.createElement('div');
         fileElement.classList.add('file-list-item');
+        fileElement.dataset.filePath = file.filePath;
 
         const relativePath = sourceDir ? file.filePath.replace(sourceDir, '') : file.filePath;
         const fileSizeMB = (file.fileSize / 1024 / 1024).toFixed(2);
@@ -377,9 +386,31 @@ class MasCopierUI {
             <div class="file-path">${relativePath}</div>
             <div class="file-size">${fileSizeMB} MB</div>
             <div class="file-status file-status-${statusClass}">${file.status}</div>
+            <div class="file-progress">
+              <div class="file-progress-bar" style="display: none;">
+                <div class="file-progress-fill"></div>
+              </div>
+            </div>
         `;
         fileListContainer.appendChild(fileElement);
     });
+  }
+
+  updateFileStatusInUI(file, success, message) {
+    const fileRow = document.querySelector(`[data-file-path="${file.filePath}"]`);
+    if (fileRow) {
+      const statusEl = fileRow.querySelector('.file-status');
+      if (statusEl) {
+        statusEl.textContent = success ? '已完成' : '失败';
+        statusEl.classList.remove('file-status-upload', 'file-status-overwrite', 'file-status-skip');
+        statusEl.classList.add(success ? 'file-status-success' : 'file-status-error');
+      }
+      const progressEl = fileRow.querySelector('.file-progress-bar');
+      if (progressEl) {
+        progressEl.style.display = 'none';
+      }
+    }
+    this.log(success ? 'success' : 'error', `${file.filename}: ${message}`);
   }
 
   getStatusClass(status) {
