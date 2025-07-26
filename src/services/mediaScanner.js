@@ -292,6 +292,10 @@ class MediaScanner extends EventEmitter {
         for (const entry of entries) {
           const fullPath = path.join(currentDir, entry.name);
           
+          if (onProgress) {
+            onProgress({ current: ++i, total: entries.length, message: `正在检查: ${entry.name}` });
+          }
+
           if (entry.isDirectory()) {
             console.log(`[collectFiles] Found directory: ${entry.name}. Recursing...`);
             await walk(fullPath);

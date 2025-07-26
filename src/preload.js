@@ -43,7 +43,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ];
     
     if (validChannels.includes(channel)) {
-      ipcRenderer.on(channel, callback);
+      // 正确地将数据传递给回调函数，而不是整个事件对象
+      const subscription = (event, ...args) => callback(...args);
+      ipcRenderer.on(channel, subscription);
     }
   },
 
