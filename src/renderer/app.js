@@ -37,24 +37,27 @@ class MasCopierUI {
       currentFileProgressText: document.getElementById("currentFileProgressText"),
       currentFileName: document.getElementById("currentFileName"),
       logContainer: document.getElementById("logContainer"),
-      logHeader: document.getElementById("logHeader"),
-      logToggleIcon: document.getElementById("logToggleIcon"),
-      logStatus: document.getElementById("logStatus"),
       clearLogBtn: document.getElementById("clearLogBtn"),
-      scanModal: document.getElementById("scanModal"),
-      scanMessage: document.getElementById("scanMessage"),
-      scanFile: document.getElementById("scanFile"),
+
+      // Scan progress elements (in-page)
+      scanProgressContainer: document.getElementById("scanProgressContainer"),
+      scanProgressLabel: document.getElementById("scanProgressLabel"),
       scanProgressFill: document.getElementById("scanProgressFill"),
       scanProgressText: document.getElementById("scanProgressText"),
-      cancelScanBtn: document.getElementById("cancelScanBtn"),
-      resultModal: document.getElementById("resultModal"),
-      closeResultBtn: document.getElementById("closeResultBtn"),
+      scanFileName: document.getElementById("scanFileName"),
+
+      // Tab elements
+      tabButtons: document.querySelectorAll(".tab-btn"),
+      tabContents: document.querySelectorAll(".tab-content"),
+      resultsTab: document.getElementById("resultsTab"),
+      logsTab: document.getElementById("logsTab"),
+      resultsPlaceholder: document.querySelector(".results-placeholder"),
+      resultsContent: document.querySelector(".results-content"),
+
+      // Result elements (now in-page)
       statsGrid: document.getElementById("statsGrid"),
       fileList: document.getElementById("fileList"),
       statusFilter: document.getElementById("statusFilter"),
-      closeResultModalBtn: document.getElementById("closeResultModalBtn"),
-      startUploadFromResultBtn: document.getElementById("startUploadFromResultBtn"),
-      modalOverlay: document.getElementById("modalOverlay"),
     };
   }
 
@@ -88,31 +91,28 @@ class MasCopierUI {
 
     this.elements.clearLogBtn.addEventListener("click", () => this.clearLogs());
 
-    // Log toggle functionality
-    if (this.elements.logHeader) {
-      this.elements.logHeader.addEventListener("click", () => this.toggleLogVisibility());
-    }
-
-    // Modal listeners
-    this.elements.cancelScanBtn.addEventListener("click", () => this.cancelScan());
-    this.elements.closeResultBtn.addEventListener("click", () => this.closeResultModal());
-    this.elements.closeResultModalBtn.addEventListener("click", () => this.closeResultModal());
-    this.elements.startUploadFromResultBtn.addEventListener("click", () => {
-      this.closeResultModal();
-      this.startUpload();
+    // Tab switching
+    this.elements.tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tab = button.getAttribute('data-tab');
+            this.switchTab(tab);
+        });
     });
+
+
+
     this.elements.statusFilter.addEventListener("change", () => this.renderFileList());
     console.log("MasCopierUI: setupEventListeners end");
   }
 
   setupIpcListeners() {
     window.electronAPI.on("scan:progress", (progress) => {
-      if (!progress || typeof progress.current !== "number" || typeof progress.total !== "number") return;
+      if (!progress) return;
 
       if (progress.phase === "collecting") {
-        this.elements.scanMessage.textContent = "正在收集文件列表...";
-        this.elements.scanFile.textContent = progress.message || "";
-        this.elements.scanProgressFill.style.width = "100%"; // Or some other indeterminate state
+        this.elements.scanProgressLabel.textContent = "正在收集文件列表...";
+        this.elements.scanFileName.textContent = progress.message || "";
+        this.elements.scanProgressFill.style.width = "100%";
         this.elements.scanProgressFill.classList.add("indeterminate");
         this.elements.scanProgressText.textContent = "...";
       } else {
@@ -120,8 +120,8 @@ class MasCopierUI {
         const percentage = progress.total > 0 ? (progress.current / progress.total) * 100 : 0;
         const message = progress.phase === "analyzing" ? "正在分析文件..." : "正在扫描文件...";
 
-        this.elements.scanMessage.textContent = `${message} (${progress.current}/${progress.total})`;
-        this.elements.scanFile.textContent = progress.message || "";
+        this.elements.scanProgressLabel.textContent = `${message} (${progress.current}/${progress.total})`;
+        this.elements.scanFileName.textContent = progress.message || "";
         this.elements.scanProgressFill.style.width = `${percentage}%`;
         this.elements.scanProgressText.textContent = `${Math.round(percentage)}%`;
       }
@@ -230,37 +230,36 @@ class MasCopierUI {
 
   async startScan() {
     this.log("info", "开始预扫描...");
-    this.showScanModal();
+    this.showScanProgress();
     try {
       const { sourceDir, targetDir } = this.config;
       const overwrite = !!this.config.overwrite;
       const result = await window.electronAPI.media.scan(sourceDir, targetDir, overwrite);
 
+      this.hideScanProgress();
+
       if (result.success && result.data) {
-        this.hideScanModal();
         this.scanResult = result.data;
         const { total, upload, overwrite, skip } = result.data.stats;
         this.log("success", `扫描完成: 发现 ${total || 0} 个文件, ${upload || 0} 个待上传, ${overwrite || 0} 个待覆盖, ${skip || 0} 个将跳过.`);
-        this.renderFileList();
-        this.showResultModal();
+        this.renderResults();
+        this.switchTab('results');
         this.updateActionButtons();
       } else {
-        // Don't hide modal on error, so user can see the message
-        this.elements.scanMessage.textContent = "扫描失败";
-        this.elements.scanFile.textContent = result.error || "未知错误";
         this.log("error", `扫描出错: ${result.error}`);
+        // Optionally show error in a more prominent way
       }
     } catch (error) {
-      this.elements.scanMessage.textContent = "扫描失败";
-      this.elements.scanFile.textContent = error.message || "未知错误";
+      this.hideScanProgress();
       console.error("Full error object received in renderer:", error);
       this.log("error", `扫描时发生未知错误: ${error.message || JSON.stringify(error)}`);
     }
   }
 
   cancelScan() {
-    // window.electronAPI.media.cancelScan(); // Not implemented in backend
-    this.hideScanModal();
+    // In a real scenario, you'd call an API to stop the backend process.
+    // window.electronAPI.media.cancelScan();
+    this.hideScanProgress();
     this.log("warn", "扫描已取消");
   }
 
@@ -357,30 +356,29 @@ class MasCopierUI {
     this.elements.logContainer.innerHTML = '<div class="log-placeholder">日志已清空</div>';
   }
 
-  showScanModal() {
-    this.elements.scanProgressFill.style.width = "0%";
-    this.elements.scanProgressText.textContent = "0%";
-    this.elements.scanMessage.textContent = "正在准备扫描...";
-    this.elements.scanFile.textContent = "";
-    this.elements.scanModal.style.display = "block";
-    this.elements.modalOverlay.style.display = "block";
+  showScanProgress() {
+    this.elements.scanProgressContainer.style.display = "flex";
+    this.showProgressSection(); // Make sure the parent section is visible
   }
 
-  hideScanModal() {
-    this.elements.scanModal.style.display = "none";
-    this.elements.modalOverlay.style.display = "none";
+  hideScanProgress() {
+    this.elements.scanProgressContainer.style.display = "none";
+    // We don't hide the whole progress section if an upload might be in progress
+    if (this.elements.overallProgressContainer.style.display === 'none') {
+        this.hideProgressSection();
+    }
   }
 
-  showResultModal() {
+  renderResults() {
+    if (!this.scanResult) {
+        this.elements.resultsPlaceholder.style.display = 'block';
+        this.elements.resultsContent.style.display = 'none';
+        return;
+    }
+    this.elements.resultsPlaceholder.style.display = 'none';
+    this.elements.resultsContent.style.display = 'block';
     this.renderStats();
     this.renderFileList();
-    this.elements.resultModal.style.display = "block";
-    this.elements.modalOverlay.style.display = "block";
-  }
-
-  closeResultModal() {
-    this.elements.resultModal.style.display = "none";
-    this.elements.modalOverlay.style.display = "none";
   }
 
   renderStats() {
@@ -498,35 +496,27 @@ class MasCopierUI {
   }
 
   hideProgressSection() {
-    if (this.elements.progressSection) {
+    // Hide the section only if both scan and upload are not in progress
+    const scanVisible = this.elements.scanProgressContainer.style.display !== 'none';
+    const uploadVisible = this.elements.overallProgressContainer.style.display !== 'none';
+    if (this.elements.progressSection && !scanVisible && !uploadVisible) {
       this.elements.progressSection.style.display = "none";
     }
   }
 
-  toggleLogVisibility() {
-    const logContent = this.elements.logContainer;
-    const logSection = document.querySelector(".log-section");
+  switchTab(tabId) {
+    this.elements.tabContents.forEach(content => {
+        content.classList.remove('active');
+    });
+    this.elements.tabButtons.forEach(button => {
+        button.classList.remove('active');
+    });
 
-    if (logContent && logSection) {
-      const isCollapsed = logContent.style.display === "none";
-
-      if (isCollapsed) {
-        logContent.style.display = "block";
-        logSection.classList.add("expanded");
-        this.updateLogStatus("展开");
-      } else {
-        logContent.style.display = "none";
-        logSection.classList.remove("expanded");
-        this.updateLogStatus("已收起");
-      }
-    }
+    document.getElementById(tabId + 'Tab').classList.add('active');
+    document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
   }
 
-  updateLogStatus(status) {
-    if (this.elements.logStatus) {
-      this.elements.logStatus.textContent = status;
-    }
-  }
+
 }
 
 document.addEventListener("DOMContentLoaded", () => {
