@@ -512,18 +512,10 @@ class MasCopierUI {
     }
 
     const sourceDir = this.config.sourceDir || "";
+    const targetDir = this.config.targetDir || "";
 
     const fileListContainer = this.elements.fileList;
     fileListContainer.innerHTML = ""; // Clear existing list
-
-    // const header = document.createElement("div");
-    // header.classList.add("file-list-header", "file-list-item");
-    // header.innerHTML = `
-    //     <div class="file-path-combined">文件路径</div>
-    //     <div class="file-size">大小</div>
-    //     <div class="file-status">状态</div>
-    // `;
-    // fileListContainer.appendChild(header);
 
     filesToRender.forEach((file) => {
       const fileElement = document.createElement("div");
@@ -534,14 +526,29 @@ class MasCopierUI {
       const fileSizeMB = (file.fileSize / 1024 / 1024).toFixed(2);
       const statusClass = this.getStatusClass(file.status);
 
-      // 分离路径和文件名
+      // 分离来源路径和文件名
       const pathParts = relativePath.split("/");
       const fileName = pathParts.pop(); // 获取文件名
       const dirPath = pathParts.length > 0 ? pathParts.join("/") + "/" : "";
 
+      // 处理目标路径（只显示目录路径，不包含文件名）
+      let targetPath = "";
+      if (file.targetPath && targetDir) {
+        const relativeTargetPath = file.targetPath.replace(targetDir, "");
+        const targetPathParts = relativeTargetPath.split("/");
+        targetPathParts.pop(); // 移除文件名，只保留目录路径
+        const targetDirPath = targetPathParts.length > 0 ? targetPathParts.join("/") + "/" : "/";
+        targetPath = `<span class="path-arrow">→</span><span class="path-directory">${targetDirPath}</span>`;
+      } else {
+        targetPath = '<span class="path-arrow">→</span><span class="path-directory">未设置</span>';
+      }
+
       fileElement.innerHTML = `
             <div class="file-path-combined">
               <span class="path-directory">${dirPath}</span><span class="path-filename">${fileName}</span>
+            </div>
+            <div class="file-path-combined">
+              ${targetPath}
             </div>
             <div class="file-size">${fileSizeMB} MB</div>
             <div class="file-status file-status-${statusClass}">${file.status}</div>

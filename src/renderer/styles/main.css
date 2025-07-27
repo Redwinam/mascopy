@@ -307,7 +307,7 @@ body {
 .action-section {
     background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
     border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md) var(--spacing-lg);
     box-shadow: var(--shadow-md);
     display: flex;
     gap: var(--spacing-lg);
@@ -369,6 +369,13 @@ body {
     border: 1px solid var(--border-color);
 }
 
+.progress-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+}
+
 .progress-label {
     font-weight: 600;
     color: var(--text-primary);
@@ -376,6 +383,7 @@ body {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
+    flex-shrink: 0;
 }
 
 .progress-label::before {
@@ -453,15 +461,16 @@ body {
 
 .current-file-name {
     font-size: var(--font-size-xs);
+    margin-right: var(--spacing-xs);
     color: var(--text-secondary);
-    margin-top: var(--spacing-xs);
-    padding: var(--spacing-sm);
-    background: var(--bg-primary);
-    border-radius: var(--border-radius);
-    border-left: 4px solid var(--primary-color);
     word-break: break-all;
     font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-    box-shadow: var(--shadow-sm);
+    text-align: right;
+    flex: 1;
+    min-width: 0; /* 允许文本截断 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* 扫描进度特殊样式 */
@@ -485,8 +494,7 @@ body {
 }
 
 #scanFileName {
-    background: rgba(67, 97, 238, 0.05);
-    border-left-color: var(--info-color);
+    /* 移除特殊背景样式，保持与其他current-file-name一致 */
 }
 
 /* 日志区域 */
