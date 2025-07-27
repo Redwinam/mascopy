@@ -108,24 +108,27 @@
             </div>
           </div>
 
-          <!-- 总体进度条 -->
-          <div class="progress-container" id="overallProgressContainer">
-            <div class="progress-label">总体进度</div>
-            <div class="progress-bar">
-              <div class="progress-fill" id="progressFill"></div>
-              <div class="progress-text" id="progressText">0%</div>
+          <!-- 上传进度区域 -->
+          <div class="upload-progress-section" id="uploadProgressSection" style="display: none">
+            <!-- 总体进度条 -->
+            <div class="progress-container" id="overallProgressContainer">
+              <div class="progress-label">总体进度</div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+                <div class="progress-text" id="progressText">0%</div>
+              </div>
             </div>
-          </div>
 
-          <!-- 当前文件进度条 -->
-          <div class="progress-container" id="currentFileProgressContainer" style="display: none">
-            <div class="progress-header">
-              <div class="progress-label">当前文件进度</div>
-              <div class="current-file-name" id="currentFileName">准备中...</div>
-            </div>
-            <div class="progress-bar">
-              <div class="progress-fill" id="currentFileProgressFill"></div>
-              <div class="progress-text" id="currentFileProgressText">0%</div>
+            <!-- 当前文件进度条 -->
+            <div class="progress-container" id="currentFileProgressContainer">
+              <div class="progress-header">
+                <div class="progress-label">当前文件进度</div>
+                <div class="current-file-name" id="currentFileName">准备中...</div>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="currentFileProgressFill"></div>
+                <div class="progress-text" id="currentFileProgressText">0%</div>
+              </div>
             </div>
           </div>
         </section>

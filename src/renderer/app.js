@@ -33,6 +33,7 @@ class MasCopierUI {
       pauseBtn: document.getElementById("pauseBtn"),
       cancelBtn: document.getElementById("cancelBtn"),
       progressSection: document.getElementById("progressSection"),
+      uploadProgressSection: document.getElementById("uploadProgressSection"),
       overallProgressContainer: document.getElementById("overallProgressContainer"),
       progressFill: document.getElementById("progressFill"),
       progressText: document.getElementById("progressText"),
@@ -131,13 +132,6 @@ class MasCopierUI {
       this.elements.progressFill.style.width = `${percentage}%`;
       this.elements.progressText.textContent = `${Math.round(percentage)}%`;
       this.log("info", `总进度: ${progress.current}/${progress.total}`);
-
-      // 如果上传完成，隐藏当前文件进度条
-      if (percentage >= 100) {
-        setTimeout(() => {
-          this.elements.currentFileProgressContainer.style.display = "none";
-        }, 2000); // 2秒后隐藏
-      }
     });
 
     window.electronAPI.on("upload:fileProcessed", (result) => {
@@ -146,9 +140,6 @@ class MasCopierUI {
 
     window.electronAPI.on("upload:file-start", ({ file }) => {
       this.log("info", `开始复制: ${file.filename}`);
-
-      // 显示当前文件进度条
-      this.elements.currentFileProgressContainer.style.display = "flex";
 
       // 更新当前文件名
       this.elements.currentFileName.textContent = file.filename || "未知文件";
@@ -227,7 +218,7 @@ class MasCopierUI {
 
   async startScan() {
     this.log("info", "开始预扫描...");
-    this.elements.overallProgressContainer.style.display = "none";
+    this.elements.uploadProgressSection.style.display = "none";
     this.showScanProgress();
     try {
       const { sourceDir, targetDir } = this.config;
@@ -278,8 +269,9 @@ class MasCopierUI {
     this.elements.pauseBtn.disabled = false;
     this.elements.cancelBtn.disabled = false;
 
-    // Show progress section
+    // Show progress section and upload progress section
     this.showProgressSection();
+    this.elements.uploadProgressSection.style.display = "flex";
 
     try {
       const { targetDir, overwrite } = this.config;
@@ -325,8 +317,8 @@ class MasCopierUI {
     this.elements.progressFill.style.width = "0%";
     this.elements.progressText.textContent = "0%";
 
-    // 隐藏当前文件进度条
-    this.elements.currentFileProgressContainer.style.display = "none";
+    // 隐藏上传进度区域
+    this.elements.uploadProgressSection.style.display = "none";
 
     // Hide progress section after a delay
     setTimeout(() => {
@@ -362,7 +354,7 @@ class MasCopierUI {
   hideScanProgress() {
     this.elements.scanProgressContainer.style.display = "none";
     // We don't hide the whole progress section if an upload might be in progress
-    if (this.elements.overallProgressContainer.style.display === "none") {
+    if (this.elements.uploadProgressSection.style.display === "none") {
       this.hideProgressSection();
     }
   }
@@ -436,10 +428,10 @@ class MasCopierUI {
   }
 
   updateStats() {
-    if (!this.scanResults || !this.scanResults.files) return;
+    if (!this.scanResult || !this.scanResult.files) return;
 
     const stats = {
-      total: this.scanResults.files.length,
+      total: this.scanResult.files.length,
       upload: 0,
       overwrite: 0,
       skip: 0,
@@ -448,7 +440,7 @@ class MasCopierUI {
       error: 0,
     };
 
-    this.scanResults.files.forEach((file) => {
+    this.scanResult.files.forEach((file) => {
       switch (file.status) {
         case "将上传":
           stats.upload++;
@@ -577,10 +569,10 @@ class MasCopierUI {
     }
 
     // 更新文件状态
-    if (this.scanResults && this.scanResults.files) {
-      const fileIndex = this.scanResults.files.findIndex((f) => f.filePath === file.filePath);
+    if (this.scanResult && this.scanResult.files) {
+      const fileIndex = this.scanResult.files.findIndex((f) => f.filePath === file.filePath);
       if (fileIndex !== -1) {
-        this.scanResults.files[fileIndex].status = success ? "已完成" : "失败";
+        this.scanResult.files[fileIndex].status = success ? "已完成" : "失败";
       }
     }
 
@@ -623,10 +615,10 @@ class MasCopierUI {
     }
 
     // 更新文件状态
-    if (this.scanResults && this.scanResults.files) {
-      const fileIndex = this.scanResults.files.findIndex((f) => f.filePath === file.filePath);
+    if (this.scanResult && this.scanResult.files) {
+      const fileIndex = this.scanResult.files.findIndex((f) => f.filePath === file.filePath);
       if (fileIndex !== -1) {
-        this.scanResults.files[fileIndex].status = "上传中";
+        this.scanResult.files[fileIndex].status = "上传中";
       }
     }
 
