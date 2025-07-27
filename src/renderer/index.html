@@ -134,15 +134,10 @@
               <button class="tab-btn" data-tab="logs">日志</button>
             </div>
             <div class="tab-controls">
-              <select class="tab-filter-select" id="statusFilter" style="display: none">
-                <option value="all">全部文件</option>
-                <option value="将上传">将上传</option>
-                <option value="将覆盖">将覆盖</option>
-                <option value="将跳过">将跳过</option>
-                <option value="上传中">上传中</option>
-                <option value="已完成">已完成</option>
-                <option value="失败">失败</option>
-              </select>
+              <!-- 统计卡片筛选器 -->
+              <div class="stats-filter-grid" id="statsFilterGrid" style="display: none">
+                <!-- 统计卡片将通过JavaScript动态生成 -->
+              </div>
               <button class="tab-action-btn" id="clearLogBtn" style="display: none">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
@@ -162,11 +157,6 @@
           <div class="tab-content active" id="resultsTab">
             <div class="results-placeholder">尚未扫描，请先执行预扫描操作。</div>
             <div class="results-content" style="display: none">
-              <!-- 统计卡片 -->
-              <div class="stats-grid" id="statsGrid">
-                <!-- 统计卡片将通过JavaScript动态生成 -->
-              </div>
-
               <!-- 文件列表 -->
               <div class="file-list-container">
                 <div class="file-list" id="fileList">

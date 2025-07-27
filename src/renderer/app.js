@@ -5,6 +5,7 @@ class MasCopierUI {
     this.config = {};
     this.scanResult = null;
     this.isPaused = false;
+    this.currentFilter = "all"; // 添加当前筛选状态
 
     this.init();
     console.log("MasCopierUI: constructor end");
@@ -58,9 +59,8 @@ class MasCopierUI {
       resultsContent: document.querySelector(".results-content"),
 
       // Result elements (now in-page)
-      statsGrid: document.getElementById("statsGrid"),
+      statsFilterGrid: document.getElementById("statsFilterGrid"),
       fileList: document.getElementById("fileList"),
-      statusFilter: document.getElementById("statusFilter"),
     };
   }
 
@@ -101,10 +101,6 @@ class MasCopierUI {
             this.switchTab(tab);
         });
     });
-
-
-
-    this.elements.statusFilter.addEventListener("change", () => this.renderFileList());
     console.log("MasCopierUI: setupEventListeners end");
   }
 
@@ -387,22 +383,46 @@ class MasCopierUI {
     if (!this.scanResult || !this.scanResult.stats) return;
     const { upload, overwrite, skip, total } = this.scanResult.stats;
     const stats = [
-      { label: "待上传", value: upload || 0, color: "blue" },
-      { label: "待覆盖", value: overwrite || 0, color: "orange" },
-      { label: "将跳过", value: skip || 0, color: "gray" },
-      { label: "总计", value: total || 0, color: "green" },
+      { label: "全部", value: total || 0, color: "blue", filter: "all" },
+      { label: "待上传", value: upload || 0, color: "blue", filter: "将上传" },
+      { label: "待覆盖", value: overwrite || 0, color: "orange", filter: "将覆盖" },
+      { label: "将跳过", value: skip || 0, color: "gray", filter: "将跳过" },
     ];
 
-    this.elements.statsGrid.innerHTML = stats
+    this.elements.statsFilterGrid.innerHTML = stats
       .map(
         (stat) => `
-            <div class="stat-card stat-card-${stat.color}">
-                <div class="stat-value">${stat.value}</div>
-                <div class="stat-label">${stat.label}</div>
+            <div class="stats-filter-card stats-filter-card-${stat.color} ${this.currentFilter === stat.filter ? 'active' : ''}" 
+                 data-filter="${stat.filter}">
+                <div class="stats-filter-value">${stat.value}</div>
+                <div class="stats-filter-label">${stat.label}</div>
             </div>
         `
       )
       .join("");
+
+    // 添加点击事件监听器
+    this.elements.statsFilterGrid.querySelectorAll('.stats-filter-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const filter = card.dataset.filter;
+        this.setFilter(filter);
+      });
+    });
+
+    // 显示统计卡片
+    this.elements.statsFilterGrid.style.display = 'flex';
+  }
+
+  setFilter(filter) {
+    this.currentFilter = filter;
+    
+    // 更新卡片的激活状态
+    this.elements.statsFilterGrid.querySelectorAll('.stats-filter-card').forEach(card => {
+      card.classList.toggle('active', card.dataset.filter === filter);
+    });
+    
+    // 重新渲染文件列表
+    this.renderFileList();
   }
 
   updateStats() {
@@ -441,20 +461,20 @@ class MasCopierUI {
       }
     });
 
-    // 更新统计卡片
-    const totalCard = document.querySelector('.stat-card.blue .stat-value');
-    const uploadCard = document.querySelector('.stat-card.orange .stat-value');
-    const skipCard = document.querySelector('.stat-card.gray .stat-value');
-    const successCard = document.querySelector('.stat-card.green .stat-value');
+    // 更新统计筛选卡片
+    const allCard = document.querySelector('.stats-filter-card[data-filter="all"] .stats-filter-value');
+    const uploadCard = document.querySelector('.stats-filter-card[data-filter="将上传"] .stats-filter-value');
+    const overwriteCard = document.querySelector('.stats-filter-card[data-filter="将覆盖"] .stats-filter-value');
+    const skipCard = document.querySelector('.stats-filter-card[data-filter="将跳过"] .stats-filter-value');
 
-    if (totalCard) totalCard.textContent = stats.total;
-    if (uploadCard) uploadCard.textContent = stats.upload + stats.overwrite + stats.uploading;
+    if (allCard) allCard.textContent = stats.total;
+    if (uploadCard) uploadCard.textContent = stats.upload + stats.uploading;
+    if (overwriteCard) overwriteCard.textContent = stats.overwrite;
     if (skipCard) skipCard.textContent = stats.skip;
-    if (successCard) successCard.textContent = stats.success;
   }
 
   renderFileList() {
-    const filter = this.elements.statusFilter.value;
+    const filter = this.currentFilter;
     let filesToRender = [];
 
     if (!this.scanResult || !this.scanResult.files) {

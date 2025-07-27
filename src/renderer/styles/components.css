@@ -460,6 +460,144 @@
     word-break: break-all;
 }
 
+/* 统计卡片筛选器 - 紧凑设计 */
+.stats-filter-grid {
+    display: flex;
+    gap: var(--spacing-xs);
+    align-items: center;
+}
+
+.stats-filter-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    min-width: 60px;
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-filter-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
+}
+
+.stats-filter-card.active {
+    background: linear-gradient(135deg, rgba(67, 97, 238, 0.1) 0%, rgba(67, 97, 238, 0.05) 100%);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+}
+
+.stats-filter-card.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary-color);
+}
+
+.stats-filter-card-blue {
+    border-color: rgba(67, 97, 238, 0.3);
+}
+
+.stats-filter-card-blue:hover,
+.stats-filter-card-blue.active {
+    background: linear-gradient(135deg, rgba(67, 97, 238, 0.1) 0%, rgba(67, 97, 238, 0.05) 100%);
+    border-color: var(--primary-color);
+}
+
+.stats-filter-card-blue .stats-filter-value {
+    color: var(--primary-color);
+}
+
+.stats-filter-card-orange {
+    border-color: rgba(255, 193, 7, 0.3);
+}
+
+.stats-filter-card-orange:hover,
+.stats-filter-card-orange.active {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
+    border-color: var(--warning-color);
+}
+
+.stats-filter-card-orange .stats-filter-value {
+    color: var(--warning-color);
+}
+
+.stats-filter-card-gray {
+    border-color: rgba(108, 117, 125, 0.3);
+}
+
+.stats-filter-card-gray:hover,
+.stats-filter-card-gray.active {
+    background: linear-gradient(135deg, rgba(108, 117, 125, 0.1) 0%, rgba(108, 117, 125, 0.05) 100%);
+    border-color: var(--secondary-color);
+}
+
+.stats-filter-card-gray .stats-filter-value {
+    color: var(--secondary-color);
+}
+
+.stats-filter-card-green {
+    border-color: rgba(40, 167, 69, 0.3);
+}
+
+.stats-filter-card-green:hover,
+.stats-filter-card-green.active {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.05) 100%);
+    border-color: var(--success-color);
+}
+
+.stats-filter-card-green .stats-filter-value {
+    color: var(--success-color);
+}
+
+.stats-filter-value {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 2px;
+}
+
+.stats-filter-label {
+    font-size: 10px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* 文件列表空状态 */
+.file-list-empty {
+    text-align: center;
+    padding: var(--spacing-xl) var(--spacing-lg);
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    border: 2px dashed var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+    font-size: var(--font-size-sm);
+}
+
+.file-list-empty::before {
+    content: "📂";
+    font-size: 2.5rem;
+    opacity: 0.5;
+}
+
 /* 统计卡片 - 紧凑设计 */
 .stats-grid {
     display: flex;
