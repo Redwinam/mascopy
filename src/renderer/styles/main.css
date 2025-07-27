@@ -102,9 +102,10 @@ body {
 .title-bar {
     background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
     border-bottom: 1px solid var(--border-color);
-    height: 60px;
+    height: 48px;
     display: flex;
     align-items: center;
+    justify-content: center; /* 标题居中 */
     padding: 0 var(--spacing-lg);
     -webkit-app-region: drag;
     user-select: none;
@@ -112,7 +113,7 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.title-bar::after {
+/* .title-bar::after {
     content: '';
     position: absolute;
     bottom: 0;
@@ -121,32 +122,49 @@ body {
     height: 2px;
     background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
     opacity: 0.6;
-}
+} */
 
+/* macOS 平台特定样式 */
 .platform-darwin .title-bar {
-    padding-left: 80px; /* 为macOS窗口控件留出空间 */
+    height: 52px; /* 调整为更符合 macOS 原生应用的标题栏高度 */
+    justify-content: center; /* 标题居中显示 */
+    padding: 0 var(--spacing-lg); /* 移除特殊的左边距 */
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 249, 250, 0.95) 100%);
+    backdrop-filter: blur(20px); /* 添加毛玻璃效果，更符合 macOS 风格 */
+    -webkit-backdrop-filter: blur(20px);
 }
 
 .title-bar-content {
     display: flex;
     align-items: center;
+    justify-content: center; /* 内容居中 */
     width: 100%;
+    height: 100%;
 }
 
-.app-icon {
-    color: var(--primary-color);
-    margin-right: var(--spacing-md);
+.platform-darwin .title-bar-content {
+    justify-content: center; /* macOS 下也居中 */
 }
 
 .app-title {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--text-primary);
+    margin: 0;
+    text-align: center;
+}
+
+.platform-darwin .app-title {
+    font-size: 16px; /* 稍微减小字体大小，更符合 macOS 应用标题 */
+    font-weight: 500; /* 调整字重，更接近 macOS 原生应用 */
+    color: var(--text-primary);
+    line-height: 1.2;
     margin: 0;
 }
 
 .title-bar-controls {
-    margin-left: auto;
+    position: absolute;
+    right: var(--spacing-lg);
     -webkit-app-region: no-drag;
 }
 
@@ -183,7 +201,7 @@ body {
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, var(--primary-color), var(--info-color), var(--primary-color));
+    background: linear-gradient(90deg, var(--primary-color), transparent, var(--primary-color));
     opacity: 0.8;
 }
 

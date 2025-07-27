@@ -46,7 +46,8 @@ class MasCopyApp {
   }
 
   async createWindow() {
-    this.mainWindow = new BrowserWindow({
+    // 根据平台设置不同的窗口选项
+    const windowOptions = {
       width: 1200,
       height: 800,
       minWidth: 800,
@@ -57,10 +58,21 @@ class MasCopyApp {
         enableRemoteModule: false,
         preload: path.join(__dirname, "preload.js"),
       },
-      titleBarStyle: "hiddenInset",
       show: true,
       icon: path.join(__dirname, "..", "assets", "icon.png"),
-    });
+    };
+
+    // macOS 特定配置
+    if (process.platform === "darwin") {
+      windowOptions.titleBarStyle = "hiddenInset";
+      windowOptions.titleBarOverlay = false;
+      windowOptions.trafficLightPosition = { x: 15, y: 16 }; // 调整红绿灯按钮位置，向左移动
+      windowOptions.customButtonsOnHover = true; // 只在悬停时显示按钮
+    } else {
+      windowOptions.titleBarStyle = "default";
+    }
+
+    this.mainWindow = new BrowserWindow(windowOptions);
 
     try {
       await this.mainWindow.loadFile(path.join(__dirname, "renderer/index.html"));

@@ -13,13 +13,6 @@
       <!-- 标题栏 -->
       <header class="title-bar">
         <div class="title-bar-content">
-          <div class="app-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-              <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-              <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-            </svg>
-          </div>
           <h1 class="app-title">MasCopy</h1>
           <div class="title-bar-controls"></div>
         </div>
@@ -109,9 +102,9 @@
           </div>
 
           <!-- 上传进度区域 -->
-          <div class="upload-progress-section" id="uploadProgressSection" style="display: none">
+          <div class="upload-progress-section progress-container" id="uploadProgressSection" style="display: none">
             <!-- 总体进度条 -->
-            <div class="progress-container" id="overallProgressContainer">
+            <div id="overallProgressContainer">
               <div class="progress-label">总体进度</div>
               <div class="progress-bar">
                 <div class="progress-fill" id="progressFill"></div>
@@ -120,7 +113,7 @@
             </div>
 
             <!-- 当前文件进度条 -->
-            <div class="progress-container" id="currentFileProgressContainer">
+            <div id="currentFileProgressContainer">
               <div class="progress-header">
                 <div class="progress-label">当前文件进度</div>
                 <div class="current-file-name" id="currentFileName">准备中...</div>
