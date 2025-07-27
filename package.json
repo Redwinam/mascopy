@@ -4,7 +4,8 @@
   "description": "照片/视频 NAS 上传工具 - Electron版本",
   "main": "src/main.js",
   "scripts": {
-    "start": "electron . --dev",
+    "start": "electron .",
+    "start-dev": "electron . --dev",
     "dev": "electron . --dev",
     "build": "electron-builder",
     "build-mac": "electron-builder --mac",

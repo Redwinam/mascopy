@@ -2,7 +2,7 @@
 .info-section {
   background-color: var(--bg-primary);
   border-radius: var(--border-radius-lg);
-  margin-top: var(--spacing-lg);
+  /* margin-top: var(--spacing-lg); */
   overflow: hidden;
   box-shadow: var(--shadow);
   border: 1px solid var(--border-color);
@@ -147,7 +147,7 @@
 
 .tab-content {
   display: none;
-  padding: var(--spacing-xl);
+  padding: var(--spacing-md);
   min-height: 300px;
   animation: fadeIn 0.3s ease-out;
 }
@@ -216,93 +216,7 @@
   opacity: 0.8;
 }
 
-/* File List Container */
-.file-list-container {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-}
 
-.file-list-header {
-  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-  padding: var(--spacing-md) var(--spacing-lg);
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.file-list-header h4 {
-  font-size: var(--font-size-base);
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.file-list-header h4::before {
-  content: "📁";
-  font-size: 16px;
-  opacity: 0.8;
-}
-
-.file-list-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-}
-
-.filter-select {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-  transition: var(--transition);
-  min-width: 120px;
-}
-
-.filter-select:hover {
-  border-color: var(--primary-color);
-}
-
-.filter-select:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.1);
-}
-
-.file-list {
-  max-height: 400px;
-  overflow-y: auto;
-  background: var(--bg-primary);
-}
-
-.file-list-empty {
-  padding: var(--spacing-xl);
-  text-align: center;
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
-  border-radius: var(--border-radius);
-  margin: var(--spacing-md);
-  border: 2px dashed var(--border-color);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.file-list-empty::before {
-  content: "📂";
-  font-size: 2rem;
-  opacity: 0.5;
-}
 
 /* Log Container */
 .log-container {
@@ -311,23 +225,6 @@
   max-height: 400px;
   overflow-y: auto;
   border: 1px solid var(--border-color);
-}
-
-.log-placeholder {
-  padding: var(--spacing-xl);
-  text-align: center;
-  color: var(--text-secondary);
-  font-style: italic;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-md);
-}
-
-.log-placeholder::before {
-  content: "📝";
-  font-size: 2rem;
-  opacity: 0.5;
 }
 
 /* Log Entry Styles */

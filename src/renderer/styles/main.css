@@ -100,7 +100,7 @@ body {
 
 /* 标题栏样式 */
 .title-bar {
-    background: var(--bg-primary);
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
     border-bottom: 1px solid var(--border-color);
     height: 60px;
     display: flex;
@@ -108,6 +108,19 @@ body {
     padding: 0 var(--spacing-lg);
     -webkit-app-region: drag;
     user-select: none;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.title-bar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+    opacity: 0.6;
 }
 
 .platform-darwin .title-bar {
@@ -149,13 +162,29 @@ body {
 
 /* 配置区域 */
 .config-section {
-    background: var(--bg-primary);
-    border-radius: var(--border-radius-lg);
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
     padding: var(--spacing-lg);
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-md);
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-md);
+    /* border: 1px solid var(--border-color); */
+    /* border-bottom: none; */
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 0;
+}
+
+.config-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), var(--info-color), var(--primary-color));
+    opacity: 0.8;
 }
 
 .config-group {
@@ -168,6 +197,10 @@ body {
     font-weight: 600;
     color: var(--text-primary);
     font-size: var(--font-size-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    position: relative;
 }
 
 .path-selector {
@@ -178,7 +211,7 @@ body {
 
 .path-display {
     flex: 1;
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
     background: var(--bg-secondary);
     border: 2px solid var(--border-color);
     border-radius: var(--border-radius);
@@ -188,31 +221,67 @@ body {
     display: flex;
     align-items: center;
     word-break: break-all;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.path-display::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(67, 97, 238, 0.02) 0%, rgba(67, 97, 238, 0.05) 100%);
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.path-display:hover::before {
+    opacity: 1;
 }
 
 .path-display.selected {
     color: var(--text-primary);
     border-color: var(--primary-color);
     background: var(--bg-primary);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.path-display.selected::before {
+    opacity: 1;
 }
 
 .options-container {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
 }
 
-.options-group {
-    background: rgba(var(--bg-secondary-rgb, 248, 249, 250), 0.5);
-    border: 1px solid rgba(var(--border-color-rgb, 229, 231, 235), 0.6);
+/* .options-group {
+    background: linear-gradient(135deg, rgba(248, 249, 250, 0.8) 0%, rgba(248, 249, 250, 0.5) 100%);
+    border: 1px solid rgba(67, 97, 238, 0.15);
     border-radius: var(--border-radius);
-    padding: var(--spacing-sm) var(--spacing-md);
-    /* margin-top: var(--spacing-xs); */
+    padding: var(--spacing-md);
+    position: relative;
+    overflow: hidden;
+}
+
+.options-group::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+    opacity: 0.4;
 }
 
 .options-group .options-container {
     gap: var(--spacing-xs);
-}
+} */
 
 .option-description {
     color: var(--text-secondary);
@@ -236,12 +305,28 @@ body {
 
 /* 操作按钮区域 */
 .action-section {
-    background: var(--bg-primary);
-    border-radius: var(--border-radius-lg);
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
     padding: var(--spacing-lg);
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-md);
     display: flex;
     gap: var(--spacing-lg);
+    /* border: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-color); */
+    position: relative;
+    overflow: hidden;
+    margin-top: 0;
+}
+
+.action-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border-color);
+    opacity: 1;
 }
 
 .action-buttons {
@@ -252,15 +337,15 @@ body {
 
 /* 进度条区域 */
 .progress-section {
-    background: var(--bg-primary);
-    border-radius: var(--border-radius-lg);
-    padding: var(--spacing-lg);
-    box-shadow: var(--shadow);
+    /* background: var(--bg-primary); */
+    /* border-radius: var(--border-radius-lg); */
+    /* padding: var(--spacing-lg); */
+    /* box-shadow: var(--shadow); */
     display: flex;
     flex-direction: column;
     gap: var(--spacing-lg);
     animation: slideDown 0.3s ease-out;
-    border: 1px solid var(--border-color);
+    /* border: 1px solid var(--border-color); */
 }
 
 @keyframes slideDown {
@@ -361,9 +446,9 @@ body {
     color: var(--text-primary);
     text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
     z-index: 1;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 2px 6px;
-    border-radius: 4px;
+    /* background: rgba(255, 255, 255, 0.9); */
+    /* padding: 2px 6px; */
+    /* border-radius: 4px; */
 }
 
 .current-file-name {
@@ -496,10 +581,22 @@ body {
 }
 
 .log-placeholder {
-    padding: var(--spacing-lg);
     text-align: center;
+    padding: var(--spacing-xl) var(--spacing-lg);
     color: var(--text-secondary);
-    font-style: italic;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    border: 2px dashed var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.log-placeholder::before {
+    content: "📝";
+    font-size: 3rem;
+    opacity: 0.5;
 }
 
 .log-entry {
