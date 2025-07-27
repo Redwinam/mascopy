@@ -460,24 +460,26 @@
     word-break: break-all;
 }
 
-/* 统计卡片筛选器 - 紧凑设计 */
+/* 统计卡片筛选器 - 横排设计 */
 .stats-filter-grid {
     display: flex;
-    gap: var(--spacing-xs);
+    gap: 12px;
+    margin-left: 16px;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .stats-filter-card {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    padding: var(--spacing-xs) var(--spacing-sm);
+    gap: 8px;
+    padding: 8px 12px;
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-sm);
+    border-radius: 20px;
     cursor: pointer;
     transition: var(--transition);
-    min-width: 60px;
+    min-height: 36px;
     position: relative;
     overflow: hidden;
 }
@@ -492,16 +494,6 @@
     background: linear-gradient(135deg, rgba(67, 97, 238, 0.1) 0%, rgba(67, 97, 238, 0.05) 100%);
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
-}
-
-.stats-filter-card.active::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: var(--primary-color);
 }
 
 .stats-filter-card-blue {
@@ -560,21 +552,48 @@
     color: var(--success-color);
 }
 
+.stats-filter-card-red {
+    border-color: rgba(220, 53, 69, 0.3);
+}
+
+.stats-filter-card-red:hover,
+.stats-filter-card-red.active {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(220, 53, 69, 0.05) 100%);
+    border-color: var(--danger-color);
+}
+
+.stats-filter-card-red .stats-filter-value {
+    color: var(--danger-color);
+}
+
+.stats-filter-card-purple {
+    border-color: rgba(147, 51, 234, 0.3);
+}
+
+.stats-filter-card-purple:hover,
+.stats-filter-card-purple.active {
+    background: linear-gradient(135deg, rgba(147, 51, 234, 0.1) 0%, rgba(147, 51, 234, 0.05) 100%);
+    border-color: #9333ea;
+}
+
+.stats-filter-card-purple .stats-filter-value {
+    color: #9333ea;
+}
+
 .stats-filter-value {
-    font-size: var(--font-size-lg);
-    font-weight: 700;
+    font-size: 16px;
+    font-weight: 600;
     line-height: 1;
-    margin-bottom: 2px;
+    min-width: 20px;
+    text-align: center;
 }
 
 .stats-filter-label {
-    font-size: 10px;
+    font-size: 12px;
     color: var(--text-secondary);
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    text-align: center;
-    line-height: 1.2;
+    line-height: 1;
+    white-space: nowrap;
 }
 
 /* 文件列表空状态 */

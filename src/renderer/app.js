@@ -387,6 +387,9 @@ class MasCopierUI {
       { label: "待上传", value: upload || 0, color: "blue", filter: "将上传" },
       { label: "待覆盖", value: overwrite || 0, color: "orange", filter: "将覆盖" },
       { label: "将跳过", value: skip || 0, color: "gray", filter: "将跳过" },
+      { label: "上传中", value: 0, color: "purple", filter: "上传中" },
+      { label: "已完成", value: 0, color: "green", filter: "已完成" },
+      { label: "失败", value: 0, color: "red", filter: "失败" },
     ];
 
     this.elements.statsFilterGrid.innerHTML = stats
@@ -466,11 +469,17 @@ class MasCopierUI {
     const uploadCard = document.querySelector('.stats-filter-card[data-filter="将上传"] .stats-filter-value');
     const overwriteCard = document.querySelector('.stats-filter-card[data-filter="将覆盖"] .stats-filter-value');
     const skipCard = document.querySelector('.stats-filter-card[data-filter="将跳过"] .stats-filter-value');
+    const uploadingCard = document.querySelector('.stats-filter-card[data-filter="上传中"] .stats-filter-value');
+    const successCard = document.querySelector('.stats-filter-card[data-filter="已完成"] .stats-filter-value');
+    const errorCard = document.querySelector('.stats-filter-card[data-filter="失败"] .stats-filter-value');
 
     if (allCard) allCard.textContent = stats.total;
-    if (uploadCard) uploadCard.textContent = stats.upload + stats.uploading;
+    if (uploadCard) uploadCard.textContent = stats.upload;
     if (overwriteCard) overwriteCard.textContent = stats.overwrite;
     if (skipCard) skipCard.textContent = stats.skip;
+    if (uploadingCard) uploadingCard.textContent = stats.uploading;
+    if (successCard) successCard.textContent = stats.success;
+    if (errorCard) errorCard.textContent = stats.error;
   }
 
   renderFileList() {
