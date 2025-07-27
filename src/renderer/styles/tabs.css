@@ -13,7 +13,7 @@
   justify-content: space-between;
   align-items: center;
   background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-  padding: var(--spacing-xs) var(--spacing-md) 0 var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-lg);
   border-bottom: 1px solid var(--border-color);
   position: relative;
 }
@@ -147,7 +147,7 @@
 
 .tab-content {
   display: none;
-  padding: var(--spacing-md);
+  /* padding: var(--spacing-md); */
   min-height: 300px;
   animation: fadeIn 0.3s ease-out;
 }
@@ -170,6 +170,7 @@
 /* Results Tab Specifics */
 .results-placeholder {
   text-align: center;
+  margin: var(--spacing-md);
   padding: var(--spacing-xl) var(--spacing-lg);
   color: var(--text-secondary);
   background: var(--bg-secondary);
@@ -216,14 +217,17 @@
   opacity: 0.8;
 }
 
-
-
 /* Log Container */
 .log-container {
+  margin: var(--spacing-md);
   background: var(--bg-secondary);
   border-radius: var(--border-radius);
   max-height: 400px;
   overflow-y: auto;
+}
+
+/* 只有当容器中有实际日志内容时才显示边框 */
+.log-container:has(.log-entry) {
   border: 1px solid var(--border-color);
 }
 

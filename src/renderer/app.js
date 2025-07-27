@@ -16,7 +16,7 @@ class MasCopierUI {
     this.loadConfig();
     this.setupEventListeners();
     this.setupIpcListeners();
-    
+
     // 初始化tab控件显示状态
     this.switchTab("results");
   }
@@ -95,11 +95,11 @@ class MasCopierUI {
     this.elements.clearLogBtn.addEventListener("click", () => this.clearLogs());
 
     // Tab switching
-    this.elements.tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const tab = button.getAttribute('data-tab');
-            this.switchTab(tab);
-        });
+    this.elements.tabButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const tab = button.getAttribute("data-tab");
+        this.switchTab(tab);
+      });
     });
     console.log("MasCopierUI: setupEventListeners end");
   }
@@ -227,7 +227,7 @@ class MasCopierUI {
 
   async startScan() {
     this.log("info", "开始预扫描...");
-    this.elements.overallProgressContainer.style.display = 'none';
+    this.elements.overallProgressContainer.style.display = "none";
     this.showScanProgress();
     try {
       const { sourceDir, targetDir } = this.config;
@@ -241,7 +241,7 @@ class MasCopierUI {
         const { total, upload, overwrite, skip } = result.data.stats;
         this.log("success", `扫描完成: 发现 ${total || 0} 个文件, ${upload || 0} 个待上传, ${overwrite || 0} 个待覆盖, ${skip || 0} 个将跳过.`);
         this.renderResults();
-        this.switchTab('results');
+        this.switchTab("results");
         this.updateActionButtons();
       } else {
         this.log("error", `扫描出错: ${result.error}`);
@@ -362,25 +362,32 @@ class MasCopierUI {
   hideScanProgress() {
     this.elements.scanProgressContainer.style.display = "none";
     // We don't hide the whole progress section if an upload might be in progress
-    if (this.elements.overallProgressContainer.style.display === 'none') {
-        this.hideProgressSection();
+    if (this.elements.overallProgressContainer.style.display === "none") {
+      this.hideProgressSection();
     }
   }
 
   renderResults() {
     if (!this.scanResult) {
-        this.elements.resultsPlaceholder.style.display = 'block';
-        this.elements.resultsContent.style.display = 'none';
-        return;
+      this.elements.resultsPlaceholder.style.display = "block";
+      this.elements.resultsContent.style.display = "none";
+      return;
     }
-    this.elements.resultsPlaceholder.style.display = 'none';
-    this.elements.resultsContent.style.display = 'block';
+    this.elements.resultsPlaceholder.style.display = "none";
+    this.elements.resultsContent.style.display = "block";
     this.renderStats();
     this.renderFileList();
   }
 
   renderStats() {
     if (!this.scanResult || !this.scanResult.stats) return;
+
+    // 检查statsFilterGrid元素是否存在
+    if (!this.elements.statsFilterGrid) {
+      console.error("statsFilterGrid element not found");
+      return;
+    }
+
     const { upload, overwrite, skip, total } = this.scanResult.stats;
     const stats = [
       { label: "全部", value: total || 0, color: "blue", filter: "all" },
@@ -395,7 +402,7 @@ class MasCopierUI {
     this.elements.statsFilterGrid.innerHTML = stats
       .map(
         (stat) => `
-            <div class="stats-filter-card stats-filter-card-${stat.color} ${this.currentFilter === stat.filter ? 'active' : ''}" 
+            <div class="stats-filter-card stats-filter-card-${stat.color} ${this.currentFilter === stat.filter ? "active" : ""}" 
                  data-filter="${stat.filter}">
                 <div class="stats-filter-value">${stat.value}</div>
                 <div class="stats-filter-label">${stat.label}</div>
@@ -405,25 +412,25 @@ class MasCopierUI {
       .join("");
 
     // 添加点击事件监听器
-    this.elements.statsFilterGrid.querySelectorAll('.stats-filter-card').forEach(card => {
-      card.addEventListener('click', () => {
+    this.elements.statsFilterGrid.querySelectorAll(".stats-filter-card").forEach((card) => {
+      card.addEventListener("click", () => {
         const filter = card.dataset.filter;
         this.setFilter(filter);
       });
     });
 
     // 显示统计卡片
-    this.elements.statsFilterGrid.style.display = 'flex';
+    this.elements.statsFilterGrid.style.display = "flex";
   }
 
   setFilter(filter) {
     this.currentFilter = filter;
-    
+
     // 更新卡片的激活状态
-    this.elements.statsFilterGrid.querySelectorAll('.stats-filter-card').forEach(card => {
-      card.classList.toggle('active', card.dataset.filter === filter);
+    this.elements.statsFilterGrid.querySelectorAll(".stats-filter-card").forEach((card) => {
+      card.classList.toggle("active", card.dataset.filter === filter);
     });
-    
+
     // 重新渲染文件列表
     this.renderFileList();
   }
@@ -438,10 +445,10 @@ class MasCopierUI {
       skip: 0,
       uploading: 0,
       success: 0,
-      error: 0
+      error: 0,
     };
 
-    this.scanResults.files.forEach(file => {
+    this.scanResults.files.forEach((file) => {
       switch (file.status) {
         case "将上传":
           stats.upload++;
@@ -509,14 +516,14 @@ class MasCopierUI {
     const fileListContainer = this.elements.fileList;
     fileListContainer.innerHTML = ""; // Clear existing list
 
-    const header = document.createElement("div");
-    header.classList.add("file-list-header", "file-list-item");
-    header.innerHTML = `
-        <div class="file-path-combined">文件路径</div>
-        <div class="file-size">大小</div>
-        <div class="file-status">状态</div>
-    `;
-    fileListContainer.appendChild(header);
+    // const header = document.createElement("div");
+    // header.classList.add("file-list-header", "file-list-item");
+    // header.innerHTML = `
+    //     <div class="file-path-combined">文件路径</div>
+    //     <div class="file-size">大小</div>
+    //     <div class="file-status">状态</div>
+    // `;
+    // fileListContainer.appendChild(header);
 
     filesToRender.forEach((file) => {
       const fileElement = document.createElement("div");
@@ -528,9 +535,9 @@ class MasCopierUI {
       const statusClass = this.getStatusClass(file.status);
 
       // 分离路径和文件名
-      const pathParts = relativePath.split('/');
+      const pathParts = relativePath.split("/");
       const fileName = pathParts.pop(); // 获取文件名
-      const dirPath = pathParts.length > 0 ? pathParts.join('/') + '/' : '';
+      const dirPath = pathParts.length > 0 ? pathParts.join("/") + "/" : "";
 
       fileElement.innerHTML = `
             <div class="file-path-combined">
@@ -552,10 +559,10 @@ class MasCopierUI {
         statusEl.classList.remove("file-status-upload", "file-status-overwrite", "file-status-skip", "file-status-uploading");
         statusEl.classList.add(success ? "file-status-success" : "file-status-error");
       }
-      
+
       // 移除上传中的样式
       fileRow.classList.remove("uploading");
-      
+
       const progressEl = fileRow.querySelector(".file-progress-bar");
       if (progressEl) {
         progressEl.style.display = "none";
@@ -564,7 +571,7 @@ class MasCopierUI {
 
     // 更新文件状态
     if (this.scanResults && this.scanResults.files) {
-      const fileIndex = this.scanResults.files.findIndex(f => f.filePath === file.filePath);
+      const fileIndex = this.scanResults.files.findIndex((f) => f.filePath === file.filePath);
       if (fileIndex !== -1) {
         this.scanResults.files[fileIndex].status = success ? "已完成" : "失败";
       }
@@ -572,7 +579,7 @@ class MasCopierUI {
 
     // 更新统计信息
     this.updateStats();
-    
+
     this.log(success ? "success" : "error", `${file.filename}: ${message}`);
   }
 
@@ -610,7 +617,7 @@ class MasCopierUI {
 
     // 更新文件状态
     if (this.scanResults && this.scanResults.files) {
-      const fileIndex = this.scanResults.files.findIndex(f => f.filePath === file.filePath);
+      const fileIndex = this.scanResults.files.findIndex((f) => f.filePath === file.filePath);
       if (fileIndex !== -1) {
         this.scanResults.files[fileIndex].status = "上传中";
       }
@@ -628,40 +635,38 @@ class MasCopierUI {
 
   hideProgressSection() {
     // Hide the section only if both scan and upload are not in progress
-    const scanVisible = this.elements.scanProgressContainer.style.display !== 'none';
-    const uploadVisible = this.elements.overallProgressContainer.style.display !== 'none';
+    const scanVisible = this.elements.scanProgressContainer.style.display !== "none";
+    const uploadVisible = this.elements.overallProgressContainer.style.display !== "none";
     if (this.elements.progressSection && !scanVisible && !uploadVisible) {
       this.elements.progressSection.style.display = "none";
     }
   }
 
   switchTab(tabId) {
-    this.elements.tabContents.forEach(content => {
-        content.classList.remove('active');
+    this.elements.tabContents.forEach((content) => {
+      content.classList.remove("active");
     });
-    this.elements.tabButtons.forEach(button => {
-        button.classList.remove('active');
+    this.elements.tabButtons.forEach((button) => {
+      button.classList.remove("active");
     });
 
-    document.getElementById(tabId + 'Tab').classList.add('active');
-    document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+    document.getElementById(tabId + "Tab").classList.add("active");
+    document.querySelector(`[data-tab="${tabId}"]`).classList.add("active");
 
     // 控制右侧按钮的显示
-    const statusFilter = document.getElementById("statusFilter");
+    const statsFilterGrid = document.getElementById("statsFilterGrid");
     const clearLogBtn = document.getElementById("clearLogBtn");
 
     if (tabId === "results") {
       // 显示筛选器，隐藏清空按钮
-      statusFilter.style.display = "block";
-      clearLogBtn.style.display = "none";
+      if (statsFilterGrid) statsFilterGrid.style.display = "flex";
+      if (clearLogBtn) clearLogBtn.style.display = "none";
     } else if (tabId === "logs") {
       // 隐藏筛选器，显示清空按钮
-      statusFilter.style.display = "none";
-      clearLogBtn.style.display = "flex";
+      if (statsFilterGrid) statsFilterGrid.style.display = "none";
+      if (clearLogBtn) clearLogBtn.style.display = "flex";
     }
   }
-
-
 }
 
 document.addEventListener("DOMContentLoaded", () => {

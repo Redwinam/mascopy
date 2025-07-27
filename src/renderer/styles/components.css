@@ -599,6 +599,7 @@
 /* 文件列表空状态 */
 .file-list-empty {
     text-align: center;
+    margin: var(--spacing-md);
     padding: var(--spacing-xl) var(--spacing-lg);
     color: var(--text-secondary);
     background: var(--bg-secondary);
@@ -737,8 +738,8 @@
 
 /* 文件列表 */
 .file-list-container {
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-lg);
+    /* border: 1px solid var(--border-color); */
+    /* border-radius: var(--border-radius-lg); */
     overflow: hidden;
 }
 
