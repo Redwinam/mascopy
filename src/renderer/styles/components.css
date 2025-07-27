@@ -255,7 +255,8 @@
 
 .path-filename {
     font-weight: 700;
-    font-size: var(--font-size-sm);
+    /* font-size: var(--font-size-sm); */
+    font-size: var(--font-size-xs);
     color: var(--text-primary);
 }
 
@@ -270,7 +271,7 @@
 .file-status {
     font-size: var(--font-size-xs);
     font-weight: 500;
-    padding: 4px 8px;
+    padding: var(--spacing-xs) var(--spacing-md);
     border-radius: var(--border-radius);
     text-align: center;
     display: inline-flex;
@@ -284,48 +285,23 @@
 .file-status-upload {
     background-color: rgba(67, 97, 238, 0.1);
     color: var(--primary-color);
-    /* border: 1px solid rgba(67, 97, 238, 0.2); */
 }
-
-/* .file-status-upload::before {
-    content: "⬆️";
-    font-size: 10px;
-} */
 
 .file-status-overwrite {
     background-color: rgba(255, 193, 7, 0.1);
     color: var(--warning-color);
-    /* border: 1px solid rgba(255, 193, 7, 0.2); */
 }
-
-/* .file-status-overwrite::before {
-    content: "🔄";
-    font-size: 10px;
-} */
 
 .file-status-skip {
     background-color: rgba(108, 117, 125, 0.1);
     color: var(--text-secondary);
-    /* border: 1px solid rgba(108, 117, 125, 0.2); */
 }
-
-/* .file-status-skip::before {
-    content: "⏭️";
-    font-size: 10px;
-} */
 
 .file-status-uploading {
     background-color: rgba(23, 162, 184, 0.1);
     color: var(--info-color);
-    /* border: 1px solid rgba(23, 162, 184, 0.2); */
     animation: statusPulse 1.5s infinite;
 }
-
-/* .file-status-uploading::before {
-    content: "📤";
-    font-size: 10px;
-    animation: bounce 1s infinite;
-} */
 
 @keyframes statusPulse {
     0%, 100% { 
@@ -348,24 +324,12 @@
 .file-status-success {
     background-color: rgba(40, 167, 69, 0.1);
     color: var(--success-color);
-    /* border: 1px solid rgba(40, 167, 69, 0.2); */
 }
-
-/* .file-status-success::before {
-    content: "✅";
-    font-size: 10px;
-} */
 
 .file-status-error {
     background-color: rgba(220, 53, 69, 0.1);
     color: var(--danger-color);
-    /* border: 1px solid rgba(220, 53, 69, 0.2); */
 }
-
-/* .file-status-error::before {
-    content: "❌";
-    font-size: 10px;
-} */
 
 /* 模态框组件 */
 .modal {
@@ -625,9 +589,11 @@
     background: var(--bg-secondary);
     padding: var(--spacing-md) var(--spacing-lg);
     border-bottom: 1px solid var(--border-color);
-    display: flex;
+    display: grid;
+    grid-template-columns: 2fr auto auto;
+    /* display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: center; */
 }
 
 .file-list-header h4 {
@@ -694,7 +660,7 @@
 }
 
 .file-status {
-    padding: var(--spacing-xs) var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-md);
     border-radius: var(--border-radius-sm);
     font-size: var(--font-size-xs);
     font-weight: 500;
