@@ -197,31 +197,41 @@ npm run dev
 
 ## 使用要求
 
-- Python 3.6+
+- Node.js 16+
 - macOS 系统
 - NAS 目录已挂载到本地
 
 ## 开发和构建
 
-- 环境设置:
-  - 克隆仓库
-  - (可选) 创建和激活虚拟环境
-  - 安装依赖: pip install -r requirements.txt
-- 运行开发版本:
-  - 如何直接运行源代码: python main.py
-- 打包应用:
-  - 运行构建脚本: bash build_app.sh
-  - 说明生成的 .app 文件位于 dist/ 目录。
-- 创建 DMG 安装包:
-  - 运行 DMG 创建脚本: bash create_dmg.sh (可能需要先 brew install create-dmg)
-  - 说明生成的 .dmg 文件位于项目根目录。
-- (可选) 发布流程:
-  - 简要说明 publish_release.sh 的作用（创建 tag、推送到 GitHub、创建 Release 并上传 DMG）。
+### 环境设置
+- 克隆仓库
+- 安装依赖: `npm install`
+
+### 运行开发版本
+- 开发模式: `npm run dev`
+- 普通启动: `npm start`
+
+### 打包应用
+- 构建应用: `npm run build-mac` 或运行 `./build_electron.sh`
+- 生成的 .app 文件位于 `dist/mac/` 目录
+
+### 代码签名
+- 运行签名脚本: `./sign_app.sh`
+- 使用自签名（无需开发者证书）
+
+### 创建 DMG 安装包
+- 运行 DMG 创建脚本: `./create_dmg.sh`
+- 会自动构建应用并创建安装包
+- 生成的 .dmg 文件位于项目根目录
+
+### 发布流程
+- 运行发布脚本: `./publish_release.sh`
+- 自动创建 tag、推送到 GitHub、创建 Release 并上传 DMG
 
 ## 安装依赖
 
 ```bash
-pip install -r requirements.txt
+npm install
 ```
 
 ## 使用方法
@@ -229,7 +239,9 @@ pip install -r requirements.txt
 1. 运行程序：
 
 ```bash
-python main.py
+npm start
+# 或开发模式
+npm run dev
 ```
 
 2. 在程序界面中：
