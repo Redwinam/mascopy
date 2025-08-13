@@ -20,17 +20,17 @@
 
       <!-- 主内容区域 -->
       <main class="main-content">
-        <!-- 模式切换 -->
-        <div class="tab-nav" style="margin-bottom: 12px">
-          <div class="tab-buttons">
-            <button class="tab-btn active" data-tab="sdMode">SD卡模式</button>
-            <button class="tab-btn" data-tab="djiMode">DJI模式</button>
-          </div>
-          <div class="tab-controls"></div>
-        </div>
-
         <!-- 配置区域 -->
         <div class="config-container">
+          <!-- 模式切换 -->
+          <div class="tab-nav">
+            <div class="tab-buttons">
+              <button class="tab-btn active" data-tab="sdMode">SD卡模式</button>
+              <button class="tab-btn" data-tab="djiMode">DJI模式</button>
+            </div>
+            <div class="tab-controls"></div>
+          </div>
+
           <!-- SD卡模式配置 -->
           <section class="config-section tab-content active" id="sdModeTab">
             <!-- 源目录选择 -->
@@ -62,7 +62,6 @@
                 <div class="path-display" id="djiSourcePath">未选择</div>
                 <button class="btn btn-secondary" id="selectDjiSourceBtn">选择文件夹</button>
               </div>
-              <p class="folder-info">例如：/Volumes/Osmo360/DCIM/</p>
             </div>
 
             <!-- 目标目录选择 -->

@@ -17,6 +17,28 @@
   border-bottom: 1px solid var(--border-color);
 }
 
+/* 顶部模式切换tab的特殊样式 */
+.main-content > .tab-nav {
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  border: 1px solid var(--border-color);
+  border-bottom: none;
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 0;
+  position: relative;
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.main-content > .tab-nav::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border-color);
+}
+
 .tab-buttons {
   display: flex;
   align-items: center;
@@ -43,6 +65,37 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
+}
+
+/* 顶部模式切换tab按钮的特殊样式 */
+.main-content > .tab-nav .tab-btn {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-weight: 600;
+  border-radius: var(--border-radius);
+  min-height: 40px;
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.5px;
+}
+
+.main-content > .tab-nav .tab-btn:hover {
+  background: rgba(67, 97, 238, 0.08);
+  color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(67, 97, 238, 0.15);
+}
+
+.main-content > .tab-nav .tab-btn.active {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 2px 12px rgba(67, 97, 238, 0.3);
+  border: none;
+  transform: translateY(-1px);
+}
+
+.main-content > .tab-nav .tab-btn.active:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(67, 97, 238, 0.4);
 }
 
 .tab-btn::before {
@@ -128,12 +181,11 @@
 .tab-content {
   display: none;
   /* padding: var(--spacing-md); */
-  min-height: 300px;
   animation: fadeIn 0.3s ease-out;
 }
 
 .tab-content.active {
-  display: block;
+  display: flex;
 }
 
 @keyframes fadeIn {
@@ -161,6 +213,7 @@
   align-items: center;
   gap: var(--spacing-md);
   font-size: var(--font-size-sm);
+  width: 100%;
 }
 
 .results-placeholder::before {
@@ -171,6 +224,7 @@
 
 .results-content {
   display: none; /* Hidden by default, shown by JS */
+  width: 100%;
 }
 
 .info-header {

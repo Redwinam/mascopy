@@ -6,7 +6,7 @@ class MasCopierUI {
     this.scanResult = null;
     this.isPaused = false;
     this.currentFilter = "all"; // 添加当前筛选状态
-    this.currentMode = 'sd'; // 添加当前模式状态
+    this.currentMode = "sd"; // 添加当前模式状态
 
     this.init();
     console.log("MasCopierUI: constructor end");
@@ -29,13 +29,13 @@ class MasCopierUI {
       targetPath: document.getElementById("targetPath"),
       selectSourceBtn: document.getElementById("selectSourceBtn"),
       selectTargetBtn: document.getElementById("selectTargetBtn"),
-      
+
       // DJI模式元素
       djiSourcePath: document.getElementById("djiSourcePath"),
       djiTargetPath: document.getElementById("djiTargetPath"),
       selectDjiSourceBtn: document.getElementById("selectDjiSourceBtn"),
       selectDjiTargetBtn: document.getElementById("selectDjiTargetBtn"),
-      
+
       overwriteCheck: document.getElementById("overwriteCheck"),
       scanBtn: document.getElementById("scanBtn"),
       startBtn: document.getElementById("startBtn"),
@@ -61,8 +61,8 @@ class MasCopierUI {
       scanFileName: document.getElementById("scanFileName"),
 
       // Tab elements (results/logs in info-section only)
-      resultsTabButtons: document.querySelectorAll('.info-section .tab-buttons .tab-btn'),
-      resultsTabContents: document.querySelectorAll('.info-section .tab-content'),
+      resultsTabButtons: document.querySelectorAll(".info-section .tab-buttons .tab-btn"),
+      resultsTabContents: document.querySelectorAll(".info-section .tab-content"),
       resultsTab: document.getElementById("resultsTab"),
       logsTab: document.getElementById("logsTab"),
       resultsPlaceholder: document.querySelector(".results-placeholder"),
@@ -71,7 +71,7 @@ class MasCopierUI {
       // Result elements (now in-page)
       statsFilterGrid: document.getElementById("statsFilterGrid"),
       fileList: document.getElementById("fileList"),
-      
+
       // 模式tab元素
       modeTabButtons: document.querySelectorAll('.tab-btn[data-tab="sdMode"], .tab-btn[data-tab="djiMode"]'),
       sdModeTab: document.getElementById("sdModeTab"),
@@ -86,30 +86,30 @@ class MasCopierUI {
     // 迁移旧版全局配置到 sdMode（一次性）
     let migrated = false;
     if (!this.config.sdMode) {
-      this.config.sdMode = { sourceDir: '', targetDir: '', overwriteDuplicates: false };
+      this.config.sdMode = { sourceDir: "", targetDir: "", overwriteDuplicates: false };
       migrated = true;
     }
     if (!this.config.djiMode) {
-      this.config.djiMode = { sourceDir: '', targetDir: '', overwriteDuplicates: false };
+      this.config.djiMode = { sourceDir: "", targetDir: "", overwriteDuplicates: false };
       migrated = true;
     }
-    if (!this.config.sdMode.sourceDir && (this.config.sourceDir || this.config.targetDir || typeof this.config.overwriteDuplicates === 'boolean')) {
-      this.config.sdMode.sourceDir = this.config.sourceDir || '';
-      this.config.sdMode.targetDir = this.config.targetDir || '';
+    if (!this.config.sdMode.sourceDir && (this.config.sourceDir || this.config.targetDir || typeof this.config.overwriteDuplicates === "boolean")) {
+      this.config.sdMode.sourceDir = this.config.sourceDir || "";
+      this.config.sdMode.targetDir = this.config.targetDir || "";
       this.config.sdMode.overwriteDuplicates = !!this.config.overwriteDuplicates;
       migrated = true;
     }
     if (!this.config.currentMode) {
-      this.config.currentMode = 'sd';
+      this.config.currentMode = "sd";
       migrated = true;
     }
     if (migrated) {
       await this.saveConfig();
     }
-    
+
     // 设置当前模式
-    this.currentMode = this.config.currentMode || 'sd';
-    
+    this.currentMode = this.config.currentMode || "sd";
+
     // 更新UI显示
     this.updateModeUI();
     this.updateActionButtons();
@@ -118,36 +118,35 @@ class MasCopierUI {
 
   updateModeUI() {
     // 更新模式tab显示
-    this.elements.modeTabButtons.forEach(btn => {
-      const tabMode = btn.getAttribute('data-tab');
-      if ((tabMode === 'sdMode' && this.currentMode === 'sd') || 
-          (tabMode === 'djiMode' && this.currentMode === 'dji')) {
-        btn.classList.add('active');
+    this.elements.modeTabButtons.forEach((btn) => {
+      const tabMode = btn.getAttribute("data-tab");
+      if ((tabMode === "sdMode" && this.currentMode === "sd") || (tabMode === "djiMode" && this.currentMode === "dji")) {
+        btn.classList.add("active");
       } else {
-        btn.classList.remove('active');
+        btn.classList.remove("active");
       }
     });
-    
+
     // 显示/隐藏对应的配置区域
-    if (this.currentMode === 'sd') {
-      this.elements.sdModeTab.classList.add('active');
-      this.elements.djiModeTab.classList.remove('active');
+    if (this.currentMode === "sd") {
+      this.elements.sdModeTab.classList.add("active");
+      this.elements.djiModeTab.classList.remove("active");
     } else {
-      this.elements.sdModeTab.classList.remove('active');
-      this.elements.djiModeTab.classList.add('active');
+      this.elements.sdModeTab.classList.remove("active");
+      this.elements.djiModeTab.classList.add("active");
     }
-    
+
     // 更新路径显示
-    const modeConfig = this.config[this.currentMode + 'Mode'] || {};
-    
-    if (this.currentMode === 'sd') {
+    const modeConfig = this.config[this.currentMode + "Mode"] || {};
+
+    if (this.currentMode === "sd") {
       this.elements.sourcePath.textContent = modeConfig.sourceDir || "未选择";
       this.elements.targetPath.textContent = modeConfig.targetDir || "未选择";
     } else {
       this.elements.djiSourcePath.textContent = modeConfig.sourceDir || "未选择";
       this.elements.djiTargetPath.textContent = modeConfig.targetDir || "未选择";
     }
-    
+
     this.elements.overwriteCheck.checked = modeConfig.overwriteDuplicates || false;
   }
 
@@ -157,19 +156,19 @@ class MasCopierUI {
 
   setupEventListeners() {
     console.log("MasCopierUI: setupEventListeners start");
-    
+
     // SD模式按钮
     this.elements.selectSourceBtn.addEventListener("click", () => this.selectFolder("source"));
     this.elements.selectTargetBtn.addEventListener("click", () => this.selectFolder("target"));
-    
-    // DJI模式按钮  
+
+    // DJI模式按钮
     this.elements.selectDjiSourceBtn.addEventListener("click", () => this.selectFolder("djiSource"));
     this.elements.selectDjiTargetBtn.addEventListener("click", () => this.selectFolder("djiTarget"));
-    
+
     this.elements.overwriteCheck.addEventListener("change", (e) => {
-      const modeConfig = this.config[this.currentMode + 'Mode'] || {};
+      const modeConfig = this.config[this.currentMode + "Mode"] || {};
       modeConfig.overwriteDuplicates = e.target.checked;
-      this.config[this.currentMode + 'Mode'] = modeConfig;
+      this.config[this.currentMode + "Mode"] = modeConfig;
       this.saveConfig();
     });
 
@@ -183,43 +182,43 @@ class MasCopierUI {
     // Tab switching for results/logs
     this.elements.resultsTabButtons.forEach((button) => {
       const tab = button.getAttribute("data-tab");
-      if (tab === 'results' || tab === 'logs') {
+      if (tab === "results" || tab === "logs") {
         button.addEventListener("click", () => {
           this.switchTab(tab);
         });
       }
     });
-    
-    // Mode tab switching  
+
+    // Mode tab switching
     this.elements.modeTabButtons.forEach((button) => {
       button.addEventListener("click", () => {
         const tabMode = button.getAttribute("data-tab");
-        if (tabMode === 'sdMode') {
-          this.switchMode('sd');
-        } else if (tabMode === 'djiMode') {
-          this.switchMode('dji');
+        if (tabMode === "sdMode") {
+          this.switchMode("sd");
+        } else if (tabMode === "djiMode") {
+          this.switchMode("dji");
         }
       });
     });
-    
+
     console.log("MasCopierUI: setupEventListeners end");
   }
 
   switchMode(mode) {
     if (this.currentMode === mode) return;
-    
+
     this.currentMode = mode;
     this.config.currentMode = mode;
-    
+
     // 保存配置并更新UI
     this.saveConfig();
     this.updateModeUI();
     this.updateActionButtons();
-    
+
     // 清空之前的扫描结果，因为模式改变了
     this.scanResult = null;
     this.renderResults();
-    
+
     console.log(`Switched to ${mode} mode`);
   }
 
@@ -304,14 +303,14 @@ class MasCopierUI {
   }
 
   async selectFolder(type) {
-    const isDji = type.startsWith('dji');
-    const isSource = type.includes('Source') || type === 'source';
-    const modeKey = isDji ? 'djiMode' : 'sdMode';
+    const isDji = type.startsWith("dji");
+    const isSource = type.includes("Source") || type === "source";
+    const modeKey = isDji ? "djiMode" : "sdMode";
     const modeConfig = this.config[modeKey] || {};
 
     const options = {
-      title: isSource ? (isDji ? '选择DJI源文件夹' : '选择源文件夹') : '选择目标文件夹',
-      defaultPath: isSource ? (modeConfig.sourceDir || '') : (modeConfig.targetDir || ''),
+      title: isSource ? (isDji ? "选择DJI源文件夹" : "选择源文件夹") : "选择目标文件夹",
+      defaultPath: isSource ? modeConfig.sourceDir || "" : modeConfig.targetDir || "",
     };
     const result = await window.electronAPI.dialog.selectFolder(options);
     if (result.canceled || result.filePaths.length === 0) return;
@@ -339,7 +338,7 @@ class MasCopierUI {
   }
 
   updateActionButtons() {
-    const modeConfig = this.config[this.currentMode + 'Mode'] || {};
+    const modeConfig = this.config[this.currentMode + "Mode"] || {};
     const canScan = !!(modeConfig.sourceDir && modeConfig.targetDir);
     this.elements.scanBtn.disabled = !canScan;
 
@@ -355,7 +354,7 @@ class MasCopierUI {
     this.elements.uploadProgressSection.style.display = "none";
     this.showScanProgress();
     try {
-      const modeConfig = this.config[this.currentMode + 'Mode'] || {};
+      const modeConfig = this.config[this.currentMode + "Mode"] || {};
       const sourceDir = modeConfig.sourceDir;
       const targetDir = modeConfig.targetDir;
       const overwrite = !!modeConfig.overwriteDuplicates;
@@ -410,7 +409,7 @@ class MasCopierUI {
     this.elements.uploadProgressSection.style.display = "flex";
 
     try {
-      const modeConfig = this.config[this.currentMode + 'Mode'] || {};
+      const modeConfig = this.config[this.currentMode + "Mode"] || {};
       const targetDir = modeConfig.targetDir;
       const overwrite = !!modeConfig.overwriteDuplicates;
       const result = await window.electronAPI.media.upload(filesToUpload, targetDir, overwrite);
@@ -499,7 +498,7 @@ class MasCopierUI {
 
   renderResults() {
     if (!this.scanResult) {
-      this.elements.resultsPlaceholder.style.display = "block";
+      this.elements.resultsPlaceholder.style.display = "flex";
       this.elements.resultsContent.style.display = "none";
       return;
     }
