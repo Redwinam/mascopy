@@ -51,7 +51,7 @@ class MasCopyApp {
       width: 1200,
       height: 800,
       minWidth: 800,
-      minHeight: 600,
+      minHeight: 640,
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
@@ -113,7 +113,7 @@ class MasCopyApp {
       return result;
     });
 
-    ipcMain.handle("media:scan", async (event, sourceDir, targetDir, overwrite, mode = 'sd') => {
+    ipcMain.handle("media:scan", async (event, sourceDir, targetDir, overwrite, mode = "sd") => {
       console.log("IPC `media:scan` received:", { sourceDir, targetDir, overwrite, mode });
 
       const progressListener = (progress) => {
