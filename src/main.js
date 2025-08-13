@@ -113,8 +113,8 @@ class MasCopyApp {
       return result;
     });
 
-    ipcMain.handle("media:scan", async (event, sourceDir, targetDir, overwrite) => {
-      console.log("IPC `media:scan` received:", { sourceDir, targetDir, overwrite });
+    ipcMain.handle("media:scan", async (event, sourceDir, targetDir, overwrite, mode = 'sd') => {
+      console.log("IPC `media:scan` received:", { sourceDir, targetDir, overwrite, mode });
 
       const progressListener = (progress) => {
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
@@ -125,6 +125,8 @@ class MasCopyApp {
       this.mediaScanner.on("progress", progressListener);
 
       try {
+        // 设置扫描器模式
+        this.mediaScanner.setMode(mode);
         const results = await this.mediaService.scan(sourceDir, targetDir, overwrite);
         return {
           success: true,

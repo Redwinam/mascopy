@@ -20,12 +20,22 @@
 
       <!-- 主内容区域 -->
       <main class="main-content">
+        <!-- 模式切换 -->
+        <div class="tab-nav" style="margin-bottom: 12px">
+          <div class="tab-buttons">
+            <button class="tab-btn active" data-tab="sdMode">SD卡模式</button>
+            <button class="tab-btn" data-tab="djiMode">DJI模式</button>
+          </div>
+          <div class="tab-controls"></div>
+        </div>
+
         <!-- 配置区域 -->
         <div class="config-container">
-          <section class="config-section">
+          <!-- SD卡模式配置 -->
+          <section class="config-section tab-content active" id="sdModeTab">
             <!-- 源目录选择 -->
             <div class="config-group">
-              <label class="config-label">源目录</label>
+              <label class="config-label">源目录（SD卡）</label>
               <div class="path-selector">
                 <div class="path-display" id="sourcePath">未选择</div>
                 <button class="btn btn-secondary" id="selectSourceBtn">选择文件夹</button>
@@ -38,6 +48,29 @@
               <div class="path-selector">
                 <div class="path-display" id="targetPath">未选择</div>
                 <button class="btn btn-secondary" id="selectTargetBtn">选择文件夹</button>
+              </div>
+              <p class="folder-info">文件将按照拍摄日期（格式：YYYY-MM-DD）自动归类到相应的子文件夹中</p>
+            </div>
+          </section>
+
+          <!-- DJI模式配置 -->
+          <section class="config-section tab-content" id="djiModeTab">
+            <!-- 源目录选择 -->
+            <div class="config-group">
+              <label class="config-label">源目录（DJI）</label>
+              <div class="path-selector">
+                <div class="path-display" id="djiSourcePath">未选择</div>
+                <button class="btn btn-secondary" id="selectDjiSourceBtn">选择文件夹</button>
+              </div>
+              <p class="folder-info">例如：/Volumes/Osmo360/DCIM/</p>
+            </div>
+
+            <!-- 目标目录选择 -->
+            <div class="config-group">
+              <label class="config-label">目标目录 (NAS)</label>
+              <div class="path-selector">
+                <div class="path-display" id="djiTargetPath">未选择</div>
+                <button class="btn btn-secondary" id="selectDjiTargetBtn">选择文件夹</button>
               </div>
               <p class="folder-info">文件将按照拍摄日期（格式：YYYY-MM-DD）自动归类到相应的子文件夹中</p>
             </div>

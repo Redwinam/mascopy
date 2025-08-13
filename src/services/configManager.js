@@ -6,10 +6,25 @@ class ConfigManager {
   constructor() {
     this.configPath = path.join(os.homedir(), '.mascopy-config.json');
     this.defaultConfig = {
+      // 向后兼容的全局设置
       sourceDir: '',
       targetDir: '',
       overwriteDuplicates: false,
       lastScanResults: null,
+      
+      // 新的模式配置
+      currentMode: 'sd', // 'sd' 或 'dji'
+      sdMode: {
+        sourceDir: '',
+        targetDir: '',
+        overwriteDuplicates: false
+      },
+      djiMode: {
+        sourceDir: '',
+        targetDir: '',
+        overwriteDuplicates: false
+      },
+      
       windowBounds: {
         width: 1200,
         height: 800,

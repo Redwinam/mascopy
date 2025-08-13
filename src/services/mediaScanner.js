@@ -26,11 +26,35 @@ class MediaFile {
 class MediaScanner extends EventEmitter {
   constructor() {
     super();
-    this.photoExtensions = ['.jpg', '.jpeg', '.png', '.heic', '.nef', '.cr2', '.arw', '.dng', '.cr3'];
-    this.videoExtensions = ['.mp4', '.mov', '.avi', '.m4v', '.3gp', '.mkv'];
+    // SD卡模式支持的文件类型
+    this.sdPhotoExtensions = ['.jpg', '.jpeg', '.png', '.heic', '.nef', '.cr2', '.arw', '.dng', '.cr3'];
+    this.sdVideoExtensions = ['.mp4', '.mov', '.avi', '.m4v', '.3gp', '.mkv'];
+    
+    // DJI模式支持的文件类型
+    this.djiPhotoExtensions = ['.jpg', '.jpeg', '.lrf'];
+    this.djiVideoExtensions = ['.osv', '.mp4', '.mov'];
+    
+    // 向后兼容的默认扩展名（SD模式）
+    this.photoExtensions = this.sdPhotoExtensions;
+    this.videoExtensions = this.sdVideoExtensions;
     this.supportedExtensions = [...this.photoExtensions, ...this.videoExtensions];
+    
     this.isScanning = false;
     this.shouldStop = false;
+    this.currentMode = 'sd'; // 默认SD模式
+  }
+
+  setMode(mode) {
+    this.currentMode = mode;
+    if (mode === 'dji') {
+      this.photoExtensions = this.djiPhotoExtensions;
+      this.videoExtensions = this.djiVideoExtensions;
+    } else {
+      this.photoExtensions = this.sdPhotoExtensions;
+      this.videoExtensions = this.sdVideoExtensions;
+    }
+    this.supportedExtensions = [...this.photoExtensions, ...this.videoExtensions];
+    console.log(`[MediaScanner] Mode set to: ${mode}, supported extensions:`, this.supportedExtensions);
   }
 
   async getPhotoDate(filePath) {
@@ -335,12 +359,16 @@ class MediaScanner extends EventEmitter {
       const mediaFile = mediaFiles[i];
       
       // 确定目标路径
-      const dateFolder = mediaFile.date.toISOString().split('T')[0]; // YYYY-MM-DD
+      const d = mediaFile.date; // 使用本地时间，避免使用 UTC 的 toISOString 导致日期偏移
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const dateFolder = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD（本地时区）
       const targetDateDir = path.join(targetDir, dateFolder);
       const targetFilePath = path.join(targetDateDir, mediaFile.filename);
       mediaFile.targetPath = targetFilePath;
       console.log(`[analyzeFiles] Analyzing: ${mediaFile.filename}. Target path: ${targetFilePath}`);
-
+      
       // 检查目标文件是否存在
       try {
         const targetStats = await fs.stat(targetFilePath);

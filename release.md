@@ -1,4 +1,4 @@
-# MasCopy v1.0.0 发布
+# MasCopy v2.0.0 发布
 
 这是 MasCopy 的首个正式版本。MasCopy 是一款照片/视频 NAS 上传工具，帮助您轻松整理和上传媒体文件。
 

@@ -10,13 +10,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // 对话框
   dialog: {
-    selectFolder: (title, defaultPath) => ipcRenderer.invoke('dialog:selectFolder', title, defaultPath)
+    selectFolder: (options) => ipcRenderer.invoke('dialog:selectFolder', options)
   },
 
   // 媒体处理
   media: {
-    scan: (sourceDir, targetDir, overwriteDuplicates) => 
-      ipcRenderer.invoke('media:scan', sourceDir, targetDir, overwriteDuplicates),
+    scan: (sourceDir, targetDir, overwriteDuplicates, mode = 'sd') => 
+      ipcRenderer.invoke('media:scan', sourceDir, targetDir, overwriteDuplicates, mode),
     upload: (files, targetDir, overwriteDuplicates) => 
       ipcRenderer.invoke('media:upload', files, targetDir, overwriteDuplicates)
   },
