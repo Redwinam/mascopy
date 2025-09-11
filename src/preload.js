@@ -15,8 +15,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // 媒体处理
   media: {
-    scan: (sourceDir, targetDir, overwriteDuplicates, mode = 'sd') => 
-      ipcRenderer.invoke('media:scan', sourceDir, targetDir, overwriteDuplicates, mode),
+    scan: (sourceDir, targetDir, overwriteDuplicates, mode = 'sd', fast = false) => 
+      ipcRenderer.invoke('media:scan', sourceDir, targetDir, overwriteDuplicates, mode, fast),
     upload: (files, targetDir, overwriteDuplicates) => 
       ipcRenderer.invoke('media:upload', files, targetDir, overwriteDuplicates)
   },

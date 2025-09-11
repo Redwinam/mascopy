@@ -113,8 +113,8 @@ class MasCopyApp {
       return result;
     });
 
-    ipcMain.handle("media:scan", async (event, sourceDir, targetDir, overwrite, mode = "sd") => {
-      console.log("IPC `media:scan` received:", { sourceDir, targetDir, overwrite, mode });
+    ipcMain.handle("media:scan", async (event, sourceDir, targetDir, overwrite, mode = "sd", fast = false) => {
+      console.log("IPC `media:scan` received:", { sourceDir, targetDir, overwrite, mode, fast });
 
       const progressListener = (progress) => {
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
@@ -127,6 +127,7 @@ class MasCopyApp {
       try {
         // 设置扫描器模式
         this.mediaScanner.setMode(mode);
+        this.mediaScanner.setFastMode(!!fast);
         const results = await this.mediaService.scan(sourceDir, targetDir, overwrite);
 
         // 兼容：mediaScanner可能返回{ files, uploadCount, overwriteCount, skipCount }
@@ -166,82 +167,60 @@ class MasCopyApp {
     });
 
     ipcMain.handle("media:upload", async (event, files, targetDir, overwrite) => {
-      return this.mediaService.upload(files, targetDir, overwrite);
-    });
-
-    ipcMain.handle("upload:pause", () => {
-      return this.mediaService.pauseUpload();
-    });
-
-    ipcMain.handle("upload:resume", () => {
-      return this.mediaService.resumeUpload();
-    });
-
-    ipcMain.handle("upload:cancel", () => {
-      return this.mediaService.cancelUpload();
-    });
-
-    ipcMain.handle("system:openPath", async (event, filePath) => {
       try {
-        await shell.openPath(filePath);
-        return { success: true };
-      } catch (error) {
-        return {
-          success: false,
-          error: errorMessage,
-          data: {
-            files: [],
-            stats: { total: 0, upload: 0, overwrite: 0, skip: 0 },
-          },
-        };
-      }
-    });
-
-    ipcMain.handle("system:showInFolder", async (event, filePath) => {
-      try {
-        shell.showItemInFolder(filePath);
-        return { success: true };
+        const result = await this.mediaService.upload(files, targetDir, overwrite);
+        return { success: true, data: result };
       } catch (error) {
         return { success: false, error: error.message };
       }
     });
+
+    ipcMain.handle("upload:pause", async () => {
+      this.mediaService.pauseUpload();
+      return true;
+    });
+
+    ipcMain.handle("upload:resume", async () => {
+      this.mediaService.resumeUpload();
+      return true;
+    });
+
+    ipcMain.handle("upload:cancel", async () => {
+      this.mediaService.cancelUpload();
+      return true;
+    });
+
+    ipcMain.handle("system:openPath", async (event, filePath) => {
+      await shell.openPath(filePath);
+    });
+
+    ipcMain.handle("system:showInFolder", async (event, filePath) => {
+      shell.showItemInFolder(filePath);
+    });
   }
 
   async ensureConfigFileExists() {
-    try {
-      await fs.access(this.configManager.configPath);
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        console.log("配置文件不存在，正在创建默认配置文件...");
-        await this.configManager.saveConfig(this.configManager.defaultConfig);
-      }
-    }
+    return await this.configManager.ensureConfigFileExists();
   }
 
   async initialize() {
-    await app.whenReady();
-
-    await this.ensureConfigFileExists();
-
+    // 确保 Electron 已就绪后再创建窗口
+    if (!app.isReady()) {
+      await app.whenReady();
+    }
+    // 先注册 IPC 处理器，确保渲染进程早期的调用（如 config:load）有处理器可用
     this.setupIpcHandlers();
-
+    await this.ensureConfigFileExists();
     await this.createWindow();
-
-    app.on("window-all-closed", () => {
-      if (process.platform !== "darwin") {
-        app.quit();
-      }
-    });
-
-    app.on("activate", async () => {
-      if (BrowserWindow.getAllWindows().length === 0) {
-        await this.createWindow();
-      }
-    });
   }
 }
 
 const masCopyApp = new MasCopyApp();
-masCopyApp.initialize().catch(console.error);
+// 使用 Electron 官方推荐的 whenReady 模式，避免在 app 未就绪前创建窗口
+if (app.isReady()) {
+  masCopyApp.initialize().catch(console.error);
+} else {
+  app.whenReady().then(() => masCopyApp.initialize()).catch(console.error);
+}
 
 module.exports = masCopyApp;

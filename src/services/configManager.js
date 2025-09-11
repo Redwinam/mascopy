@@ -34,6 +34,23 @@ class ConfigManager {
     };
   }
 
+  async ensureConfigFileExists() {
+    try {
+      await fs.access(this.configPath);
+      return { exists: true };
+    } catch (_) {
+      try {
+        const dir = path.dirname(this.configPath);
+        await fs.mkdir(dir, { recursive: true });
+        await fs.writeFile(this.configPath, JSON.stringify(this.defaultConfig, null, 2), 'utf8');
+        return { exists: true, created: true };
+      } catch (error) {
+        console.error('创建配置文件失败:', error);
+        return { exists: false, error: error.message };
+      }
+    }
+  }
+
   async loadConfig() {
     try {
       const configData = await fs.readFile(this.configPath, 'utf8');

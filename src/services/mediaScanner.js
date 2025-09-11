@@ -1,21 +1,21 @@
-const fs = require('fs').promises;
-const path = require('path');
-const { EventEmitter } = require('events');
-const sharp = require('sharp');
-const { exiftool } = require('exiftool-vendored');
-const exifParser = require('exif-parser');
-const ffprobe = require('ffprobe');
-const ffprobeStatic = require('ffprobe-static');
+const fs = require("fs").promises;
+const path = require("path");
+const { EventEmitter } = require("events");
+const sharp = require("sharp");
+const { exiftool } = require("exiftool-vendored");
+const exifParser = require("exif-parser");
+const ffprobe = require("ffprobe");
+const ffprobeStatic = require("ffprobe-static");
 
 class MediaFile {
-  constructor(filePath, date = null, fileType = '未知') {
+  constructor(filePath, date = null, fileType = "未知") {
     this.filePath = filePath;
     this.filename = path.basename(filePath);
     this.fileSize = 0;
     this.date = date;
     this.fileType = fileType;
-    this.status = '未处理'; // 状态：未处理、将上传、将覆盖、将跳过
-    this.targetPath = '';
+    this.status = "未处理"; // 状态：未处理、将上传、将覆盖、将跳过
+    this.targetPath = "";
   }
 
   toString() {
@@ -27,26 +27,27 @@ class MediaScanner extends EventEmitter {
   constructor() {
     super();
     // SD卡模式支持的文件类型
-    this.sdPhotoExtensions = ['.jpg', '.jpeg', '.png', '.heic', '.nef', '.cr2', '.arw', '.dng', '.cr3'];
-    this.sdVideoExtensions = ['.mp4', '.mov', '.avi', '.m4v', '.3gp', '.mkv'];
-    
+    this.sdPhotoExtensions = [".jpg", ".jpeg", ".png", ".heic", ".nef", ".cr2", ".arw", ".dng", ".cr3"];
+    this.sdVideoExtensions = [".mp4", ".mov", ".avi", ".m4v", ".3gp", ".mkv"];
+
     // DJI模式支持的文件类型
-    this.djiPhotoExtensions = ['.jpg', '.jpeg', '.lrf'];
-    this.djiVideoExtensions = ['.osv', '.mp4', '.mov'];
-    
+    this.djiPhotoExtensions = [".jpg", ".jpeg", ".lrf"];
+    this.djiVideoExtensions = [".osv", ".mp4", ".mov"];
+
     // 向后兼容的默认扩展名（SD模式）
     this.photoExtensions = this.sdPhotoExtensions;
     this.videoExtensions = this.sdVideoExtensions;
     this.supportedExtensions = [...this.photoExtensions, ...this.videoExtensions];
-    
+
     this.isScanning = false;
     this.shouldStop = false;
-    this.currentMode = 'sd'; // 默认SD模式
+    this.currentMode = "sd"; // 默认SD模式
+    this.fastMode = false; // 快速扫描模式：跳过EXIF/FFprobe，仅用文件mtime
   }
 
   setMode(mode) {
     this.currentMode = mode;
-    if (mode === 'dji') {
+    if (mode === "dji") {
       this.photoExtensions = this.djiPhotoExtensions;
       this.videoExtensions = this.djiVideoExtensions;
     } else {
@@ -55,6 +56,12 @@ class MediaScanner extends EventEmitter {
     }
     this.supportedExtensions = [...this.photoExtensions, ...this.videoExtensions];
     console.log(`[MediaScanner] Mode set to: ${mode}, supported extensions:`, this.supportedExtensions);
+  }
+
+  // 设置快速扫描模式，true时跳过EXIF/FFprobe读取，使用文件mtime
+  setFastMode(fast) {
+    this.fastMode = !!fast;
+    console.log(`[MediaScanner] Fast scan mode: ${this.fastMode}`);
   }
 
   async getPhotoDate(filePath) {
@@ -71,10 +78,8 @@ class MediaScanner extends EventEmitter {
     } catch (sharpError) {
       // 如果 sharp 失败（例如，对于 .CR3 文件），则回退到 exiftool
       console.log(`[getPhotoDate] Sharp failed for ${filePath}: ${sharpError.message}. Falling back to ExifTool.`);
-      
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('exiftool timeout after 5s')), 5000)
-      );
+
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("exiftool timeout after 5s")), 5000));
 
       try {
         const readPromise = exiftool.read(filePath);
@@ -110,17 +115,12 @@ class MediaScanner extends EventEmitter {
     try {
       // 使用ffprobe获取视频元数据
       const data = await ffprobe(filePath, { path: ffprobeStatic.path });
-      
+
       if (data.format && data.format.tags) {
         const tags = data.format.tags;
-        
+
         // 尝试不同的日期字段
-        const dateFields = [
-          tags.creation_time,
-          tags.date,
-          tags.encoded_date,
-          tags['com.apple.quicktime.creationdate']
-        ];
+        const dateFields = [tags.creation_time, tags.date, tags.encoded_date, tags["com.apple.quicktime.creationdate"]];
 
         for (const dateField of dateFields) {
           if (dateField) {
@@ -150,9 +150,19 @@ class MediaScanner extends EventEmitter {
   }
 
   async getMediaDate(filePath) {
+    // 快速模式：直接使用文件mtime
+    if (this.fastMode) {
+      try {
+        const stats = await fs.stat(filePath);
+        return stats.mtime;
+      } catch (e) {
+        return new Date();
+      }
+    }
+
     console.log(`[getMediaDate] Getting date for: ${filePath}`);
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error(`exiftool timeout for ${filePath}`)), 10000) // 10秒超时
+    const timeoutPromise = new Promise(
+      (_, reject) => setTimeout(() => reject(new Error(`exiftool timeout for ${filePath}`)), 10000) // 10秒超时
     );
 
     try {
@@ -167,7 +177,7 @@ class MediaScanner extends EventEmitter {
 
       // 尝试从最常见的日期标签中获取日期
       const date = tags.DateTimeOriginal || tags.CreateDate || tags.MediaCreateDate || tags.TrackCreateDate || tags.ModifyDate;
-      
+
       if (date) {
         // exiftool-vendored 返回一个带有 toDate() 方法的 ExifDateTime 对象
         // 它在转换时会使用系统的本地时区。如果 EXIF 时间本身没有时区，
@@ -210,22 +220,22 @@ class MediaScanner extends EventEmitter {
       await fs.access(sourceDir);
       await fs.access(targetDir);
 
-      this.emit('progress', {
-        phase: 'collecting',
+      this.emit("progress", {
+        phase: "collecting",
         current: 0,
         total: 100,
-        message: '正在收集文件列表...'
+        message: this.fastMode ? "正在收集文件列表（快速模式）..." : "正在收集文件列表...",
       });
 
       // 收集所有文件
       let allFiles = await this.collectFiles(sourceDir, (progress) => {
-        this.emit('progress', { ...progress, phase: 'collecting' });
+        this.emit("progress", { ...progress, phase: "collecting" });
       });
       if (!Array.isArray(allFiles)) {
-        console.warn('collectFiles did not return an array. Defaulting to an empty array.');
+        console.warn("collectFiles did not return an array. Defaulting to an empty array.");
         allFiles = [];
       }
-      
+
       // 过滤媒体文件
       const mediaFiles = [];
       let processed = 0;
@@ -240,19 +250,19 @@ class MediaScanner extends EventEmitter {
           console.log(`[scanDirectory] Supported extension found. Creating MediaFile object for: ${filePath}`);
           try {
             const stats = await fs.stat(filePath);
-            const fileType = this.photoExtensions.includes(ext) ? '照片' : '视频';
+            const fileType = this.photoExtensions.includes(ext) ? "照片" : "视频";
             const mediaDate = await this.getMediaDate(filePath);
-            
+
             const mediaFile = new MediaFile(filePath, mediaDate, fileType);
             mediaFile.fileSize = stats.size;
             mediaFiles.push(mediaFile);
             console.log(`[scanDirectory] Successfully created MediaFile: ${mediaFile.filename}`);
 
-            this.emit('progress', {
-              phase: 'processing',
+            this.emit("progress", {
+              phase: "processing",
               current: processed + 1,
               total: allFiles.length,
-              message: `正在处理: ${path.basename(filePath)}`
+              message: this.fastMode ? `快速处理中: ${path.basename(filePath)}` : `正在处理: ${path.basename(filePath)}`,
             });
           } catch (error) {
             console.error(`[scanDirectory] Error processing file: ${filePath}`, error);
@@ -265,35 +275,34 @@ class MediaScanner extends EventEmitter {
       }
 
       if (this.shouldStop) {
-        throw new Error('扫描已取消');
+        throw new Error("扫描已取消");
       }
 
       // 分析文件状态
       const results = await this.analyzeFiles(mediaFiles, targetDir, overwriteDuplicates, (progress) => {
-        this.emit('progress', { ...progress, phase: 'analyzing' });
+        this.emit("progress", { ...progress, phase: "analyzing" });
       });
-      
-      this.emit('progress', {
-        phase: 'completed',
+
+      this.emit("progress", {
+        phase: "completed",
         current: 100,
         total: 100,
-        message: '扫描完成'
+        message: this.fastMode ? "扫描完成（快速模式）" : "扫描完成",
       });
 
       return results;
-
     } catch (error) {
-      console.error('!!!!!!!!!!!!!!!!! SCAN METHOD TOP LEVEL ERROR !!!!!!!!!!!!!!!!');
-      console.error('Error object:', error);
-      console.error('Error message:', error ? error.message : 'N/A');
-      console.error('Error stack:', error ? error.stack : 'N/A');
-      console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+      console.error("!!!!!!!!!!!!!!!!! SCAN METHOD TOP LEVEL ERROR !!!!!!!!!!!!!!!!");
+      console.error("Error object:", error);
+      console.error("Error message:", error ? error.message : "N/A");
+      console.error("Error stack:", error ? error.stack : "N/A");
+      console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
       const errorMessage = error instanceof Error ? error.message : String(error);
-      this.emit('progress', {
-        phase: 'error',
+      this.emit("progress", {
+        phase: "error",
         current: 0,
         total: 100,
-        message: `扫描失败: ${errorMessage}`
+        message: `扫描失败: ${errorMessage}`,
       });
       // 抛出一个带有清晰信息的新错误对象
       throw new Error(`扫描过程中发生错误: ${errorMessage}`);
@@ -305,17 +314,17 @@ class MediaScanner extends EventEmitter {
   async collectFiles(dir, onProgress) {
     console.log(`[collectFiles] Starting collection in: ${dir}`);
     const files = [];
-    
+
     async function walk(currentDir) {
       console.log(`[collectFiles] Walking directory: ${currentDir}`);
       try {
         const entries = await fs.readdir(currentDir, { withFileTypes: true });
         console.log(`[collectFiles] Found ${entries.length} entries in ${currentDir}`);
-        
+
         let i = 0;
         for (const entry of entries) {
           const fullPath = path.join(currentDir, entry.name);
-          
+
           if (onProgress) {
             onProgress({ current: ++i, total: entries.length, message: `正在检查: ${entry.name}` });
           }
@@ -332,7 +341,7 @@ class MediaScanner extends EventEmitter {
             onProgress({
               current: i + 1,
               total: entries.length,
-              message: `正在扫描: ${entry.name}`
+              message: `正在扫描: ${entry.name}`,
             });
           }
           i++;
@@ -355,7 +364,7 @@ class MediaScanner extends EventEmitter {
       if (a.date && b.date && a.date.getTime() !== b.date.getTime()) {
         return a.date - b.date;
       }
-      return (a.filename || '').localeCompare(b.filename || '');
+      return (a.filename || "").localeCompare(b.filename || "");
     });
 
     let uploadCount = 0;
@@ -403,8 +412,8 @@ class MediaScanner extends EventEmitter {
 
     const getDateFolder = (d) => {
       const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
       return `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD（本地时区）
     };
 
@@ -428,8 +437,8 @@ class MediaScanner extends EventEmitter {
       while (true) {
         let candidateBase;
         if (m) {
-          const prefix = m[1] || '';
-          const letter = (m[2] || '').toUpperCase();
+          const prefix = m[1] || "";
+          const letter = (m[2] || "").toUpperCase();
           const digits = m[3];
 
           if (letter) {
@@ -493,13 +502,13 @@ class MediaScanner extends EventEmitter {
         const sizeOnDisk = await getIndexedSize(targetDateDir, existingIndex, originalName);
         if (sizeOnDisk === mediaFile.fileSize) {
           // 同名且同大小：跳过
-          mediaFile.status = '将跳过';
+          mediaFile.status = "将跳过";
           mediaFile.targetPath = originalPath;
           skipCount++;
           nameSet.add(originalName);
         } else if (overwriteDuplicates) {
           // 同名但大小不同：根据设置覆盖
-          mediaFile.status = '将覆盖';
+          mediaFile.status = "将覆盖";
           mediaFile.targetPath = originalPath;
           overwriteCount++;
           nameSet.add(originalName);
@@ -508,7 +517,7 @@ class MediaScanner extends EventEmitter {
           const uniqueName = await makeUniqueName(targetDateDir, originalName);
           mediaFile.filename = uniqueName;
           mediaFile.targetPath = path.join(targetDateDir, uniqueName);
-          mediaFile.status = '将上传';
+          mediaFile.status = "将上传";
           uploadCount++;
           nameSet.add(uniqueName);
         }
@@ -522,7 +531,7 @@ class MediaScanner extends EventEmitter {
           if (altIndex.has(originalName)) {
             const altSize = await getIndexedSize(altDir, altIndex, originalName);
             if (altSize === mediaFile.fileSize) {
-              mediaFile.status = '将跳过';
+              mediaFile.status = "将跳过";
               mediaFile.targetPath = path.join(altDir, originalName);
               skipCount++;
               nameSet.add(originalName);
@@ -539,13 +548,13 @@ class MediaScanner extends EventEmitter {
             const uniqueName = await makeUniqueName(targetDateDir, originalName);
             mediaFile.filename = uniqueName;
             mediaFile.targetPath = path.join(targetDateDir, uniqueName);
-            mediaFile.status = '将上传';
+            mediaFile.status = "将上传";
             uploadCount++;
             nameSet.add(uniqueName);
           } else {
             // 保持原名
             mediaFile.targetPath = originalPath;
-            mediaFile.status = '将上传';
+            mediaFile.status = "将上传";
             uploadCount++;
             nameSet.add(originalName);
           }
@@ -557,11 +566,11 @@ class MediaScanner extends EventEmitter {
       // 发送进度更新（每10个更新一次）
       if (onProgress && i % 10 === 0) {
         onProgress({
-          phase: 'analyzing',
+          phase: "analyzing",
           current: i + 1,
           total: files.length,
           message: `分析中: ${mediaFile.filename}`,
-          stats: { upload: uploadCount, overwrite: overwriteCount, skip: skipCount }
+          stats: { upload: uploadCount, overwrite: overwriteCount, skip: skipCount },
         });
       }
     }

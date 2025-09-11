@@ -41,6 +41,7 @@ class MasCopierUI {
       selectDjiTargetBtn: document.getElementById("selectDjiTargetBtn"),
 
       overwriteCheck: document.getElementById("overwriteCheck"),
+      fastScanCheck: document.getElementById("fastScanCheck"),
       scanBtn: document.getElementById("scanBtn"),
       startBtn: document.getElementById("startBtn"),
       pauseBtn: document.getElementById("pauseBtn"),
@@ -90,17 +91,18 @@ class MasCopierUI {
     // 迁移旧版全局配置到 sdMode（一次性）
     let migrated = false;
     if (!this.config.sdMode) {
-      this.config.sdMode = { sourceDir: "", targetDir: "", overwriteDuplicates: false };
+      this.config.sdMode = { sourceDir: "", targetDir: "", overwriteDuplicates: false, fastScan: false };
       migrated = true;
     }
     if (!this.config.djiMode) {
-      this.config.djiMode = { sourceDir: "", targetDir: "", overwriteDuplicates: false };
+      this.config.djiMode = { sourceDir: "", targetDir: "", overwriteDuplicates: false, fastScan: false };
       migrated = true;
     }
     if (!this.config.sdMode.sourceDir && (this.config.sourceDir || this.config.targetDir || typeof this.config.overwriteDuplicates === "boolean")) {
       this.config.sdMode.sourceDir = this.config.sourceDir || "";
       this.config.sdMode.targetDir = this.config.targetDir || "";
       this.config.sdMode.overwriteDuplicates = !!this.config.overwriteDuplicates;
+      if (typeof this.config.fastScan === "boolean") this.config.sdMode.fastScan = !!this.config.fastScan;
       migrated = true;
     }
     if (!this.config.currentMode) {
@@ -175,6 +177,15 @@ class MasCopierUI {
       this.config[this.currentMode + "Mode"] = modeConfig;
       this.saveConfig();
     });
+
+    if (this.elements.fastScanCheck) {
+      this.elements.fastScanCheck.addEventListener("change", (e) => {
+        const modeConfig = this.config[this.currentMode + "Mode"] || {};
+        modeConfig.fastScan = !!e.target.checked;
+        this.config[this.currentMode + "Mode"] = modeConfig;
+        this.saveConfig();
+      });
+    }
 
     this.elements.scanBtn.addEventListener("click", () => this.startScan());
     this.elements.startBtn.addEventListener("click", () => this.startUpload());
@@ -362,7 +373,8 @@ class MasCopierUI {
       const sourceDir = modeConfig.sourceDir;
       const targetDir = modeConfig.targetDir;
       const overwriteFlag = !!modeConfig.overwriteDuplicates;
-      const result = await window.electronAPI.media.scan(sourceDir, targetDir, overwriteFlag, this.currentMode);
+      const fast = !!modeConfig.fastScan;
+      const result = await window.electronAPI.media.scan(sourceDir, targetDir, overwriteFlag, this.currentMode, fast);
       this.hideScanProgress();
 
       if (result.success && result.data) {
@@ -384,7 +396,7 @@ class MasCopierUI {
         this.updateActionButtons();
       } else {
         this.log("error", `扫描出错: ${result.error}`);
-        // 可在此显示更明显的错误提示
+        // 可在此显示更明确的错误提示
       }
     } catch (error) {
       this.hideScanProgress();

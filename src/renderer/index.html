@@ -114,6 +114,13 @@
                   <span class="checkbox-text">覆盖重复文件</span>
                 </label>
                 <p class="option-description">当目标位置存在同名但大小不同的文件时覆盖，大小相同的文件将始终被视为相同文件而跳过</p>
+
+                <label class="checkbox-container">
+                  <input type="checkbox" id="fastScanCheck" />
+                  <span class="checkmark"></span>
+                  <span class="checkbox-text">快速扫描</span>
+                </label>
+                <p class="option-description">仅使用文件的修改时间确定日期，跳过EXIF/视频元数据解析，速度更快但准确性略低</p>
               </div>
             </div>
           </section>
