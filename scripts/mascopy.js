@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * MasCopy CLI - 简化构建/打包/发布流程
+ * 大师拷贝 CLI - 简化构建/打包/发布流程
  * 用法示例：
  *   - 版本号：  node scripts/mascopy.js bump 2.1.1
  *   - 构建：    node scripts/mascopy.js build [--install]
@@ -36,6 +36,20 @@ function readJSON(file) {
 
 function writeJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n');
+}
+
+function getProductName() {
+  try {
+    const pkgPath = path.join(process.cwd(), 'package.json');
+    const pkg = JSON.parse(fsModule.readFileSync(pkgPath, 'utf8'));
+    return (pkg.build && pkg.build.productName) || '大师拷贝';
+  } catch (_) {
+    return '大师拷贝';
+  }
+}
+
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function updatePublishVersion(newVersion) {
@@ -80,14 +94,16 @@ function cmdBuild(opts) {
   }
   run('npm', ['run', 'build-mac']);
   // 兼容 electron-builder 在 macOS 下按架构输出的目录
+  const prodName = getProductName();
   const appCandidates = [
-    path.join(ROOT, 'dist', 'mac', 'MasCopy.app'),
-    path.join(ROOT, 'dist', 'mac-arm64', 'MasCopy.app'),
-    path.join(ROOT, 'dist', 'mac-x64', 'MasCopy.app')
+    path.join(ROOT, 'dist', 'mac', `${prodName}.app`),
+    path.join(ROOT, 'dist', 'mac-arm64', `${prodName}.app`),
+    path.join(ROOT, 'dist', 'mac-x64', `${prodName}.app`)
   ];
   const hasApp = appCandidates.some(p => fs.existsSync(p));
   const distDir = path.join(ROOT, 'dist');
-  const hasDMG = fs.existsSync(distDir) && fs.readdirSync(distDir).some(f => /^MasCopy-.*\.dmg$/.test(f));
+  const re = new RegExp(`^${escapeRegExp(prodName)}-.*\\.dmg$`);
+  const hasDMG = fs.existsSync(distDir) && fs.readdirSync(distDir).some(f => re.test(f));
   if (!hasApp && !hasDMG) {
     err('未找到构建产物；请检查 electron-builder 输出日志');
     process.exit(1);
@@ -110,13 +126,14 @@ function cmdSign() {
 function cmdRelease(opts) {
   const arch = opts.arch || 'arm64';
   const pkg = readJSON(PKG_PATH);
-  const dmg = path.join(ROOT, 'dist', `MasCopy-${pkg.version}-${arch}.dmg`);
+  const prodName = getProductName();
+  const dmg = path.join(ROOT, 'dist', `${prodName}-${pkg.version}-${arch}.dmg`);
   if (!fs.existsSync(dmg)) {
     err(`未找到 DMG: ${path.relative(ROOT, dmg)}，请先执行构建`);
     process.exit(1);
   }
   const script = path.join(ROOT, 'publish_release.sh');
-  if (!fs.existsSync(script)) {
+  if (!fs.existsExists && !fs.existsSync(script)) {
     err('publish_release.sh 不存在，无法发布');
     process.exit(1);
   }
@@ -167,13 +184,14 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
+  const prodName = getProductName();
   console.log(`
-MasCopy CLI - 用于构建/打包/发布
+${prodName} CLI - 用于构建/打包/发布
 
 用法：
   node scripts/mascopy.js bump <version>     例如 2.1.1（会同步 publish_release.sh）
   node scripts/mascopy.js build [--install]  构建 mac 应用与 DMG
-  node scripts/mascopy.js sign               对 dist/mac/MasCopy.app 进行自签名
+  node scripts/mascopy.js sign               对构建的 .app 进行自签名
   node scripts/mascopy.js release [--arch arm64]  调用 publish_release.sh 发布到 GitHub
   node scripts/mascopy.js all [--install] [--sign] [--release] [--arch arm64]
   node scripts/mascopy.js check              检查环境依赖

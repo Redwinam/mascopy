@@ -4,6 +4,9 @@
 
 # 选择待签名的 .app（兼容多种输出目录）
 APP_CANDIDATES=(
+  "dist/mac/大师拷贝.app"
+  "dist/mac-arm64/大师拷贝.app"
+  "dist/mac-x64/大师拷贝.app"
   "dist/mac/MasCopy.app"
   "dist/mac-arm64/MasCopy.app"
   "dist/mac-x64/MasCopy.app"

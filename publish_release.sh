@@ -6,7 +6,7 @@ RELEASE_FILE="release.md"
 
 # 1. 创建tag
 echo "创建tag $VERSION..."
-git tag -a $VERSION -m "MasCopy $VERSION 发布"
+git tag -a $VERSION -m "大师拷贝 $VERSION 发布"
 
 # 2. 推送tag到GitHub
 echo "推送tag到GitHub..."
@@ -30,7 +30,7 @@ NOTES=$(cat $RELEASE_FILE)
 
 # 计算DMG文件路径（由 electron-builder 生成，执行：npm run mascopy -- build）
 ARCH="arm64" # 如需同时支持 x64，可改为脚本参数
-DMG_FILE="dist/MasCopy-${VERSION#v}-${ARCH}.dmg"
+DMG_FILE="dist/大师拷贝-${VERSION#v}-${ARCH}.dmg"
 
 # 校验 DMG 是否存在
 if [ ! -f "$DMG_FILE" ]; then
@@ -41,9 +41,9 @@ fi
 # 创建发布版本并上传DMG文件
 echo "创建GitHub发布版本并上传 $DMG_FILE ..."
 gh release create $VERSION \
-    --title "MasCopy $VERSION" \
+    --title "大师拷贝 $VERSION" \
     --notes "$NOTES" \
     "$DMG_FILE"
 
-echo "完成！MasCopy $VERSION 已发布到GitHub。"
+echo "完成！大师拷贝 $VERSION 已发布到GitHub。"
 echo "发布地址：https://github.com/Redwinam/mascopy/releases/tag/$VERSION"

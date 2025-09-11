@@ -1,75 +1,61 @@
-# MasCopy Electron 打包与发布指南（统一 CLI 版）
+# 大师拷贝 Electron 打包与发布指南（统一 CLI 版）
 
-## 快速发布
+以下命令均以 npm 脚本方式调用：
+```bash
+npm run mascopy -- <subcommand> [options]
+```
 
+## 一键流程（推荐）
 ```bash
 npm run mascopy -- bump 2.1.1
 npm run mascopy -- all --install --sign --release --arch arm64
 ```
 
-## 开发与测试
+## 手动分步
 
-```bash
-npm install
-npm run dev   # 开发模式
-npm start     # 普通模式
-```
-
-## 构建与打包
-
+### 1. 构建
 推荐使用统一 CLI：
-
 ```bash
-# 构建 mac 应用与 DMG（可加 --install 自动安装依赖）
 npm run mascopy -- build [--install]
 ```
+构建产物：
+- 应用：`dist/mac/大师拷贝.app`（或 `dist/mac-arm64/大师拷贝.app` / `dist/mac-x64/大师拷贝.app`）
+- DMG：`dist/大师拷贝-<version>-arm64.dmg`
 
-- 构建产物：
-  - 应用：`dist/mac/MasCopy.app`
-  - DMG：`dist/MasCopy-<version>-arm64.dmg`
-
-## 代码签名（可选）
-
+### 2. 自签名（可选）
 ```bash
-# 使用自签名（adhoc）
 npm run mascopy -- sign
 ```
+说明：
+- 默认使用 adhoc 签名（-），无需开发者证书
+- 如需使用开发者证书，请编辑 sign_app.sh 的 `codesign --sign` 值
 
-说明：自签名不会通过 Gatekeeper；首次运行需右键-打开或在系统安全设置允许。
-
-## 发布到 GitHub（可选）
-
+### 3. 发布到 GitHub（可选）
 ```bash
-# 读取 release.md 并上传 DMG（依赖 gh CLI）
 npm run mascopy -- release --arch arm64
-
-# 或一键全流程（构建→签名→发布）
-npm run mascopy -- all --install --sign --release --arch arm64
 ```
+说明：
+- 依赖 GitHub CLI（`gh`），首次会引导安装/登录
+- 使用 release.md 作为发布说明
+- 自动读取 DMG：`dist/大师拷贝-<version>-<arch>.dmg`
 
-首次使用需要安装并登录 GitHub CLI：
-
+### 4. 全流程（构建→签名→发布）
 ```bash
-brew install gh
-gh auth login
+npm run mascopy -- all --install --sign --release --arch arm64
 ```
 
 ## 版本管理
-
 ```bash
-# 同步修改 package.json 与发布脚本中的版本
 npm run mascopy -- bump 2.1.1
 ```
+- 同步修改 package.json 版本
+- 自动尝试同步 publish_release.sh 的 VERSION 值
 
 ## 故障排除
-
-- 构建失败：
-  - 检查 Node 版本：`node -v`
-  - 重新安装依赖：`rm -rf node_modules && npm install`
-  - 查看 electron-builder 版本与配置
-- DMG 缺失：
-  - 确认已执行构建：`npm run mascopy -- build`
-  - DMG 路径：`dist/MasCopy-<version>-arm64.dmg`
-- 发布失败：
-  - 确认 gh 已安装并登录：`gh --version`、`gh auth status`
-  - 检查 tag 权限与网络
+- 构建后未见 .app，但有 DMG：
+  - Electron Builder 可能将 .app 放在 `dist/mac-arm64` 或 `dist/mac-x64`
+  - CLI 与 sign_app.sh 已兼容上述路径
+- 发布找不到 DMG：
+  - 确认已执行构建，DMG 位于 `dist/大师拷贝-<version>-<arch>.dmg`
+- GitHub CLI 未登录/未安装：
+  - 执行 `gh auth login`，或按提示安装 `gh`

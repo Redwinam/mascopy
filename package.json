@@ -24,8 +24,8 @@
     "media",
     "organizer"
   ],
-  "author": "MasCopy Team",
-  "license": "MIT",
+  "author": "千啾略",
+  "license": "CC BY-NC-SA 4.0",
   "devDependencies": {
     "electron": "^27.0.0",
     "electron-builder": "^24.6.4"
@@ -43,7 +43,7 @@
   },
   "build": {
     "appId": "com.mascopy.electron",
-    "productName": "MasCopy",
+    "productName": "大师拷贝",
     "directories": {
       "output": "dist"
     },
@@ -67,7 +67,7 @@
       "identity": null
     },
     "dmg": {
-      "title": "MasCopy Installer",
+      "title": "大师拷贝 安装包",
       "icon": "mascopy.icns"
     },
     "win": {

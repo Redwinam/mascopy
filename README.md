@@ -1,4 +1,4 @@
-# MasCopy - 照片/视频 NAS 上传工具 (Electron版)
+# 大师拷贝 - 照片/视频 NAS 上传工具 (Electron版)
 
 一个现代化的照片和视频文件管理工具，使用 Electron 构建，专为 NAS 上传而设计。
 
@@ -44,8 +44,8 @@ npm start
 ### 构建应用（推荐）
 - 使用统一 CLI：`npm run mascopy -- build`（会生成 .app 与 DMG）
 - 构建产物：
-  - 应用：`dist/mac/MasCopy.app`（或 `dist/mac-arm64/MasCopy.app` / `dist/mac-x64/MasCopy.app`）
-  - DMG：`dist/MasCopy-<version>-arm64.dmg`
+  - 应用：`dist/mac/大师拷贝.app`（或 `dist/mac-arm64/大师拷贝.app` / `dist/mac-x64/大师拷贝.app`）
+  - DMG：`dist/大师拷贝-<version>-arm64.dmg`
 
 ## 使用说明
 
@@ -210,14 +210,14 @@ npm run dev
 
 ### 打包应用
 - 构建应用: `npm run mascopy -- build`（或 `npm run build-mac`）
-- 生成的 .app 文件位于 `dist/mac/` 目录
+- 生成的 .app 文件位于 `dist/mac/` 目录（应用名：大师拷贝.app；或按架构位于 mac-arm64/mac-x64）
 
 ### 代码签名
 - 使用 CLI 进行自签名（adhoc）：`npm run mascopy -- sign`（内部调用 sign_app.sh）
 
 ### 创建 DMG 安装包
 - 构建时 electron-builder 会自动生成 DMG
-- 生成的 .dmg 文件位于 `dist/MasCopy-<version>-arm64.dmg`
+- 生成的 .dmg 文件位于 `dist/大师拷贝-<version>-arm64.dmg`
 
 ### 发布流程
 - 使用 CLI 发布到 GitHub：`npm run mascopy -- release --arch arm64`
