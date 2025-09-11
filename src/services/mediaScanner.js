@@ -175,8 +175,46 @@ class MediaScanner extends EventEmitter {
         return stats.mtime;
       }
 
-      // 尝试从最常见的日期标签中获取日期
-      const date = tags.DateTimeOriginal || tags.CreateDate || tags.MediaCreateDate || tags.TrackCreateDate || tags.ModifyDate;
+      // 根据文件类型，优先选择“拍摄时间”相关的标签，避免误用创建/修改时间
+      const ext = path.extname(filePath).toLowerCase();
+      const isPhoto = this.photoExtensions.includes(ext);
+      const isVideo = this.videoExtensions.includes(ext);
+
+      const photoTagPriority = [
+        "SubSecDateTimeOriginal",
+        "DateTimeOriginal",
+        "SubSecCreateDate",
+        "CreateDate",
+        "SubSecDateTimeDigitized",
+        "DateTimeDigitized",
+        "DateCreated",
+      ];
+      const videoTagPriority = [
+        "MediaCreateDate",
+        "CreateDate",
+        "TrackCreateDate",
+        "CreationDate",
+        "DateTimeOriginal",
+      ];
+      const genericTagPriority = [
+        "DateTimeOriginal",
+        "MediaCreateDate",
+        "CreateDate",
+        "TrackCreateDate",
+        "CreationDate",
+      ];
+
+      const pickFirst = (obj, keys) => {
+        for (const k of keys) {
+          if (obj && obj[k]) return { key: k, value: obj[k] };
+        }
+        return null;
+      };
+
+      const picked = pickFirst(
+        tags,
+        isPhoto ? photoTagPriority : isVideo ? videoTagPriority : genericTagPriority
+      );
 
       // 解析为“本地墙钟时间”（忽略任何时区后缀），避免因为时区导致日期跨天
       const parseNaiveLocalDateTime = (val) => {
@@ -195,33 +233,34 @@ class MediaScanner extends EventEmitter {
         return new Date(y, mon, d, h, mi, se);
       };
 
-      if (date) {
-        // 优先使用“忽略时区”的解析结果，避免 8/23 被放到 8/24 的文件夹
-        const naive = parseNaiveLocalDateTime(date);
+      if (picked && picked.value) {
+        const { key, value } = picked;
+        // 优先使用“忽略时区”的解析结果
+        const naive = parseNaiveLocalDateTime(value);
         if (naive instanceof Date && !isNaN(naive.getTime())) {
-          console.log(`[getMediaDate] Parsed naive local datetime for ${filePath}: ${naive}`);
+          console.log(`[getMediaDate] Using ${key} (naive local) for ${filePath}: ${naive}`);
           return naive;
         }
 
         // 回退：保持原有逻辑
         let parsedDate;
-        if (date.toDate) {
-          parsedDate = date.toDate();
+        if (value.toDate) {
+          parsedDate = value.toDate();
         } else {
           // 对于纯字符串日期，手动解析以避免时区问题
           // 格式通常是 'YYYY:MM:DD HH:mm:ss'
-          const parts = String(date).split(/[: ]/);
+          const parts = String(value).split(/[: ]/);
           if (parts.length >= 6) {
             parsedDate = new Date(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]);
           } else {
-            parsedDate = new Date(date); // 回退到标准解析
+            parsedDate = new Date(value); // 回退到标准解析
           }
         }
 
-        console.log(`[getMediaDate] Found date for ${filePath}: ${parsedDate}`);
+        console.log(`[getMediaDate] Using ${key} for ${filePath}: ${parsedDate}`);
         return parsedDate;
       } else {
-        console.log(`[getMediaDate] No common date tags found for: ${filePath}. Falling back to file stats.`);
+        console.log(`[getMediaDate] No capture-time tags found for: ${filePath}. Falling back to file stats (mtime).`);
         const stats = await fs.stat(filePath);
         return stats.mtime;
       }
