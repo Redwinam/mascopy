@@ -178,10 +178,32 @@ class MediaScanner extends EventEmitter {
       // 尝试从最常见的日期标签中获取日期
       const date = tags.DateTimeOriginal || tags.CreateDate || tags.MediaCreateDate || tags.TrackCreateDate || tags.ModifyDate;
 
+      // 解析为“本地墙钟时间”（忽略任何时区后缀），避免因为时区导致日期跨天
+      const parseNaiveLocalDateTime = (val) => {
+        if (!val) return null;
+        const s = typeof val === "string" ? val : (val.toString ? val.toString() : "");
+        // 捕获前6个数字字段：YYYY[-|:]MM[-|:]DD[ |T]HH:MM:SS，忽略后面的毫秒/时区（如Z、+08:00、-0700）
+        const m = s.match(/(\d{4})[:\-](\d{2})[:\-](\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+        if (!m) return null;
+        const [_, yyyy, mm, dd, HH, MM, SS] = m;
+        const y = Number(yyyy), mon = Number(mm) - 1, d = Number(dd), h = Number(HH), mi = Number(MM), se = Number(SS);
+        if (
+          Number.isNaN(y) || Number.isNaN(mon) || Number.isNaN(d) ||
+          Number.isNaN(h) || Number.isNaN(mi) || Number.isNaN(se)
+        ) return null;
+        // 直接构造本地时间，不应用任何时区偏移
+        return new Date(y, mon, d, h, mi, se);
+      };
+
       if (date) {
-        // exiftool-vendored 返回一个带有 toDate() 方法的 ExifDateTime 对象
-        // 它在转换时会使用系统的本地时区。如果 EXIF 时间本身没有时区，
-        // JS Date() 构造函数也会假定为本地时间。我们需要补偿这个行为。
+        // 优先使用“忽略时区”的解析结果，避免 8/23 被放到 8/24 的文件夹
+        const naive = parseNaiveLocalDateTime(date);
+        if (naive instanceof Date && !isNaN(naive.getTime())) {
+          console.log(`[getMediaDate] Parsed naive local datetime for ${filePath}: ${naive}`);
+          return naive;
+        }
+
+        // 回退：保持原有逻辑
         let parsedDate;
         if (date.toDate) {
           parsedDate = date.toDate();
