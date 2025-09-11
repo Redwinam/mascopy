@@ -154,6 +154,9 @@ class MasCopierUI {
     }
 
     this.elements.overwriteCheck.checked = modeConfig.overwriteDuplicates || false;
+    if (this.elements.fastScanCheck) {
+      this.elements.fastScanCheck.checked = !!modeConfig.fastScan;
+    }
   }
 
   async saveConfig() {
@@ -369,11 +372,20 @@ class MasCopierUI {
     this.elements.uploadProgressSection.style.display = "none";
     this.showScanProgress();
     try {
-      const modeConfig = this.config[this.currentMode + "Mode"] || {};
+      const modeKey = this.currentMode + "Mode";
+      const modeConfig = this.config[modeKey] || {};
       const sourceDir = modeConfig.sourceDir;
       const targetDir = modeConfig.targetDir;
       const overwriteFlag = !!modeConfig.overwriteDuplicates;
-      const fast = !!modeConfig.fastScan;
+      // 优先使用复选框的状态，避免UI未同步导致的误判
+      const fastFromUI = this.elements.fastScanCheck ? !!this.elements.fastScanCheck.checked : undefined;
+      const fast = typeof fastFromUI === "boolean" ? fastFromUI : !!modeConfig.fastScan;
+      // 将最终使用的值写回配置，保持一致
+      modeConfig.fastScan = fast;
+      this.config[modeKey] = modeConfig;
+      this.saveConfig();
+      this.log("info", `快速扫描：${fast ? "已开启" : "已关闭"}`);
+
       const result = await window.electronAPI.media.scan(sourceDir, targetDir, overwriteFlag, this.currentMode, fast);
       this.hideScanProgress();
 

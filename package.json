@@ -1,6 +1,6 @@
 {
   "name": "mascopy-electron",
-  "version": "2.2.2",
+  "version": "2.2.4",
   "description": "照片/视频 NAS 上传工具 - Electron版本",
   "main": "src/main.js",
   "scripts": {
@@ -58,7 +58,11 @@
     "asarUnpack": [
       "node_modules/sharp/**/*",
       "node_modules/@img/sharp-libvips-*/**/*",
-      "node_modules/@img/sharp-darwin-arm64/**/*"
+      "node_modules/@img/sharp-darwin-arm64/**/*",
+      "node_modules/exiftool-vendored/**/*",
+      "node_modules/exiftool-vendored.pl/**/*",
+      "node_modules/exiftool-vendored.exe/**/*",
+      "node_modules/ffprobe-static/**/*"
     ],
     "mac": {
       "icon": "mascopy.icns",
