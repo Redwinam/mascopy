@@ -123,16 +123,28 @@ class MediaUploader extends EventEmitter {
         const totalBytes = stats.size;
         let copiedBytes = 0;
 
-        const readStream = require('fs').createReadStream(mediaFile.filePath);
-        const writeStream = require('fs').createWriteStream(mediaFile.targetPath);
+        // 增大缓冲区以提升 SMB/NAS 吞吐
+        const fsNative = require('fs');
+        const readStream = fsNative.createReadStream(mediaFile.filePath, { highWaterMark: 1024 * 1024 }); // 1MB
+        const writeStream = fsNative.createWriteStream(mediaFile.targetPath, { highWaterMark: 1024 * 1024 }); // 1MB
 
-        readStream.on('data', (chunk) => {
-          copiedBytes += chunk.length;
+        // 节流进度事件，减少IPC压力
+        let lastEmit = 0;
+        const emitProgress = () => {
           this.emit('file-progress', {
             file: mediaFile,
             total: totalBytes,
             current: copiedBytes
           });
+        };
+
+        readStream.on('data', (chunk) => {
+          copiedBytes += chunk.length;
+          const now = Date.now();
+          if (now - lastEmit >= 100 || copiedBytes === totalBytes) {
+            lastEmit = now;
+            emitProgress();
+          }
         });
 
         readStream.on('error', reject);

@@ -22,16 +22,22 @@ fi
 echo "安装项目依赖..."
 npm install
 
+# 从package.json读取版本号
+VERSION=$(node -p "require('./package.json').version")
+echo "当前版本: $VERSION"
+
 # 构建Electron应用
 echo "构建Electron应用..."
 npm run build-mac
 
 # 检查构建结果
-if [ ! -f "dist/MasCopy-2.0.1-arm64.dmg" ]; then
+if [ ! -f "dist/MasCopy-$VERSION-arm64.dmg" ]; then
     echo "错误: 构建失败，未找到DMG文件"
+    echo "检查dist目录中的文件:"
+    ls -la dist/ || echo "dist目录不存在"
     exit 1
 fi
 
-echo "✅ DMG安装包已创建: dist/MasCopy-2.0.1-arm64.dmg"
-echo "📦 应用大小: $(du -h "dist/MasCopy-2.0.1-arm64.dmg" | cut -f1)"
+echo "✅ DMG安装包已创建: dist/MasCopy-$VERSION-arm64.dmg"
+echo "📦 应用大小: $(du -h "dist/MasCopy-$VERSION-arm64.dmg" | cut -f1)"
 echo "🚀 可以分发此DMG文件给用户安装"

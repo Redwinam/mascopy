@@ -14,6 +14,10 @@ class MasCopierUI {
 
   init() {
     this.selectDOMElements();
+    // 初始化渲染器以承载UI渲染相关职责
+    if (window.UIRenderer) {
+      this.renderer = new window.UIRenderer(this);
+    }
     this.loadConfig();
     this.setupEventListeners();
     this.setupIpcListeners();
@@ -357,21 +361,30 @@ class MasCopierUI {
       const modeConfig = this.config[this.currentMode + "Mode"] || {};
       const sourceDir = modeConfig.sourceDir;
       const targetDir = modeConfig.targetDir;
-      const overwrite = !!modeConfig.overwriteDuplicates;
-      const result = await window.electronAPI.media.scan(sourceDir, targetDir, overwrite, this.currentMode);
-
+      const overwriteFlag = !!modeConfig.overwriteDuplicates;
+      const result = await window.electronAPI.media.scan(sourceDir, targetDir, overwriteFlag, this.currentMode);
       this.hideScanProgress();
 
       if (result.success && result.data) {
         this.scanResult = result.data;
-        const { total, upload, overwrite, skip } = result.data.stats;
-        this.log("success", `扫描完成: 发现 ${total || 0} 个文件, ${upload || 0} 个待上传, ${overwrite || 0} 个待覆盖, ${skip || 0} 个将跳过.`);
+        const files = Array.isArray(this.scanResult.files) ? this.scanResult.files : [];
+        const safeStats = this.scanResult.stats || {
+          total: files.length,
+          upload: files.filter(f => f.status === '将上传').length,
+          overwrite: files.filter(f => f.status === '将覆盖').length,
+          skip: files.filter(f => f.status === '将跳过').length,
+        };
+        this.scanResult.stats = safeStats;
+
+        const { total, upload, overwrite: overwriteCount, skip } = this.scanResult.stats;
+        this.renderer && this.renderer.renderResults && this.renderer.renderResults();
+        this.log("success", `扫描完成: 发现 ${total || 0} 个文件, ${upload || 0} 个待上传, ${overwriteCount || 0} 个待覆盖, ${skip || 0} 个将跳过.`);
         this.renderResults();
         this.switchTab("results");
         this.updateActionButtons();
       } else {
         this.log("error", `扫描出错: ${result.error}`);
-        // Optionally show error in a more prominent way
+        // 可在此显示更明显的错误提示
       }
     } catch (error) {
       this.hideScanProgress();
@@ -497,6 +510,8 @@ class MasCopierUI {
   }
 
   renderResults() {
+    if (this.renderer) return this.renderer.renderResults();
+    // 兼容：若渲染器未初始化，保留原有行为（最小实现）
     if (!this.scanResult) {
       this.elements.resultsPlaceholder.style.display = "flex";
       this.elements.resultsContent.style.display = "none";
@@ -509,258 +524,108 @@ class MasCopierUI {
   }
 
   renderStats() {
-    if (!this.scanResult || !this.scanResult.stats) return;
-
-    // 检查statsFilterGrid元素是否存在
-    if (!this.elements.statsFilterGrid) {
-      console.error("statsFilterGrid element not found");
-      return;
-    }
-
-    const { upload, overwrite, skip, total } = this.scanResult.stats;
-    const stats = [
-      { label: "全部", value: total || 0, color: "blue", filter: "all" },
-      { label: "待上传", value: upload || 0, color: "blue", filter: "将上传" },
-      { label: "待覆盖", value: overwrite || 0, color: "orange", filter: "将覆盖" },
-      { label: "将跳过", value: skip || 0, color: "gray", filter: "将跳过" },
-      { label: "上传中", value: 0, color: "purple", filter: "上传中" },
-      { label: "已完成", value: 0, color: "green", filter: "已完成" },
-      { label: "失败", value: 0, color: "red", filter: "失败" },
-    ];
-
-    this.elements.statsFilterGrid.innerHTML = stats
-      .map(
-        (stat) => `
-            <div class="stats-filter-card stats-filter-card-${stat.color} ${this.currentFilter === stat.filter ? "active" : ""}" 
-                 data-filter="${stat.filter}">
-                <div class="stats-filter-value">${stat.value}</div>
-                <div class="stats-filter-label">${stat.label}</div>
-            </div>
-        `
-      )
-      .join("");
-
-    // 添加点击事件监听器
-    this.elements.statsFilterGrid.querySelectorAll(".stats-filter-card").forEach((card) => {
-      card.addEventListener("click", () => {
-        const filter = card.dataset.filter;
-        this.setFilter(filter);
-      });
-    });
-
-    // 显示统计卡片
-    this.elements.statsFilterGrid.style.display = "flex";
+    if (this.renderer) return this.renderer.renderStats();
   }
 
   setFilter(filter) {
+    if (this.renderer) return this.renderer.setFilter(filter);
     this.currentFilter = filter;
-
-    // 更新卡片的激活状态
-    this.elements.statsFilterGrid.querySelectorAll(".stats-filter-card").forEach((card) => {
-      card.classList.toggle("active", card.dataset.filter === filter);
-    });
-
-    // 重新渲染文件列表
     this.renderFileList();
   }
 
   updateStats() {
-    if (!this.scanResult || !this.scanResult.files) return;
-
-    const stats = {
-      total: this.scanResult.files.length,
-      upload: 0,
-      overwrite: 0,
-      skip: 0,
-      uploading: 0,
-      success: 0,
-      error: 0,
-    };
-
-    this.scanResult.files.forEach((file) => {
-      switch (file.status) {
-        case "将上传":
-          stats.upload++;
-          break;
-        case "将覆盖":
-          stats.overwrite++;
-          break;
-        case "将跳过":
-          stats.skip++;
-          break;
-        case "上传中":
-          stats.uploading++;
-          break;
-        case "已完成":
-          stats.success++;
-          break;
-        case "失败":
-          stats.error++;
-          break;
-      }
-    });
-
-    // 更新统计筛选卡片
-    const allCard = document.querySelector('.stats-filter-card[data-filter="all"] .stats-filter-value');
-    const uploadCard = document.querySelector('.stats-filter-card[data-filter="将上传"] .stats-filter-value');
-    const overwriteCard = document.querySelector('.stats-filter-card[data-filter="将覆盖"] .stats-filter-value');
-    const skipCard = document.querySelector('.stats-filter-card[data-filter="将跳过"] .stats-filter-value');
-    const uploadingCard = document.querySelector('.stats-filter-card[data-filter="上传中"] .stats-filter-value');
-    const successCard = document.querySelector('.stats-filter-card[data-filter="已完成"] .stats-filter-value');
-    const errorCard = document.querySelector('.stats-filter-card[data-filter="失败"] .stats-filter-value');
-
-    if (allCard) allCard.textContent = stats.total;
-    if (uploadCard) uploadCard.textContent = stats.upload;
-    if (overwriteCard) overwriteCard.textContent = stats.overwrite;
-    if (skipCard) skipCard.textContent = stats.skip;
-    if (uploadingCard) uploadingCard.textContent = stats.uploading;
-    if (successCard) successCard.textContent = stats.success;
-    if (errorCard) errorCard.textContent = stats.error;
+    if (this.renderer) return this.renderer.updateStats();
   }
 
   renderFileList() {
-    const filter = this.currentFilter;
-    let filesToRender = [];
-
-    if (!this.scanResult || !this.scanResult.files) {
-      this.elements.fileList.innerHTML = '<div class="file-list-empty">没有文件可显示</div>';
-      return;
-    }
-
-    const allFiles = this.scanResult.files;
-
-    if (filter === "all") {
-      filesToRender = allFiles;
-    } else {
-      filesToRender = allFiles.filter((f) => f.status === filter);
-    }
-
-    if (filesToRender.length === 0) {
-      this.elements.fileList.innerHTML = '<div class="file-list-empty">没有符合条件的文件</div>';
-      return;
-    }
-
-    const sourceDir = this.config.sourceDir || "";
-    const targetDir = this.config.targetDir || "";
-
-    const fileListContainer = this.elements.fileList;
-    fileListContainer.innerHTML = ""; // Clear existing list
-
-    filesToRender.forEach((file) => {
-      const fileElement = document.createElement("div");
-      fileElement.classList.add("file-list-item");
-      fileElement.dataset.filePath = file.filePath;
-
-      const relativePath = sourceDir ? file.filePath.replace(sourceDir, "") : file.filePath;
-      const fileSizeMB = (file.fileSize / 1024 / 1024).toFixed(2);
-      const statusClass = this.getStatusClass(file.status);
-
-      // 分离来源路径和文件名
-      const pathParts = relativePath.split("/");
-      const fileName = pathParts.pop(); // 获取文件名
-      const dirPath = pathParts.length > 0 ? pathParts.join("/") + "/" : "";
-
-      // 处理目标路径（只显示目录路径，不包含文件名）
-      let targetPath = "";
-      if (file.targetPath && targetDir) {
-        const relativeTargetPath = file.targetPath.replace(targetDir, "");
-        const targetPathParts = relativeTargetPath.split("/");
-        targetPathParts.pop(); // 移除文件名，只保留目录路径
-        const targetDirPath = targetPathParts.length > 0 ? targetPathParts.join("/") + "/" : "/";
-        targetPath = `<span class="path-arrow">→</span><span class="path-directory">${targetDirPath}</span>`;
-      } else {
-        targetPath = '<span class="path-arrow">→</span><span class="path-directory">未设置</span>';
-      }
-
-      fileElement.innerHTML = `
-            <div class="file-path-combined">
-              <span class="path-directory">${dirPath}</span><span class="path-filename">${fileName}</span>
-            </div>
-            <div class="file-path-combined">
-              ${targetPath}
-            </div>
-            <div class="file-size">${fileSizeMB} MB</div>
-            <div class="file-status file-status-${statusClass}">${file.status}</div>
-        `;
-      fileListContainer.appendChild(fileElement);
-    });
+    if (this.renderer) return this.renderer.renderFileList();
   }
 
   updateFileStatusInUI(file, success, message) {
-    const fileRow = document.querySelector(`[data-file-path="${file.filePath}"]`);
-    if (fileRow) {
-      const statusEl = fileRow.querySelector(".file-status");
-      if (statusEl) {
-        statusEl.textContent = success ? "已完成" : "失败";
-        statusEl.classList.remove("file-status-upload", "file-status-overwrite", "file-status-skip", "file-status-uploading");
-        statusEl.classList.add(success ? "file-status-success" : "file-status-error");
-      }
-
-      // 移除上传中的样式
-      fileRow.classList.remove("uploading");
-
-      const progressEl = fileRow.querySelector(".file-progress-bar");
-      if (progressEl) {
-        progressEl.style.display = "none";
-      }
-    }
-
-    // 更新文件状态
-    if (this.scanResult && this.scanResult.files) {
-      const fileIndex = this.scanResult.files.findIndex((f) => f.filePath === file.filePath);
-      if (fileIndex !== -1) {
-        this.scanResult.files[fileIndex].status = success ? "已完成" : "失败";
-      }
-    }
-
-    // 更新统计信息
-    this.updateStats();
-
-    this.log(success ? "success" : "error", `${file.filename}: ${message}`);
+    if (this.renderer) return this.renderer.updateFileStatusInUI(file, success, message);
   }
 
   getStatusClass(status) {
-    switch (status) {
-      case "将上传":
-        return "upload";
-      case "将覆盖":
-        return "overwrite";
-      case "将跳过":
-        return "skip";
-      case "上传中":
-        return "uploading";
-      case "已完成":
-        return "success";
-      case "失败":
-        return "error";
-      default:
-        return "unknown";
+    if (this.renderer && this.renderer.getStatusClass) return this.renderer.getStatusClass(status);
+    return "unknown";
+  }
+
+  setFileUploading(file) {
+    if (this.renderer) return this.renderer.setFileUploading(file);
+  }
+
+  showProgressSection() {
+    if (this.renderer && this.renderer.showProgressSection) return this.renderer.showProgressSection();
+    if (this.elements.progressSection) {
+      this.elements.progressSection.style.display = "flex";
     }
   }
 
-  // 新增方法：设置文件为上传中状态
-  setFileUploading(file) {
-    const fileRow = document.querySelector(`[data-file-path="${file.filePath}"]`);
-    if (fileRow) {
-      const statusEl = fileRow.querySelector(".file-status");
-      if (statusEl) {
-        statusEl.textContent = "上传中";
-        statusEl.classList.remove("file-status-upload", "file-status-overwrite", "file-status-skip", "file-status-success", "file-status-error");
-        statusEl.classList.add("file-status-uploading");
-      }
-      fileRow.classList.add("uploading");
+  hideProgressSection() {
+    if (this.renderer && this.renderer.hideProgressSection) return this.renderer.hideProgressSection();
+    const scanVisible = this.elements.scanProgressContainer.style.display !== "none";
+    const uploadVisible = this.elements.overallProgressContainer.style.display !== "none";
+    if (this.elements.progressSection && !scanVisible && !uploadVisible) {
+      this.elements.progressSection.style.display = "none";
     }
+  }
 
-    // 更新文件状态
-    if (this.scanResult && this.scanResult.files) {
-      const fileIndex = this.scanResult.files.findIndex((f) => f.filePath === file.filePath);
-      if (fileIndex !== -1) {
-        this.scanResult.files[fileIndex].status = "上传中";
-      }
+  showScanProgress() {
+    if (this.renderer && this.renderer.showScanProgress) return this.renderer.showScanProgress();
+    this.elements.scanProgressContainer.style.display = "flex";
+    this.showProgressSection();
+  }
+
+  hideScanProgress() {
+    if (this.renderer && this.renderer.hideScanProgress) return this.renderer.hideScanProgress();
+    this.elements.scanProgressContainer.style.display = "none";
+    if (this.elements.uploadProgressSection.style.display === "none") {
+      this.hideProgressSection();
     }
+  }
 
-    // 更新统计信息
-    this.updateStats();
+  switchTab(tabId) {
+    if (this.renderer && this.renderer.switchTab) return this.renderer.switchTab(tabId);
+    // 仅切换信息区域（扫描结果/日志）的tab，不影响模式配置区域
+    this.elements.resultsTabContents.forEach((content) => {
+      content.classList.remove("active");
+    });
+    this.elements.resultsTabButtons.forEach((button) => {
+      button.classList.remove("active");
+    });
+
+    document.getElementById(tabId + "Tab").classList.add("active");
+    document.querySelector(`.info-section .tab-buttons .tab-btn[data-tab="${tabId}"]`).classList.add("active");
+
+    const statsFilterGrid = document.getElementById("statsFilterGrid");
+    const clearLogBtn = document.getElementById("clearLogBtn");
+
+    if (tabId === "results") {
+      if (statsFilterGrid) statsFilterGrid.style.display = "flex";
+      if (clearLogBtn) clearLogBtn.style.display = "none";
+    } else if (tabId === "logs") {
+      if (statsFilterGrid) statsFilterGrid.style.display = "none";
+      if (clearLogBtn) clearLogBtn.style.display = "flex";
+    }
+  }
+
+  log(type, message) {
+    if (this.renderer && this.renderer.log) return this.renderer.log(type, message);
+    const logPlaceholder = this.elements.logContainer.querySelector(".log-placeholder");
+    if (logPlaceholder) {
+      logPlaceholder.remove();
+    }
+    const logEntry = document.createElement("div");
+    logEntry.className = `log-entry log-${type}`;
+    const timestamp = new Date().toLocaleTimeString();
+    logEntry.innerHTML = `<span class="log-timestamp">${timestamp}</span><span class="log-message">${message}</span>`;
+    this.elements.logContainer.appendChild(logEntry);
+    this.elements.logContainer.scrollTop = this.elements.logContainer.scrollHeight;
+  }
+
+  clearLogs() {
+    if (this.renderer && this.renderer.clearLogs) return this.renderer.clearLogs();
+    this.elements.logContainer.innerHTML = '<div class="log-placeholder">日志已清空</div>';
   }
 
   showProgressSection() {

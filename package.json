@@ -1,6 +1,6 @@
 {
   "name": "mascopy-electron",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "照片/视频 NAS 上传工具 - Electron版本",
   "main": "src/main.js",
   "scripts": {
@@ -62,27 +62,12 @@
     "mac": {
       "icon": "mascopy.icns",
       "category": "public.app-category.photography",
-      "target": "dmg"
+      "target": "dmg",
+      "identity": null
     },
     "dmg": {
       "title": "MasCopy Installer",
-      "icon": "mascopy.icns",
-      "contents": [
-        {
-          "x": 130,
-          "y": 220
-        },
-        {
-          "x": 410,
-          "y": 220,
-          "type": "link",
-          "path": "/Applications"
-        }
-      ],
-      "window": {
-        "width": 540,
-        "height": 420
-      }
+      "icon": "mascopy.icns"
     },
     "win": {
       "target": "nsis"

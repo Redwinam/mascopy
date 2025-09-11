@@ -349,74 +349,225 @@ class MediaScanner extends EventEmitter {
 
   async analyzeFiles(mediaFiles, targetDir, overwriteDuplicates, onProgress) {
     console.log(`[analyzeFiles] Starting analysis of ${mediaFiles.length} files. Target: ${targetDir}, Overwrite: ${overwriteDuplicates}`);
+
+    // 1) 先按拍摄时间排序（如时间相同则按文件名稳定排序）
+    const files = [...mediaFiles].sort((a, b) => {
+      if (a.date && b.date && a.date.getTime() !== b.date.getTime()) {
+        return a.date - b.date;
+      }
+      return (a.filename || '').localeCompare(b.filename || '');
+    });
+
     let uploadCount = 0;
     let overwriteCount = 0;
     let skipCount = 0;
 
-    for (let i = 0; i < mediaFiles.length; i++) {
-      if (this.shouldStop) break;
+    // 记录每个日期目录下，本批次已分配的目标文件名，避免批内重名
+    const usedNamesByDate = new Map(); // dateFolder -> Set(filenames)
 
-      const mediaFile = mediaFiles[i];
-      
-      // 确定目标路径
-      const d = mediaFile.date; // 使用本地时间，避免使用 UTC 的 toISOString 导致日期偏移
+    // 针对 SMB/NAS：缓存每个日期目录的现有文件名（size懒获取），避免频繁 stat
+    const existingByDir = new Map(); // targetDateDir -> Map(name -> size|null)
+    const getDirIndex = async (dir) => {
+      if (existingByDir.has(dir)) return existingByDir.get(dir);
+      const map = new Map();
+      try {
+        const entries = await fs.readdir(dir, { withFileTypes: true });
+        for (const ent of entries) {
+          if (ent.isFile()) {
+            // 仅记录文件名；size 按需获取
+            map.set(ent.name, null);
+          }
+        }
+      } catch {
+        // 目录不存在或无法访问时，按空目录处理
+      }
+      existingByDir.set(dir, map);
+      return map;
+    };
+
+    // 懒获取指定文件的size（并缓存到索引中）
+    const getIndexedSize = async (dir, indexMap, name) => {
+      if (!indexMap.has(name)) return undefined;
+      const cached = indexMap.get(name);
+      if (cached != null) return cached;
+      try {
+        const st = await fs.stat(path.join(dir, name));
+        indexMap.set(name, st.size);
+        return st.size;
+      } catch {
+        // 文件可能被外部删除
+        indexMap.delete(name);
+        return undefined;
+      }
+    };
+
+    const getDateFolder = (d) => {
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth() + 1).padStart(2, '0');
       const dd = String(d.getDate()).padStart(2, '0');
-      const dateFolder = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD（本地时区）
-      const targetDateDir = path.join(targetDir, dateFolder);
-      const targetFilePath = path.join(targetDateDir, mediaFile.filename);
-      mediaFile.targetPath = targetFilePath;
-      console.log(`[analyzeFiles] Analyzing: ${mediaFile.filename}. Target path: ${targetFilePath}`);
-      
-      // 检查目标文件是否存在
-      try {
-        const targetStats = await fs.stat(targetFilePath);
-        console.log(`[analyzeFiles] File exists at target: ${targetFilePath}`);
-        
-        if (mediaFile.fileSize === targetStats.size) {
-          // 文件大小相同，跳过
-          console.log(`[analyzeFiles] Same size. Marking to skip.`);
-          mediaFile.status = '将跳过';
-          skipCount++;
-        } else if (overwriteDuplicates) {
-          // 设置为覆盖
-          console.log(`[analyzeFiles] Size mismatch (${mediaFile.fileSize} vs ${targetStats.size}) and overwrite is enabled. Marking for overwrite.`);
-          mediaFile.status = '将覆盖';
-          overwriteCount++;
+      return `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD（本地时区）
+    };
+
+    // 生成相邻日期目录（兼容历史UTC命名导致的偏移）
+    const getAdjacentDateDirs = (d) => {
+      const base = new Date(d.getTime());
+      const prev = new Date(d.getTime() - 24 * 60 * 60 * 1000);
+      const next = new Date(d.getTime() + 24 * 60 * 60 * 1000);
+      return [getDateFolder(base), getDateFolder(prev), getDateFolder(next)];
+    };
+
+    const makeUniqueName = async (targetDateDir, originalName) => {
+      const ext = path.extname(originalName);
+      const base = path.basename(originalName, ext);
+      const nameSet = usedNamesByDate.get(targetDateDir) || new Set();
+
+      // 匹配：任意前缀 + 可选单字母 + 末尾数字
+      const m = base.match(/^(.*?)([A-Za-z])?(\d+)$/);
+
+      let attempt = 0;
+      while (true) {
+        let candidateBase;
+        if (m) {
+          const prefix = m[1] || '';
+          const letter = (m[2] || '').toUpperCase();
+          const digits = m[3];
+
+          if (letter) {
+            // 有字母+数字结尾：按字母递增，超过 Z 后使用 _1、_2 后缀避免无限循环
+            if (attempt === 0) {
+              candidateBase = `${prefix}${letter}${digits}`;
+            } else if (attempt <= 26) {
+              const startCode = letter.charCodeAt(0) - 65; // 0..25
+              const nextCode = startCode + attempt; // 不取模
+              if (nextCode <= 25) {
+                const nextLetter = String.fromCharCode(65 + nextCode);
+                candidateBase = `${prefix}${nextLetter}${digits}`;
+              } else {
+                // 超过 Z，回退为在原名后追加 _N
+                candidateBase = `${prefix}${letter}${digits}_${nextCode - 25}`;
+              }
+            } else {
+              // attempt > 26
+              candidateBase = `${prefix}${letter}${digits}_${attempt - 26}`;
+            }
+          } else {
+            // 没有字母，仅数字结尾：使用 _1, _2 后缀
+            candidateBase = attempt === 0 ? base : `${base}_${attempt}`;
+          }
         } else {
-          // 不覆盖，跳过
-          console.log(`[analyzeFiles] Size mismatch but overwrite is disabled. Marking to skip.`);
-          mediaFile.status = '将跳过';
-          skipCount++;
+          // 不符合规律：使用 _1, _2 后缀
+          candidateBase = attempt === 0 ? base : `${base}_${attempt}`;
         }
-      } catch (error) {
-        // 目标文件不存在，将上传
-        console.log(`[analyzeFiles] File does not exist at target. Marking for upload.`);
-        mediaFile.status = '将上传';
-        uploadCount++;
+
+        const candidate = candidateBase + ext;
+        const existingIndex = await getDirIndex(targetDateDir);
+        const nameTakenInBatch = nameSet.has(candidate);
+        const nameTakenOnDisk = existingIndex.has(candidate);
+        if (!nameTakenInBatch && !nameTakenOnDisk) {
+          // 找到可用名字
+          nameSet.add(candidate);
+          usedNamesByDate.set(targetDateDir, nameSet);
+          return candidate;
+        }
+        attempt++;
+      }
+    };
+
+    for (let i = 0; i < files.length; i++) {
+      if (this.shouldStop) break;
+
+      const mediaFile = files[i];
+
+      // 确定目标日期路径
+      const d = mediaFile.date; // 使用本地时间，避免使用 UTC 的 toISOString 导致日期偏移
+      const [dateFolder, prevFolder, nextFolder] = getAdjacentDateDirs(d);
+      const targetDateDir = path.join(targetDir, dateFolder);
+      const existingIndex = await getDirIndex(targetDateDir);
+      let nameSet = usedNamesByDate.get(targetDateDir) || new Set();
+
+      const originalName = mediaFile.filename;
+      const originalPath = path.join(targetDateDir, originalName);
+
+      // 先检测当前日期目录
+      if (existingIndex.has(originalName)) {
+        const sizeOnDisk = await getIndexedSize(targetDateDir, existingIndex, originalName);
+        if (sizeOnDisk === mediaFile.fileSize) {
+          // 同名且同大小：跳过
+          mediaFile.status = '将跳过';
+          mediaFile.targetPath = originalPath;
+          skipCount++;
+          nameSet.add(originalName);
+        } else if (overwriteDuplicates) {
+          // 同名但大小不同：根据设置覆盖
+          mediaFile.status = '将覆盖';
+          mediaFile.targetPath = originalPath;
+          overwriteCount++;
+          nameSet.add(originalName);
+        } else {
+          // 同名且大小不同，且不覆盖：按规则重命名
+          const uniqueName = await makeUniqueName(targetDateDir, originalName);
+          mediaFile.filename = uniqueName;
+          mediaFile.targetPath = path.join(targetDateDir, uniqueName);
+          mediaFile.status = '将上传';
+          uploadCount++;
+          nameSet.add(uniqueName);
+        }
+      } else {
+        // 如果当前日期目录未找到，兼容历史UTC偏移：检查前一天/后一天目录的同名同大小，以决定跳过
+        let foundSameElsewhere = false;
+        for (const altFolder of [prevFolder, nextFolder]) {
+          if (!altFolder) continue;
+          const altDir = path.join(targetDir, altFolder);
+          const altIndex = await getDirIndex(altDir);
+          if (altIndex.has(originalName)) {
+            const altSize = await getIndexedSize(altDir, altIndex, originalName);
+            if (altSize === mediaFile.fileSize) {
+              mediaFile.status = '将跳过';
+              mediaFile.targetPath = path.join(altDir, originalName);
+              skipCount++;
+              nameSet.add(originalName);
+              foundSameElsewhere = true;
+              break;
+            }
+          }
+        }
+
+        if (!foundSameElsewhere) {
+          // 目标目录中无同名文件，也未在相邻日期目录找到同名同大小
+          if (nameSet.has(originalName)) {
+            // 批次内已使用该名：按规则重命名
+            const uniqueName = await makeUniqueName(targetDateDir, originalName);
+            mediaFile.filename = uniqueName;
+            mediaFile.targetPath = path.join(targetDateDir, uniqueName);
+            mediaFile.status = '将上传';
+            uploadCount++;
+            nameSet.add(uniqueName);
+          } else {
+            // 保持原名
+            mediaFile.targetPath = originalPath;
+            mediaFile.status = '将上传';
+            uploadCount++;
+            nameSet.add(originalName);
+          }
+        }
       }
 
-      // 发送进度更新
+      usedNamesByDate.set(targetDateDir, nameSet);
+
+      // 发送进度更新（每10个更新一次）
       if (onProgress && i % 10 === 0) {
         onProgress({
+          phase: 'analyzing',
           current: i + 1,
-          total: mediaFiles.length,
-          message: `正在分析: ${mediaFile.filename}`
+          total: files.length,
+          message: `分析中: ${mediaFile.filename}`,
+          stats: { upload: uploadCount, overwrite: overwriteCount, skip: skipCount }
         });
       }
     }
 
     console.log(`[analyzeFiles] Analysis complete. Upload: ${uploadCount}, Overwrite: ${overwriteCount}, Skip: ${skipCount}`);
-    return {
-      files: mediaFiles,
-      stats: {
-        total: mediaFiles.length,
-        upload: uploadCount,
-        overwrite: overwriteCount,
-        skip: skipCount
-      }
-    };
+    return { files, uploadCount, overwriteCount, skipCount };
   }
 
   stop() {

@@ -128,11 +128,20 @@ class MasCopyApp {
         // 设置扫描器模式
         this.mediaScanner.setMode(mode);
         const results = await this.mediaService.scan(sourceDir, targetDir, overwrite);
+
+        // 兼容：mediaScanner可能返回{ files, uploadCount, overwriteCount, skipCount }
+        const safeStats = results.stats || {
+          total: Array.isArray(results.files) ? results.files.length : 0,
+          upload: results.uploadCount || 0,
+          overwrite: results.overwriteCount || 0,
+          skip: results.skipCount || 0,
+        };
+
         return {
           success: true,
           data: {
             files: results.files,
-            stats: results.stats,
+            stats: safeStats,
           },
         };
       } catch (error) {
