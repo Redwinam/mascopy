@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 设置版本号和发布说明
-VERSION="v2.1.0"
+VERSION="v2.1.1"
 RELEASE_FILE="release.md"
 
 # 1. 创建tag
@@ -28,13 +28,13 @@ fi
 # 从release.md文件中读取发布说明
 NOTES=$(cat $RELEASE_FILE)
 
-# 计算DMG文件路径（假设 create_dmg.sh 已在 dist 目录生成对应版本与架构的 DMG）
+# 计算DMG文件路径（由 electron-builder 生成，执行：npm run mascopy -- build）
 ARCH="arm64" # 如需同时支持 x64，可改为脚本参数
 DMG_FILE="dist/MasCopy-${VERSION#v}-${ARCH}.dmg"
 
 # 校验 DMG 是否存在
 if [ ! -f "$DMG_FILE" ]; then
-    echo "错误: 未找到 $DMG_FILE ，请先运行 create_dmg.sh 生成安装包"
+    echo "错误: 未找到 $DMG_FILE ，请先执行：npm run mascopy -- build 生成安装包"
     exit 1
 fi
 

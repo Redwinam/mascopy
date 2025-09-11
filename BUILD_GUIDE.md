@@ -1,68 +1,75 @@
-# MasCopy Electron 应用打包指南
+# MasCopy Electron 打包与发布指南（统一 CLI 版）
 
-## 快速开始
+## 快速发布
 
-### 1. 开发和测试
 ```bash
-# 安装依赖
+npm run mascopy -- bump 2.1.1
+npm run mascopy -- all --install --sign --release --arch arm64
+```
+
+## 开发与测试
+
+```bash
 npm install
-
-# 开发模式运行
-npm run dev
-
-# 普通模式运行
-npm start
+npm run dev   # 开发模式
+npm start     # 普通模式
 ```
 
-### 2. 构建应用
+## 构建与打包
+
+推荐使用统一 CLI：
+
 ```bash
-# 方式一：使用npm脚本
-npm run build-mac
-
-# 方式二：使用构建脚本
-./build_electron.sh
+# 构建 mac 应用与 DMG（可加 --install 自动安装依赖）
+npm run mascopy -- build [--install]
 ```
 
-### 3. 代码签名（可选）
+- 构建产物：
+  - 应用：`dist/mac/MasCopy.app`
+  - DMG：`dist/MasCopy-<version>-arm64.dmg`
+
+## 代码签名（可选）
+
 ```bash
-./sign_app.sh
+# 使用自签名（adhoc）
+npm run mascopy -- sign
 ```
 
-### 4. 创建DMG安装包
+说明：自签名不会通过 Gatekeeper；首次运行需右键-打开或在系统安全设置允许。
+
+## 发布到 GitHub（可选）
+
 ```bash
-./create_dmg.sh
+# 读取 release.md 并上传 DMG（依赖 gh CLI）
+npm run mascopy -- release --arch arm64
+
+# 或一键全流程（构建→签名→发布）
+npm run mascopy -- all --install --sign --release --arch arm64
 ```
 
-### 5. 发布到GitHub（可选）
+首次使用需要安装并登录 GitHub CLI：
+
 ```bash
-./publish_release.sh
+brew install gh
+gh auth login
 ```
 
-## 构建输出
+## 版本管理
 
-- **应用文件**: `dist/mac/MasCopy.app`
-- **DMG安装包**: `MasCopy Installer.dmg`
-
-## 注意事项
-
-1. 确保已安装Node.js 16+
-2. 首次构建会下载Electron二进制文件，需要网络连接
-3. DMG创建需要安装create-dmg工具（脚本会自动安装）
-4. 代码签名使用自签名，首次运行会有安全提示
+```bash
+# 同步修改 package.json 与发布脚本中的版本
+npm run mascopy -- bump 2.1.1
+```
 
 ## 故障排除
 
-### 构建失败
-- 检查Node.js版本：`node --version`
-- 清理并重新安装依赖：`rm -rf node_modules && npm install`
-- 检查网络连接（下载Electron二进制文件）
-
-### DMG创建失败
-- 确保已安装Homebrew
-- 手动安装create-dmg：`brew install create-dmg`
-- 检查应用是否已成功构建
-
-### 应用无法启动
-- 检查控制台错误信息
-- 尝试开发模式：`npm run dev`
-- 检查依赖是否完整安装
+- 构建失败：
+  - 检查 Node 版本：`node -v`
+  - 重新安装依赖：`rm -rf node_modules && npm install`
+  - 查看 electron-builder 版本与配置
+- DMG 缺失：
+  - 确认已执行构建：`npm run mascopy -- build`
+  - DMG 路径：`dist/MasCopy-<version>-arm64.dmg`
+- 发布失败：
+  - 确认 gh 已安装并登录：`gh --version`、`gh auth status`
+  - 检查 tag 权限与网络

@@ -41,14 +41,11 @@ npm install
 npm start
 ```
 
-### 构建应用
-```bash
-# 构建当前平台
-npm run build
-
-# 打包为可分发文件
-npm run dist
-```
+### 构建应用（推荐）
+- 使用统一 CLI：`npm run mascopy -- build`（会生成 .app 与 DMG）
+- 构建产物：
+  - 应用：`dist/mac/MasCopy.app`（或 `dist/mac-arm64/MasCopy.app` / `dist/mac-x64/MasCopy.app`）
+  - DMG：`dist/MasCopy-<version>-arm64.dmg`
 
 ## 使用说明
 
@@ -212,20 +209,19 @@ npm run dev
 - 普通启动: `npm start`
 
 ### 打包应用
-- 构建应用: `npm run build-mac` 或运行 `./build_electron.sh`
+- 构建应用: `npm run mascopy -- build`（或 `npm run build-mac`）
 - 生成的 .app 文件位于 `dist/mac/` 目录
 
 ### 代码签名
-- 运行签名脚本: `./sign_app.sh`
-- 使用自签名（无需开发者证书）
+- 使用 CLI 进行自签名（adhoc）：`npm run mascopy -- sign`（内部调用 sign_app.sh）
 
 ### 创建 DMG 安装包
-- 运行 DMG 创建脚本: `./create_dmg.sh`
-- 会自动构建应用并创建安装包
-- 生成的 .dmg 文件位于项目根目录
+- 构建时 electron-builder 会自动生成 DMG
+- 生成的 .dmg 文件位于 `dist/MasCopy-<version>-arm64.dmg`
 
 ### 发布流程
-- 运行发布脚本: `./publish_release.sh`
+- 使用 CLI 发布到 GitHub：`npm run mascopy -- release --arch arm64`
+- 或直接运行脚本：`./publish_release.sh`
 - 自动创建 tag、推送到 GitHub、创建 Release 并上传 DMG
 
 ## 安装依赖
