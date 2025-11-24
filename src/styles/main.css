@@ -426,3 +426,28 @@ body {
   font-size: 0.875rem;
   cursor: pointer;
 }
+
+.fav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.fav-path {
+  font-family: monospace;
+  color: #374151;
+}
+
+.fav-basename {
+  font-weight: 700;
+}

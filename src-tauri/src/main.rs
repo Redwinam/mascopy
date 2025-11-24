@@ -13,6 +13,7 @@ use config::{Config, ConfigManager};
 use scanner::{Scanner, MediaFile};
 use analyzer::Analyzer;
 use uploader::Uploader;
+use serde::Deserialize;
 
 struct AppState {
     config_manager: ConfigManager,
@@ -29,20 +30,25 @@ fn save_config(state: State<AppState>, config: Config) -> Result<(), String> {
     state.config_manager.save(&config).map_err(|e| e.to_string())
 }
 
-#[tauri::command]
-async fn scan_files(
-    source_dir: String, 
-    target_dir: String, 
+#[derive(Deserialize)]
+struct ScanArgs {
+    #[serde(alias = "sourceDir")]
+    source_dir: String,
+    #[serde(alias = "targetDir")]
+    target_dir: String,
+    #[serde(default, alias = "overwriteDuplicates")]
     overwrite_duplicates: bool,
+    #[serde(default)]
     mode: Option<String>,
+    #[serde(default, alias = "fastMode")]
     fast_mode: Option<bool>,
-) -> Result<Vec<MediaFile>, String> {
-    let scanner = Scanner::with_mode(&mode.unwrap_or_else(|| "sd".to_string()));
-    let mut files = scanner.scan(&source_dir, fast_mode.unwrap_or(false));
-    
-    // Analyze files to determine status and target path
-    Analyzer::analyze(&mut files, &target_dir, overwrite_duplicates);
-    
+}
+
+#[tauri::command]
+async fn scan_files(args: ScanArgs) -> Result<Vec<MediaFile>, String> {
+    let scanner = Scanner::with_mode(&args.mode.clone().unwrap_or_else(|| "sd".to_string()));
+    let mut files = scanner.scan(&args.source_dir, args.fast_mode.unwrap_or(false));
+    Analyzer::analyze(&mut files, &args.target_dir, args.overwrite_duplicates);
     Ok(files)
 }
 

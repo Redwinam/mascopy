@@ -9,6 +9,7 @@
             :title="`源目录 (${currentMode === 'sd' ? 'SD卡' : 'DJI'})`"
             :path="config[currentMode].source_dir" 
             @update:path="updateSource"
+            @addFavorite="addSourceFavorite"
             placeholder="请选择包含照片/视频的文件夹"
           >
             <template #icon>
@@ -22,6 +23,7 @@
             title="目标目录 (NAS)" 
             :path="config[currentMode].target_dir" 
             @update:path="updateTarget"
+            @addFavorite="addTargetFavorite"
             placeholder="请选择备份目标文件夹"
           >
             <template #icon>
@@ -31,53 +33,24 @@
             </template>
           </FileSelector>
         </div>
-
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="glass-panel p-4 flex flex-col gap-3">
-            <div class="flex items-center justify-between">
-              <div class="font-semibold">来源收藏夹</div>
-              <div class="flex items-center gap-2">
-                <select v-if="currentMode === 'dji'" v-model="djiDeviceType" class="border border-gray-300 rounded text-sm">
-                  <option v-for="opt in djiDeviceOptions" :key="opt" :value="opt">{{ opt }}</option>
-                </select>
-                <button @click="addSourceFavorite" class="btn btn-secondary">加入收藏</button>
+            <div class="font-semibold">来源收藏夹</div>
+            <div class="fav-list">
+              <div v-for="p in sourceFavorites" :key="p" class="fav-item">
+                <div class="fav-path" @click="selectSource(p)">{{ dirname(p) }}/<span class="fav-basename">{{ basename(p) }}</span></div>
+                <button class="btn btn-secondary" @click="removeSourceFavorite(p)">删除</button>
               </div>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <template v-if="currentMode === 'sd'">
-                <div v-for="p in config.favorites.sd_sources" :key="p" class="chip" @click="selectSource(p)">
-                  <span class="chip-label">{{ basename(p) }}</span>
-                  <button class="chip-remove" @click.stop="removeSourceFavorite(p)">×</button>
-                </div>
-              </template>
-              <template v-else>
-                <div v-for="f in config.favorites.dji_sources" :key="f.path + ':' + f.device_type" class="chip" @click="selectSource(f.path)">
-                  <span class="chip-tag">{{ deviceLabel(f.device_type) }}</span>
-                  <span class="chip-label truncate max-w-[70%]">{{ basename(f.path) }}</span>
-                  <button class="chip-remove" @click.stop="removeSourceFavorite(f)">×</button>
-                </div>
-              </template>
             </div>
           </div>
 
           <div class="glass-panel p-4 flex flex-col gap-3">
-            <div class="flex items-center justify-between">
-              <div class="font-semibold">目标收藏夹</div>
-              <button @click="addTargetFavorite" class="btn btn-secondary">加入收藏</button>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <template v-if="currentMode === 'sd'">
-                <div v-for="p in config.favorites.sd_targets" :key="p" class="chip" @click="selectTarget(p)">
-                  <span class="chip-label">{{ basename(p) }}</span>
-                  <button class="chip-remove" @click.stop="removeTargetFavorite(p)">×</button>
-                </div>
-              </template>
-              <template v-else>
-                <div v-for="p in config.favorites.dji_targets" :key="p" class="chip" @click="selectTarget(p)">
-                  <span class="chip-label">{{ basename(p) }}</span>
-                  <button class="chip-remove" @click.stop="removeTargetFavorite(p)">×</button>
-                </div>
-              </template>
+            <div class="font-semibold">目标收藏夹</div>
+            <div class="fav-list">
+              <div v-for="p in targetFavorites" :key="p" class="fav-item">
+                <div class="fav-path" @click="selectTarget(p)">{{ dirname(p) }}/<span class="fav-basename">{{ basename(p) }}</span></div>
+                <button class="btn btn-secondary" @click="removeTargetFavorite(p)">删除</button>
+              </div>
             </div>
           </div>
         </div>
@@ -186,8 +159,15 @@ const progress = ref({ current: 0, total: 0, filename: '' });
 const logs = ref([]);
 const activeView = ref('results');
 const fileFilter = ref('all');
-const djiDeviceType = ref('NANO');
-const djiDeviceOptions = ['NANO', 'OSMO360', '其他'];
+const sourceFavorites = computed(() => {
+  if (currentMode.value === 'sd') return config.value.favorites.sd_sources || [];
+  const arr = config.value.favorites.dji_sources || [];
+  return Array.isArray(arr) ? arr.map((x) => (typeof x === 'string' ? x : x.path)) : [];
+});
+const targetFavorites = computed(() => {
+  if (currentMode.value === 'sd') return config.value.favorites.sd_targets || [];
+  return config.value.favorites.dji_targets || [];
+});
 
 const modeTabs = [
   { id: 'sd', label: 'SD卡模式' },
@@ -244,8 +224,11 @@ function basename(p) {
   return parts[parts.length - 1] || p;
 }
 
-function deviceLabel(dt) {
-  return dt || '其他';
+function dirname(p) {
+  if (!p) return '';
+  const idx = Math.max(p.lastIndexOf('/'), p.lastIndexOf('\\'));
+  if (idx <= 0) return '';
+  return p.slice(0, idx);
 }
 
 async function addSourceFavorite() {
@@ -257,8 +240,11 @@ async function addSourceFavorite() {
     config.value.favorites.sd_sources = arr.slice(0, 8);
   } else {
     const arr = config.value.favorites.dji_sources || [];
-    const item = { path: p, device_type: djiDeviceType.value };
-    if (!arr.some(x => x.path === item.path && x.device_type === item.device_type)) arr.unshift(item);
+    const exists = Array.isArray(arr) && arr.some(x => (typeof x === 'string' ? x === p : x.path === p));
+    if (!exists) {
+      const item = { path: p };
+      arr.unshift(item);
+    }
     config.value.favorites.dji_sources = arr.slice(0, 8);
   }
   await saveConfig();
@@ -268,7 +254,7 @@ async function removeSourceFavorite(item) {
   if (currentMode.value === 'sd') {
     config.value.favorites.sd_sources = (config.value.favorites.sd_sources || []).filter(x => x !== item);
   } else {
-    config.value.favorites.dji_sources = (config.value.favorites.dji_sources || []).filter(x => !(x.path === item.path && x.device_type === item.device_type));
+    config.value.favorites.dji_sources = (config.value.favorites.dji_sources || []).filter(x => (typeof x === 'string' ? x !== item : x.path !== item));
   }
   await saveConfig();
 }

@@ -12,9 +12,10 @@
           </p>
         </div>
       </div>
-      <button @click="selectPath" class="btn btn-secondary">
-        选择目录
-      </button>
+      <div class="flex items-center gap-2">
+        <button @click="addFavorite" class="btn btn-secondary">加入收藏</button>
+        <button @click="selectPath" class="btn btn-secondary">选择目录</button>
+      </div>
     </div>
   </div>
 </template>
@@ -42,5 +43,9 @@ async function selectPath() {
   if (selected) {
     emit('update:path', selected);
   }
+}
+
+function addFavorite() {
+  emit('addFavorite');
 }
 </script>
