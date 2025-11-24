@@ -5,13 +5,10 @@
       <div class="mode-content">
         <!-- Configuration Section -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <PathSelector 
+          <FileSelector 
             :title="`源目录 (${currentMode === 'sd' ? 'SD卡' : 'DJI'})`"
             :path="config[currentMode].source_dir" 
-            :category="currentMode === 'sd' ? 'sd_source' : 'dji_source'"
-            :favorites="currentMode === 'sd' ? config.favorites?.sd_sources : config.favorites?.dji_sources"
             @update:path="updateSource"
-            @favorites-changed="loadConfig"
             placeholder="请选择包含照片/视频的文件夹"
           >
             <template #icon>
@@ -19,15 +16,12 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
               </svg>
             </template>
-          </PathSelector>
+          </FileSelector>
 
-          <PathSelector 
+          <FileSelector 
             title="目标目录 (NAS)" 
             :path="config[currentMode].target_dir" 
-            category="target"
-            :favorites="config.favorites?.targets"
             @update:path="updateTarget"
-            @favorites-changed="loadConfig"
             placeholder="请选择备份目标文件夹"
           >
             <template #icon>
@@ -35,7 +29,57 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
               </svg>
             </template>
-          </PathSelector>
+          </FileSelector>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="glass-panel p-4 flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <div class="font-semibold">来源收藏夹</div>
+              <div class="flex items-center gap-2">
+                <select v-if="currentMode === 'dji'" v-model="djiDeviceType" class="border border-gray-300 rounded text-sm">
+                  <option v-for="opt in djiDeviceOptions" :key="opt" :value="opt">{{ opt }}</option>
+                </select>
+                <button @click="addSourceFavorite" class="btn btn-secondary">加入收藏</button>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <template v-if="currentMode === 'sd'">
+                <div v-for="p in config.favorites.sd_sources" :key="p" class="chip" @click="selectSource(p)">
+                  <span class="chip-label">{{ basename(p) }}</span>
+                  <button class="chip-remove" @click.stop="removeSourceFavorite(p)">×</button>
+                </div>
+              </template>
+              <template v-else>
+                <div v-for="f in config.favorites.dji_sources" :key="f.path + ':' + f.device_type" class="chip" @click="selectSource(f.path)">
+                  <span class="chip-tag">{{ deviceLabel(f.device_type) }}</span>
+                  <span class="chip-label truncate max-w-[70%]">{{ basename(f.path) }}</span>
+                  <button class="chip-remove" @click.stop="removeSourceFavorite(f)">×</button>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <div class="glass-panel p-4 flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <div class="font-semibold">目标收藏夹</div>
+              <button @click="addTargetFavorite" class="btn btn-secondary">加入收藏</button>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <template v-if="currentMode === 'sd'">
+                <div v-for="p in config.favorites.sd_targets" :key="p" class="chip" @click="selectTarget(p)">
+                  <span class="chip-label">{{ basename(p) }}</span>
+                  <button class="chip-remove" @click.stop="removeTargetFavorite(p)">×</button>
+                </div>
+              </template>
+              <template v-else>
+                <div v-for="p in config.favorites.dji_targets" :key="p" class="chip" @click="selectTarget(p)">
+                  <span class="chip-label">{{ basename(p) }}</span>
+                  <button class="chip-remove" @click.stop="removeTargetFavorite(p)">×</button>
+                </div>
+              </template>
+            </div>
+          </div>
         </div>
 
         <!-- Options -->
@@ -107,7 +151,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import PathSelector from '../components/PathSelector.vue';
+import FileSelector from '../components/FileSelector.vue';
 import ProgressBar from '../components/ProgressBar.vue';
 import TabView from '../components/TabView.vue';
 import FileTable from '../components/FileTable.vue';
@@ -128,8 +172,9 @@ const config = ref({
   },
   favorites: {
     sd_sources: [],
+    sd_targets: [],
     dji_sources: [],
-    targets: []
+    dji_targets: []
   }
 });
 
@@ -141,6 +186,8 @@ const progress = ref({ current: 0, total: 0, filename: '' });
 const logs = ref([]);
 const activeView = ref('results');
 const fileFilter = ref('all');
+const djiDeviceType = ref('NANO');
+const djiDeviceOptions = ['NANO', 'OSMO360', '其他'];
 
 const modeTabs = [
   { id: 'sd', label: 'SD卡模式' },
@@ -158,21 +205,20 @@ const canStart = computed(() => {
 });
 
 onMounted(async () => {
-  await loadConfig();
+  try {
+    const savedConfig = await invoke('get_config');
+    config.value = { ...config.value, ...savedConfig };
+    if (!config.value.favorites) {
+      config.value.favorites = { sd_sources: [], sd_targets: [], dji_sources: [], dji_targets: [] };
+    }
+  } catch (e) {
+    addLog('warning', '无法加载配置: ' + e);
+  }
 
   await listen('upload-progress', (event) => {
     progress.value = event.payload;
   });
 });
-
-async function loadConfig() {
-  try {
-    const savedConfig = await invoke('get_config');
-    config.value = { ...config.value, ...savedConfig };
-  } catch (e) {
-    addLog('warning', '无法加载配置: ' + e);
-  }
-}
 
 async function updateSource(path) {
   config.value[currentMode.value].source_dir = path;
@@ -192,6 +238,75 @@ async function saveConfig() {
   }
 }
 
+function basename(p) {
+  if (!p) return '';
+  const parts = p.split(/[\\/]/).filter(Boolean);
+  return parts[parts.length - 1] || p;
+}
+
+function deviceLabel(dt) {
+  return dt || '其他';
+}
+
+async function addSourceFavorite() {
+  const p = config.value[currentMode.value].source_dir;
+  if (!p) return;
+  if (currentMode.value === 'sd') {
+    const arr = config.value.favorites.sd_sources;
+    if (!arr.includes(p)) arr.unshift(p);
+    config.value.favorites.sd_sources = arr.slice(0, 8);
+  } else {
+    const arr = config.value.favorites.dji_sources || [];
+    const item = { path: p, device_type: djiDeviceType.value };
+    if (!arr.some(x => x.path === item.path && x.device_type === item.device_type)) arr.unshift(item);
+    config.value.favorites.dji_sources = arr.slice(0, 8);
+  }
+  await saveConfig();
+}
+
+async function removeSourceFavorite(item) {
+  if (currentMode.value === 'sd') {
+    config.value.favorites.sd_sources = (config.value.favorites.sd_sources || []).filter(x => x !== item);
+  } else {
+    config.value.favorites.dji_sources = (config.value.favorites.dji_sources || []).filter(x => !(x.path === item.path && x.device_type === item.device_type));
+  }
+  await saveConfig();
+}
+
+async function selectSource(p) {
+  config.value[currentMode.value].source_dir = p;
+  await saveConfig();
+}
+
+async function addTargetFavorite() {
+  const p = config.value[currentMode.value].target_dir;
+  if (!p) return;
+  if (currentMode.value === 'sd') {
+    const arr = config.value.favorites.sd_targets || [];
+    if (!arr.includes(p)) arr.unshift(p);
+    config.value.favorites.sd_targets = arr.slice(0, 8);
+  } else {
+    const arr = config.value.favorites.dji_targets || [];
+    if (!arr.includes(p)) arr.unshift(p);
+    config.value.favorites.dji_targets = arr.slice(0, 8);
+  }
+  await saveConfig();
+}
+
+async function removeTargetFavorite(p) {
+  if (currentMode.value === 'sd') {
+    config.value.favorites.sd_targets = (config.value.favorites.sd_targets || []).filter(x => x !== p);
+  } else {
+    config.value.favorites.dji_targets = (config.value.favorites.dji_targets || []).filter(x => x !== p);
+  }
+  await saveConfig();
+}
+
+async function selectTarget(p) {
+  config.value[currentMode.value].target_dir = p;
+  await saveConfig();
+}
+
 async function startScan() {
   isScanning.value = true;
   scanResult.value = null;
@@ -201,11 +316,11 @@ async function startScan() {
   try {
     const modeConfig = config.value[currentMode.value];
     const files = await invoke('scan_files', {
-      sourceDir: modeConfig.source_dir,
-      targetDir: modeConfig.target_dir,
-      overwriteDuplicates: modeConfig.overwrite_duplicates,
+      source_dir: modeConfig.source_dir,
+      target_dir: modeConfig.target_dir,
+      overwrite_duplicates: modeConfig.overwrite_duplicates,
       mode: currentMode.value,
-      fastMode: fastMode.value
+      fast_mode: fastMode.value
     });
     
     scanResult.value = files;
