@@ -302,11 +302,13 @@ async function startScan() {
   try {
     const modeConfig = config.value[currentMode.value];
     const files = await invoke('scan_files', {
-      source_dir: modeConfig.source_dir,
-      target_dir: modeConfig.target_dir,
-      overwrite_duplicates: modeConfig.overwrite_duplicates,
-      mode: currentMode.value,
-      fast_mode: fastMode.value
+      args: {
+        sourceDir: modeConfig.source_dir,
+        targetDir: modeConfig.target_dir,
+        overwriteDuplicates: modeConfig.overwrite_duplicates,
+        mode: currentMode.value,
+        fastMode: fastMode.value
+      }
     });
     
     scanResult.value = files;
