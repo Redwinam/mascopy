@@ -20,10 +20,6 @@ pub struct Scanner {
 }
 
 impl Scanner {
-    pub fn new() -> Self {
-        Self::with_mode("sd")
-    }
-
     pub fn with_mode(mode: &str) -> Self {
         let (photo_exts, video_exts) = match mode {
             "dji" => (
