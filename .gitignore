@@ -1,73 +1,24 @@
-# Dependencies
-## Node
-node_modules/
-
-## Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-venv/
-env/
-ENV/
-.env
-.venv
-develop-eggs/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Build output
-build/
-dist/
-out/
-*.dmg
-
 # Logs
-logs/
+logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# OS generated files
-## macOS
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
-.AppleDouble
-.LSOverride
-Icon
-._*
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-
-# IDE configuration
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
-# Application data and configuration
-.mascopy-config.json
-user_config.json
-last_paths.json
-.coverage
-htmlcov/
-
-# Temporary & Backup Files
-*.bak
-temp/
-uploads/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
