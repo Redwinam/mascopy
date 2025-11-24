@@ -4,19 +4,29 @@ use std::path::PathBuf;
 use directories::ProjectDirs;
 use anyhow::Result;
 
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct ModeConfig {
+    #[serde(default)]
+    pub source_dir: String,
+    #[serde(default)]
+    pub target_dir: String,
+    #[serde(default)]
+    pub overwrite_duplicates: bool,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
-    pub source_dir: String,
-    pub target_dir: String,
-    pub overwrite_duplicates: bool,
+    #[serde(default)]
+    pub sd: ModeConfig,
+    #[serde(default)]
+    pub dji: ModeConfig,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
-            source_dir: String::new(),
-            target_dir: String::new(),
-            overwrite_duplicates: false,
+            sd: ModeConfig::default(),
+            dji: ModeConfig::default(),
         }
     }
 }

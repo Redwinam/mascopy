@@ -33,10 +33,12 @@ fn save_config(state: State<AppState>, config: Config) -> Result<(), String> {
 async fn scan_files(
     source_dir: String, 
     target_dir: String, 
-    overwrite_duplicates: bool
+    overwrite_duplicates: bool,
+    mode: Option<String>,
+    fast_mode: Option<bool>,
 ) -> Result<Vec<MediaFile>, String> {
-    let scanner = Scanner::new();
-    let mut files = scanner.scan(&source_dir);
+    let scanner = Scanner::with_mode(&mode.unwrap_or_else(|| "sd".to_string()));
+    let mut files = scanner.scan(&source_dir, fast_mode.unwrap_or(false));
     
     // Analyze files to determine status and target path
     Analyzer::analyze(&mut files, &target_dir, overwrite_duplicates);
