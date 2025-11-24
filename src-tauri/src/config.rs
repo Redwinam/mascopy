@@ -14,12 +14,24 @@ pub struct ModeConfig {
     pub overwrite_duplicates: bool,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct PathFavorites {
+    #[serde(default)]
+    pub sd_sources: Vec<String>,
+    #[serde(default)]
+    pub dji_sources: Vec<String>,
+    #[serde(default)]
+    pub targets: Vec<String>,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     #[serde(default)]
     pub sd: ModeConfig,
     #[serde(default)]
     pub dji: ModeConfig,
+    #[serde(default)]
+    pub favorites: PathFavorites,
 }
 
 impl Default for Config {
@@ -27,6 +39,7 @@ impl Default for Config {
         Self {
             sd: ModeConfig::default(),
             dji: ModeConfig::default(),
+            favorites: PathFavorites::default(),
         }
     }
 }

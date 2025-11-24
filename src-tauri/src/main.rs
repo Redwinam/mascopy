@@ -71,6 +71,50 @@ fn cancel_upload(state: State<AppState>) {
     state.uploader.cancel();
 }
 
+#[tauri::command]
+fn add_favorite(
+    state: State<AppState>,
+    category: String,
+    path: String
+) -> Result<(), String> {
+    let mut config = state.config_manager.load().map_err(|e| e.to_string())?;
+    
+    let list = match category.as_str() {
+        "sd_source" => &mut config.favorites.sd_sources,
+        "dji_source" => &mut config.favorites.dji_sources,
+        "target" => &mut config.favorites.targets,
+        _ => return Err("Invalid category".to_string()),
+    };
+    
+    if !list.contains(&path) {
+        list.push(path);
+        state.config_manager.save(&config).map_err(|e| e.to_string())?;
+    }
+    
+    Ok(())
+}
+
+#[tauri::command]
+fn remove_favorite(
+    state: State<AppState>,
+    category: String,
+    path: String
+) -> Result<(), String> {
+    let mut config = state.config_manager.load().map_err(|e| e.to_string())?;
+    
+    let list = match category.as_str() {
+        "sd_source" => &mut config.favorites.sd_sources,
+        "dji_source" => &mut config.favorites.dji_sources,
+        "target" => &mut config.favorites.targets,
+        _ => return Err("Invalid category".to_string()),
+    };
+    
+    list.retain(|p| p != &path);
+    state.config_manager.save(&config).map_err(|e| e.to_string())?;
+    
+    Ok(())
+}
+
 fn main() {
     let uploader = Arc::new(Uploader::new());
     let config_manager = ConfigManager::new();
@@ -88,7 +132,9 @@ fn main() {
             upload_files,
             pause_upload,
             resume_upload,
-            cancel_upload
+            cancel_upload,
+            add_favorite,
+            remove_favorite
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

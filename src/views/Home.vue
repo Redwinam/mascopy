@@ -5,10 +5,13 @@
       <div class="mode-content">
         <!-- Configuration Section -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FileSelector 
+          <PathSelector 
             :title="`源目录 (${currentMode === 'sd' ? 'SD卡' : 'DJI'})`"
             :path="config[currentMode].source_dir" 
+            :category="currentMode === 'sd' ? 'sd_source' : 'dji_source'"
+            :favorites="currentMode === 'sd' ? config.favorites?.sd_sources : config.favorites?.dji_sources"
             @update:path="updateSource"
+            @favorites-changed="loadConfig"
             placeholder="请选择包含照片/视频的文件夹"
           >
             <template #icon>
@@ -16,12 +19,15 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
               </svg>
             </template>
-          </FileSelector>
+          </PathSelector>
 
-          <FileSelector 
+          <PathSelector 
             title="目标目录 (NAS)" 
             :path="config[currentMode].target_dir" 
+            category="target"
+            :favorites="config.favorites?.targets"
             @update:path="updateTarget"
+            @favorites-changed="loadConfig"
             placeholder="请选择备份目标文件夹"
           >
             <template #icon>
@@ -29,7 +35,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
               </svg>
             </template>
-          </FileSelector>
+          </PathSelector>
         </div>
 
         <!-- Options -->
@@ -101,7 +107,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import FileSelector from '../components/FileSelector.vue';
+import PathSelector from '../components/PathSelector.vue';
 import ProgressBar from '../components/ProgressBar.vue';
 import TabView from '../components/TabView.vue';
 import FileTable from '../components/FileTable.vue';
@@ -119,6 +125,11 @@ const config = ref({
     source_dir: '',
     target_dir: '',
     overwrite_duplicates: false
+  },
+  favorites: {
+    sd_sources: [],
+    dji_sources: [],
+    targets: []
   }
 });
 
@@ -147,17 +158,21 @@ const canStart = computed(() => {
 });
 
 onMounted(async () => {
+  await loadConfig();
+
+  await listen('upload-progress', (event) => {
+    progress.value = event.payload;
+  });
+});
+
+async function loadConfig() {
   try {
     const savedConfig = await invoke('get_config');
     config.value = { ...config.value, ...savedConfig };
   } catch (e) {
     addLog('warning', '无法加载配置: ' + e);
   }
-
-  await listen('upload-progress', (event) => {
-    progress.value = event.payload;
-  });
-});
+}
 
 async function updateSource(path) {
   config.value[currentMode.value].source_dir = path;
