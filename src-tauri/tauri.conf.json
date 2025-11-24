@@ -2,9 +2,9 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "mascopy",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "com.redwinam.mascopy",
   "build": {
-    "frontendDist": "dist",
+    "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build"
