@@ -1,6 +1,6 @@
 <template>
-  <div class="tabs">
-    <div class="tab-buttons">
+  <div class="tabs-container">
+    <div class="tab-list">
       <button 
         v-for="tab in tabs" 
         :key="tab.id"
@@ -8,6 +8,7 @@
         @click="$emit('update:activeTab', tab.id)"
       >
         {{ tab.label }}
+        <div v-if="activeTab === tab.id" class="active-indicator" layoutId="activeTab"></div>
       </button>
     </div>
     <div class="tab-content">
@@ -26,35 +27,48 @@ defineEmits(['update:activeTab']);
 </script>
 
 <style scoped>
-.tabs {
+.tabs-container {
   width: 100%;
 }
 
-.tab-buttons {
-  display: flex;
-  gap: 0.5rem;
-  border-bottom: 2px solid #e5e7eb;
-  margin-bottom: 1.5rem;
+.tab-list {
+  display: inline-flex;
+  padding: 4px;
+  background: var(--surface-200);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
+  position: relative;
 }
 
 .tab-btn {
-  padding: 0.75rem 1.5rem;
+  position: relative;
+  padding: 0.5rem 1.5rem;
   border: none;
   background: transparent;
-  color: #6b7280;
+  color: var(--color-text-muted);
   font-weight: 500;
+  font-size: 0.95rem;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  transition: all 0.2s;
+  border-radius: var(--radius-md);
+  transition: color 0.2s;
+  z-index: 1;
 }
 
 .tab-btn:hover {
-  color: #2563eb;
+  color: var(--color-text-main);
 }
 
 .tab-btn.active {
-  color: #2563eb;
-  border-bottom-color: #2563eb;
+  color: var(--primary-700);
+  font-weight: 600;
+  background: white;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Optional: Smooth transition for active state background if using a shared background element */
+/* For simplicity, we are just styling the button itself for now */
+
+.tab-content {
+  position: relative;
 }
 </style>

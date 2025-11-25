@@ -1,20 +1,20 @@
 <template>
-  <div class="glass-panel p-6 flex flex-col gap-4">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+  <div class="file-selector glass-panel">
+    <div class="selector-header">
+      <div class="selector-info">
+        <div class="icon-box">
           <slot name="icon"></slot>
         </div>
-        <div>
-          <h3 class="font-semibold text-lg">{{ title }}</h3>
-          <p class="text-sm text-gray-500 truncate max-w-[300px]" :title="path || placeholder">
+        <div class="text-content">
+          <h3 class="selector-title">{{ title }}</h3>
+          <p class="selector-path" :title="path || placeholder">
             {{ path || placeholder }}
           </p>
         </div>
       </div>
-      <div class="flex items-center gap-2">
-        <button @click="addFavorite" class="btn btn-secondary">加入收藏</button>
-        <button @click="selectPath" class="btn btn-secondary">选择目录</button>
+      <div class="selector-actions">
+        <button @click="addFavorite" class="btn btn-secondary btn-sm">加入收藏</button>
+        <button @click="selectPath" class="btn btn-secondary btn-sm">选择目录</button>
       </div>
     </div>
   </div>
@@ -32,7 +32,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:path']);
+const emit = defineEmits(['update:path', 'addFavorite']);
 
 async function selectPath() {
   const selected = await open({
@@ -49,3 +49,81 @@ function addFavorite() {
   emit('addFavorite');
 }
 </script>
+
+<style scoped>
+.file-selector {
+  padding: var(--space-6);
+  transition: transform var(--transition-fast);
+}
+
+.file-selector:hover {
+  transform: translateY(-2px);
+}
+
+.selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.selector-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex: 1;
+  min-width: 0; /* Enable truncation */
+}
+
+.icon-box {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--primary-100);
+  color: var(--primary-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.text-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.selector-title {
+  font-weight: 600;
+  font-size: 1.125rem;
+  margin: 0 0 0.25rem 0;
+  color: var(--color-text-main);
+}
+
+.selector-path {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.selector-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .selector-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .selector-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+</style>

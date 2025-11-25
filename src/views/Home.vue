@@ -1,10 +1,10 @@
 <template>
-  <div class="flex flex-col gap-6">
+  <div class="dashboard">
     <!-- Mode Switching Tabs -->
-    <TabView :tabs="modeTabs" v-model:activeTab="currentMode">
+    <TabView :tabs="modeTabs" v-model:activeTab="currentMode" class="mode-tabs">
       <div class="mode-content">
         <!-- Configuration Section -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="config-grid">
           <FileSelector 
             :title="`源目录 (${currentMode === 'sd' ? 'SD卡' : 'DJI'})`"
             :path="config[currentMode].source_dir" 
@@ -13,7 +13,7 @@
             placeholder="请选择包含照片/视频的文件夹"
           >
             <template #icon>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
               </svg>
             </template>
@@ -27,96 +27,129 @@
             placeholder="请选择备份目标文件夹"
           >
             <template #icon>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
               </svg>
             </template>
           </FileSelector>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div class="favorites-grid">
           <div class="glass-panel p-4 flex flex-col gap-3">
-            <div class="font-semibold">来源收藏夹</div>
+            <div class="panel-header">来源收藏夹</div>
             <div class="fav-list">
-              <div v-for="p in sourceFavorites" :key="p" class="fav-item">
-                <div class="fav-path" @click="selectSource(p)">{{ dirname(p) }}/<span class="fav-basename">{{ basename(p) }}</span></div>
-                <button class="btn btn-secondary" @click="removeSourceFavorite(p)">删除</button>
+              <div v-for="p in sourceFavorites" :key="p" class="fav-item" @click="selectSource(p)">
+                <div class="fav-info">
+                  <span class="fav-basename">{{ basename(p) }}</span>
+                  <span class="fav-path">{{ dirname(p) }}</span>
+                </div>
+                <button class="btn-icon-danger" @click.stop="removeSourceFavorite(p)" title="删除">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
+              <div v-if="sourceFavorites.length === 0" class="empty-fav">暂无收藏</div>
             </div>
           </div>
 
           <div class="glass-panel p-4 flex flex-col gap-3">
-            <div class="font-semibold">目标收藏夹</div>
+            <div class="panel-header">目标收藏夹</div>
             <div class="fav-list">
-              <div v-for="p in targetFavorites" :key="p" class="fav-item">
-                <div class="fav-path" @click="selectTarget(p)">{{ dirname(p) }}/<span class="fav-basename">{{ basename(p) }}</span></div>
-                <button class="btn btn-secondary" @click="removeTargetFavorite(p)">删除</button>
+              <div v-for="p in targetFavorites" :key="p" class="fav-item" @click="selectTarget(p)">
+                <div class="fav-info">
+                  <span class="fav-basename">{{ basename(p) }}</span>
+                  <span class="fav-path">{{ dirname(p) }}</span>
+                </div>
+                <button class="btn-icon-danger" @click.stop="removeTargetFavorite(p)" title="删除">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
+              <div v-if="targetFavorites.length === 0" class="empty-fav">暂无收藏</div>
             </div>
           </div>
         </div>
 
         <!-- Options -->
-        <div class="glass-panel p-4 flex flex-col gap-3">
-          <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" v-model="config[currentMode].overwrite_duplicates" class="w-5 h-5 text-blue-600 rounded border-gray-300">
-            <span class="text-gray-700">覆盖重复文件</span>
-          </label>
-          <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" v-model="fastMode" class="w-5 h-5 text-blue-600 rounded border-gray-300">
-            <span class="text-gray-700">快速扫描</span>
-          </label>
-          <p class="text-sm text-gray-500 ml-7">快速模式将跳过 EXIF/元数据解析，直接使用文件修改时间</p>
+        <div class="glass-panel p-4 options-panel">
+          <div class="options-group">
+            <label class="checkbox-label">
+              <input type="checkbox" v-model="config[currentMode].overwrite_duplicates">
+              <span class="checkbox-custom"></span>
+              <span class="text">覆盖重复文件</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" v-model="fastMode">
+              <span class="checkbox-custom"></span>
+              <span class="text">快速扫描</span>
+            </label>
+          </div>
+          <p class="options-hint">快速模式将跳过 EXIF/元数据解析，直接使用文件修改时间</p>
         </div>
 
         <!-- Actions -->
-        <div class="flex justify-end gap-4" v-if="!isScanning && !isUploading">
-          <button @click="startScan" class="btn btn-secondary px-6 py-2" :disabled="!canStart">
+        <div class="action-bar" v-if="!isScanning && !isUploading">
+          <button @click="startScan" class="btn btn-secondary" :disabled="!canStart">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
             预扫描
           </button>
-          <button @click="startUpload" class="btn btn-primary px-8 py-3 text-lg shadow-lg shadow-blue-200" :disabled="!scanResult || scanResult.length === 0">
+          <button @click="startUpload" class="btn btn-primary" :disabled="!scanResult || scanResult.length === 0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
             开始上传
           </button>
         </div>
 
         <!-- Progress Bar during scan/upload -->
-        <ProgressBar 
-          v-if="isScanning || isUploading"
-          :current="progress.current" 
-          :total="progress.total" 
-          :filename="progress.filename || (isScanning ? '正在扫描...' : '正在上传...')"
-        />
-
-        <!-- Upload controls -->
-        <div v-if="isUploading" class="flex justify-end gap-2">
-          <button @click="togglePause" class="btn btn-secondary text-sm">
-            {{ isPaused ? '继续' : '暂停' }}
-          </button>
-          <button @click="cancel" class="btn btn-secondary text-sm text-red-500 hover:bg-red-50">
-            取消
-          </button>
+        <div v-if="isScanning || isUploading" class="progress-section animate-fade-in">
+          <ProgressBar 
+            :current="progress.current" 
+            :total="progress.total" 
+            :filename="progress.filename || (isScanning ? '正在扫描...' : '正在上传...')"
+          />
+          
+          <!-- Upload controls -->
+          <div v-if="isUploading" class="upload-controls">
+            <button @click="togglePause" class="btn btn-secondary btn-sm">
+              {{ isPaused ? '继续' : '暂停' }}
+            </button>
+            <button @click="cancel" class="btn btn-danger btn-sm">
+              取消
+            </button>
+          </div>
         </div>
       </div>
     </TabView>
 
     <!-- Results & Logs Tabs -->
-    <TabView :tabs="viewTabs" v-model:activeTab="activeView" v-if="scanResult || logs.length > 0">
-      <div v-show="activeView === 'results'" class="tab-pane">
-        <FileTable 
-          v-if="scanResult && scanResult.length > 0"
-          :files="scanResult" 
-          v-model:filter="fileFilter"
-        />
-        <div v-else class="empty-state">
-          尚未扫描，请先执行预扫描操作。
+    <div v-if="scanResult || logs.length > 0" class="results-section animate-fade-in">
+      <TabView :tabs="viewTabs" v-model:activeTab="activeView">
+        <div v-show="activeView === 'results'" class="tab-pane">
+          <FileTable 
+            v-if="scanResult && scanResult.length > 0"
+            :files="scanResult" 
+            v-model:filter="fileFilter"
+          />
+          <div v-else class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <p>尚未扫描，请先执行预扫描操作。</p>
+          </div>
         </div>
-      </div>
-      <div v-show="activeView === 'logs'" class="tab-pane">
-        <LogViewer :logs="logs" />
-        <button @click="clearLogs" class="btn btn-secondary mt-4">
-          清空日志
-        </button>
-      </div>
-    </TabView>
+        <div v-show="activeView === 'logs'" class="tab-pane">
+          <LogViewer :logs="logs" />
+          <div class="log-actions">
+            <button @click="clearLogs" class="btn btn-secondary btn-sm">
+              清空日志
+            </button>
+          </div>
+        </div>
+      </TabView>
+    </div>
   </div>
 </template>
 
@@ -375,10 +408,196 @@ function clearLogs() {
 </script>
 
 <style scoped>
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
 .mode-content {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: var(--space-6);
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  .config-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.favorites-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  .favorites-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.panel-header {
+  font-weight: 600;
+  color: var(--color-text-main);
+  margin-bottom: var(--space-2);
+}
+
+.fav-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.fav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface-50);
+  border: 1px solid var(--surface-200);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.fav-item:hover {
+  background: white;
+  border-color: var(--primary-300);
+  transform: translateX(2px);
+}
+
+.fav-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.fav-basename {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-text-main);
+}
+
+.fav-path {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-icon-danger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-light);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-icon-danger:hover {
+  color: var(--color-error);
+  background: #fef2f2;
+}
+
+.empty-fav {
+  text-align: center;
+  color: var(--color-text-light);
+  font-size: 0.875rem;
+  padding: var(--space-2);
+}
+
+.options-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.options-group {
+  display: flex;
+  gap: var(--space-6);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-label input {
+  display: none;
+}
+
+.checkbox-custom {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--surface-300);
+  border-radius: var(--radius-sm);
+  background: white;
+  position: relative;
+  transition: all var(--transition-fast);
+}
+
+.checkbox-label input:checked + .checkbox-custom {
+  background: var(--primary-600);
+  border-color: var(--primary-600);
+}
+
+.checkbox-label input:checked + .checkbox-custom::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.options-hint {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-left: 2rem;
+}
+
+.action-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.progress-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.upload-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.results-section {
+  margin-top: var(--space-8);
 }
 
 .tab-pane {
@@ -386,20 +605,27 @@ function clearLogs() {
 }
 
 .empty-state {
-  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12);
   text-align: center;
-  color: #9ca3af;
+  color: var(--color-text-muted);
   background: white;
-  border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--surface-300);
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: var(--space-4);
+  opacity: 0.5;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+.log-actions {
+  margin-top: var(--space-4);
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

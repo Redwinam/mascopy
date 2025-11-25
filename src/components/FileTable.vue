@@ -12,7 +12,7 @@
       </div>
     </div>
 
-    <div class="table-wrapper">
+    <div class="table-wrapper glass-panel">
       <table class="file-table">
         <thead>
           <tr>
@@ -25,10 +25,12 @@
         </thead>
         <tbody>
           <tr v-for="(file, index) in filteredFiles" :key="index">
-            <td class="filename">{{ file.filename }}</td>
-            <td>{{ file.file_type === 'photo' ? '照片' : '视频' }}</td>
-            <td>{{ formatSize(file.size) }}</td>
-            <td>{{ formatDate(file.date) }}</td>
+            <td class="filename" :title="file.filename">{{ file.filename }}</td>
+            <td>
+              <span class="type-badge">{{ file.file_type === 'photo' ? '照片' : '视频' }}</span>
+            </td>
+            <td class="text-muted">{{ formatSize(file.size) }}</td>
+            <td class="text-muted">{{ formatDate(file.date) }}</td>
             <td>
               <span :class="['status-badge', `status-${file.status}`]">
                 {{ formatStatus(file.status) }}
@@ -116,59 +118,67 @@ function formatStatus(status) {
 <style scoped>
 .file-table-container {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
 }
 
 .stats-cards {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .stats-cards {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .stat-card {
-  background: white;
-  border: 2px solid #e5e7eb;
-  border-radius: 0.75rem;
-  padding: 1rem;
+  background: var(--surface-0);
+  border: 1px solid var(--surface-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
   text-align: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
 }
 
 .stat-card:hover {
-  border-color: #3b82f6;
+  border-color: var(--primary-300);
   transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 .stat-card.active {
-  border-color: #3b82f6;
-  background: #eff6ff;
+  border-color: var(--primary-500);
+  background: var(--primary-50);
+  box-shadow: 0 0 0 2px var(--primary-100);
 }
 
 .stat-label {
   font-size: 0.875rem;
-  color: #6b7280;
-  margin-bottom: 0.5rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
 }
 
 .stat-value {
-  font-size: 1.875rem;
+  font-size: 1.5rem;
   font-weight: 700;
 }
 
-.stat-all { color: #374151; }
-.stat-upload { color: #2563eb; }
-.stat-overwrite { color: #f59e0b; }
-.stat-skip { color: #9ca3af; }
+.stat-all { color: var(--color-text-main); }
+.stat-upload { color: var(--primary-600); }
+.stat-overwrite { color: var(--color-warning); }
+.stat-skip { color: var(--color-text-light); }
 
 .table-wrapper {
-  background: white;
-  border-radius: 0.75rem;
   overflow: hidden;
-  border: 1px solid #e5e7eb;
-  max-height: 400px;
-  overflow-y: auto;
+  max-height: 500px;
+  display: flex;
+  flex-direction: column;
+  padding: 0; /* Override glass-panel padding */
 }
 
 .file-table {
@@ -177,36 +187,60 @@ function formatStatus(status) {
 }
 
 .file-table th {
-  background: #f9fafb;
-  padding: 0.75rem 1rem;
+  background: var(--surface-50);
+  padding: var(--space-3) var(--space-4);
   text-align: left;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-muted);
   position: sticky;
   top: 0;
   z-index: 1;
+  border-bottom: 1px solid var(--surface-200);
 }
 
 .file-table td {
-  padding: 0.75rem 1rem;
-  border-top: 1px solid #e5e7eb;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--surface-100);
   font-size: 0.875rem;
+  color: var(--color-text-main);
+}
+
+.file-table tr:last-child td {
+  border-bottom: none;
+}
+
+.file-table tr:hover td {
+  background: var(--surface-50);
 }
 
 .file-table .filename {
   font-family: monospace;
-  color: #1f2937;
+  font-weight: 500;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.type-badge {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface-100);
+  color: var(--color-text-muted);
 }
 
 .empty-state {
-  padding: 3rem;
+  padding: var(--space-8);
   text-align: center;
-  color: #9ca3af;
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 
 .status-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.75rem;
@@ -214,8 +248,8 @@ function formatStatus(status) {
 }
 
 .status-upload {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--primary-100);
+  color: var(--primary-700);
 }
 
 .status-overwrite {
@@ -224,7 +258,9 @@ function formatStatus(status) {
 }
 
 .status-skip {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--surface-100);
+  color: var(--color-text-muted);
 }
 </style>
+
+

@@ -6,7 +6,8 @@
         <span class="log-message">{{ log.message }}</span>
       </div>
       <div v-if="logs.length === 0" class="log-placeholder">
-        准备就绪，请选择源目录和目标目录开始扫描...
+        <div class="placeholder-icon">📝</div>
+        <p>准备就绪，请选择源目录和目标目录开始扫描...</p>
       </div>
     </div>
   </div>
@@ -39,54 +40,62 @@ function formatTime(time) {
 
 <style scoped>
 .log-container {
-  background: #1f2937;
-  border-radius: 0.75rem;
+  background: #1e293b; /* Keep dark background for logs */
+  border-radius: var(--radius-xl);
   overflow: hidden;
   height: 400px;
+  border: 1px solid var(--surface-300);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .log-content {
-  padding: 1rem;
+  padding: var(--space-4);
   height: 100%;
   overflow-y: auto;
-  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', monospace;
   font-size: 0.875rem;
+  line-height: 1.6;
 }
 
 .log-entry {
-  padding: 0.25rem 0;
-  color: #e5e7eb;
+  padding: 0.125rem 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .log-time {
-  color: #9ca3af;
-  margin-right: 0.5rem;
+  color: #64748b;
+  font-size: 0.75rem;
+  min-width: 80px;
+  padding-top: 2px;
 }
 
 .log-message {
-  color: #f3f4f6;
+  color: #e2e8f0;
+  word-break: break-all;
 }
 
-.log-info {
-  color: #93c5fd;
-}
-
-.log-success {
-  color: #86efac;
-}
-
-.log-warning {
-  color: #fde047;
-}
-
-.log-error {
-  color: #fca5a5;
-}
+.log-info .log-message { color: #93c5fd; }
+.log-success .log-message { color: #86efac; }
+.log-warning .log-message { color: #fde047; }
+.log-error .log-message { color: #fca5a5; }
 
 .log-placeholder {
-  color: #6b7280;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
   text-align: center;
-  padding: 3rem;
+}
+
+.placeholder-icon {
+  font-size: 2rem;
+  margin-bottom: var(--space-2);
+  opacity: 0.5;
 }
 
 /* Scrollbar */
@@ -95,15 +104,17 @@ function formatTime(time) {
 }
 
 .log-content::-webkit-scrollbar-track {
-  background: #374151;
+  background: #0f172a;
 }
 
 .log-content::-webkit-scrollbar-thumb {
-  background: #6b7280;
+  background: #334155;
   border-radius: 4px;
 }
 
 .log-content::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: #475569;
 }
 </style>
+
+
