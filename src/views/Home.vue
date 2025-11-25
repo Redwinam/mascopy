@@ -5,69 +5,83 @@
       <div class="mode-content">
         <!-- Configuration Section -->
         <div class="config-grid">
-          <FileSelector 
-            :title="`源目录 (${currentMode === 'sd' ? 'SD卡' : 'DJI'})`"
-            :path="config[currentMode].source_dir" 
-            @update:path="updateSource"
-            @addFavorite="addSourceFavorite"
-            placeholder="请选择包含照片/视频的文件夹"
-          >
-            <template #icon>
-              <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-              </svg>
-            </template>
-          </FileSelector>
-
-          <FileSelector 
-            title="目标目录 (NAS)" 
-            :path="config[currentMode].target_dir" 
-            @update:path="updateTarget"
-            @addFavorite="addTargetFavorite"
-            placeholder="请选择备份目标文件夹"
-          >
-            <template #icon>
-              <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
-              </svg>
-            </template>
-          </FileSelector>
-        </div>
-
-        <div class="favorites-grid">
-          <div class="glass-panel p-4 flex flex-col gap-3">
-            <div class="panel-header">来源收藏夹</div>
-            <div class="fav-list">
-              <div v-for="p in sourceFavorites" :key="p" class="fav-item" @click="selectSource(p)">
-                <div class="fav-info">
-                  <span class="fav-basename">{{ basename(p) }}</span>
-                  <span class="fav-path">{{ dirname(p) }}</span>
+          <!-- Source Column -->
+          <div class="config-card glass-panel">
+            <div class="card-header">
+              <span class="header-tag">来源</span>
+            </div>
+            <FileSelector 
+              :title="`源目录 (${currentMode === 'sd' ? 'SD卡' : 'DJI'})`"
+              :path="config[currentMode].source_dir" 
+              @update:path="updateSource"
+              @addFavorite="addSourceFavorite"
+              placeholder="请选择包含照片/视频的文件夹"
+            >
+              <template #icon>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+              </template>
+            </FileSelector>
+            
+            <div class="divider"></div>
+            
+            <div class="favorites-section">
+              <div class="section-title">收藏夹</div>
+              <div class="fav-list">
+                <div v-for="p in sourceFavorites" :key="p" class="fav-item" @click="selectSource(p)">
+                  <div class="fav-info">
+                    <span class="fav-basename">{{ basename(p) }}</span>
+                    <span class="fav-path">{{ dirname(p) }}</span>
+                  </div>
+                  <button class="btn-icon-danger" @click.stop="removeSourceFavorite(p)" title="删除">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
-                <button class="btn-icon-danger" @click.stop="removeSourceFavorite(p)" title="删除">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                <div v-if="sourceFavorites.length === 0" class="empty-fav">暂无收藏</div>
               </div>
-              <div v-if="sourceFavorites.length === 0" class="empty-fav">暂无收藏</div>
             </div>
           </div>
 
-          <div class="glass-panel p-4 flex flex-col gap-3">
-            <div class="panel-header">目标收藏夹</div>
-            <div class="fav-list">
-              <div v-for="p in targetFavorites" :key="p" class="fav-item" @click="selectTarget(p)">
-                <div class="fav-info">
-                  <span class="fav-basename">{{ basename(p) }}</span>
-                  <span class="fav-path">{{ dirname(p) }}</span>
+          <!-- Target Column -->
+          <div class="config-card glass-panel">
+            <div class="card-header">
+              <span class="header-tag tag-blue">目标</span>
+            </div>
+            <FileSelector 
+              title="目标目录 (NAS)" 
+              :path="config[currentMode].target_dir" 
+              @update:path="updateTarget"
+              @addFavorite="addTargetFavorite"
+              placeholder="请选择备份目标文件夹"
+            >
+              <template #icon>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
+                </svg>
+              </template>
+            </FileSelector>
+
+            <div class="divider"></div>
+
+            <div class="favorites-section">
+              <div class="section-title">收藏夹</div>
+              <div class="fav-list">
+                <div v-for="p in targetFavorites" :key="p" class="fav-item" @click="selectTarget(p)">
+                  <div class="fav-info">
+                    <span class="fav-basename">{{ basename(p) }}</span>
+                    <span class="fav-path">{{ dirname(p) }}</span>
+                  </div>
+                  <button class="btn-icon-danger" @click.stop="removeTargetFavorite(p)" title="删除">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
-                <button class="btn-icon-danger" @click.stop="removeTargetFavorite(p)" title="删除">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                <div v-if="targetFavorites.length === 0" class="empty-fav">暂无收藏</div>
               </div>
-              <div v-if="targetFavorites.length === 0" class="empty-fav">暂无收藏</div>
             </div>
           </div>
         </div>
@@ -411,13 +425,13 @@ function clearLogs() {
 .dashboard {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-8);
 }
 
 .mode-content {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-8);
 }
 
 .config-grid {
@@ -426,54 +440,98 @@ function clearLogs() {
   gap: var(--space-6);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 900px) {
   .config-grid {
     grid-template-columns: 1fr 1fr;
+    gap: var(--space-8);
   }
 }
 
-.favorites-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-6);
+.config-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0.6));
 }
 
-@media (min-width: 768px) {
-  .favorites-grid {
-    grid-template-columns: 1fr 1fr;
-  }
+.card-header {
+  padding: var(--space-4) var(--space-6) 0;
 }
 
-.panel-header {
+.header-tag {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: var(--primary-100);
+  color: var(--primary-700);
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  letter-spacing: 0.05em;
+}
+
+.tag-blue {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.divider {
+  height: 1px;
+  background: var(--surface-200);
+  margin: 0 var(--space-6);
+}
+
+.favorites-section {
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  background: rgba(255, 255, 255, 0.3);
+  flex: 1;
+}
+
+.section-title {
+  font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-text-main);
-  margin-bottom: var(--space-2);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .fav-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  max-height: 200px;
+  max-height: 240px;
   overflow-y: auto;
+  padding-right: var(--space-2);
+}
+
+/* Custom scrollbar for fav list */
+.fav-list::-webkit-scrollbar {
+  width: 4px;
+}
+.fav-list::-webkit-scrollbar-thumb {
+  background: var(--surface-300);
+  border-radius: 2px;
 }
 
 .fav-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--surface-50);
-  border: 1px solid var(--surface-200);
+  background: white;
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-3);
   cursor: pointer;
   transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
 }
 
 .fav-item:hover {
-  background: white;
   border-color: var(--primary-300);
   transform: translateX(2px);
+  box-shadow: var(--shadow-md);
 }
 
 .fav-info {
@@ -500,13 +558,18 @@ function clearLogs() {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.25rem;
-  border-radius: var(--radius-sm);
-  color: var(--color-text-light);
+  padding: 0.35rem;
+  border-radius: var(--radius-md);
+  color: var(--surface-400);
   background: transparent;
   border: none;
   cursor: pointer;
   transition: all var(--transition-fast);
+  opacity: 0; /* Hidden by default */
+}
+
+.fav-item:hover .btn-icon-danger {
+  opacity: 1;
 }
 
 .btn-icon-danger:hover {
@@ -518,7 +581,10 @@ function clearLogs() {
   text-align: center;
   color: var(--color-text-light);
   font-size: 0.875rem;
-  padding: var(--space-2);
+  padding: var(--space-4);
+  background: rgba(255,255,255,0.5);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--surface-300);
 }
 
 .options-panel {

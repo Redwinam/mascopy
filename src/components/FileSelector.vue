@@ -1,5 +1,5 @@
 <template>
-  <div class="file-selector glass-panel">
+  <div class="file-selector">
     <div class="selector-header">
       <div class="selector-info">
         <div class="icon-box">
