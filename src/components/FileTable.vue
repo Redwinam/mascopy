@@ -1,14 +1,14 @@
 <template>
   <div class="file-table-container">
-    <div class="stats-cards" v-if="stats">
+    <div class="filter-strip" v-if="stats">
       <div 
         v-for="(stat, key) in stats" 
         :key="key"
-        :class="['stat-card', { active: filter === key }]"
+        :class="['filter-item', { active: filter === key }]"
         @click="$emit('update:filter', key)"
       >
-        <div class="stat-label">{{ getLabel(key) }}</div>
-        <div class="stat-value" :class="`stat-${key}`">{{ stat }}</div>
+        <span class="filter-label">{{ getLabel(key) }}</span>
+        <span class="filter-count" :class="`count-${key}`">{{ stat }}</span>
       </div>
     </div>
 
@@ -123,55 +123,56 @@ function formatStatus(status) {
   gap: var(--space-6);
 }
 
-.stats-cards {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-4);
-}
-
-@media (min-width: 768px) {
-  .stats-cards {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-.stat-card {
-  background: var(--surface-0);
-  border: 1px solid var(--surface-200);
+.filter-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1);
+  background: var(--surface-100);
   border-radius: var(--radius-lg);
-  padding: var(--space-4);
-  text-align: center;
+  width: fit-content;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--transition-fast);
-}
-
-.stat-card:hover {
-  border-color: var(--primary-300);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.stat-card.active {
-  border-color: var(--primary-500);
-  background: var(--primary-50);
-  box-shadow: 0 0 0 2px var(--primary-100);
-}
-
-.stat-label {
   font-size: 0.875rem;
   color: var(--color-text-muted);
-  margin-bottom: var(--space-2);
 }
 
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
+.filter-item:hover {
+  background: rgba(255,255,255,0.5);
+  color: var(--color-text-main);
 }
 
-.stat-all { color: var(--color-text-main); }
-.stat-upload { color: var(--primary-600); }
-.stat-overwrite { color: var(--color-warning); }
-.stat-skip { color: var(--color-text-light); }
+.filter-item.active {
+  background: white;
+  color: var(--primary-700);
+  box-shadow: var(--shadow-sm);
+  font-weight: 500;
+}
+
+.filter-count {
+  font-size: 0.75rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--surface-200);
+  color: var(--color-text-muted);
+}
+
+.filter-item.active .filter-count {
+  background: var(--primary-100);
+  color: var(--primary-700);
+}
+
+.count-upload { color: var(--primary-600); }
+.count-overwrite { color: var(--color-warning); }
+.count-skip { color: var(--color-text-light); }
 
 .table-wrapper {
   overflow: hidden;

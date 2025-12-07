@@ -13,10 +13,9 @@
         </div>
       </div>
       <div class="selector-actions">
-        <button @click="addFavorite" class="btn btn-secondary btn-sm">加入收藏</button>
+        <button @click="addFavorite" class="btn btn-secondary btn-sm compact-btn">加入收藏</button>
         <button @click="selectPath" class="btn btn-secondary btn-sm">选择目录</button>
       </div>
-    </div>
   </div>
 </template>
 
@@ -93,7 +92,7 @@ function addFavorite() {
 }
 
 .selector-title {
-  font-weight: 600;
+  font-weight: 500; /* Removed bold */
   font-size: 1.125rem;
   margin: 0 0 0.25rem 0;
   color: var(--color-text-main);
@@ -113,6 +112,11 @@ function addFavorite() {
   align-items: center;
   gap: var(--space-2);
   flex-shrink: 0;
+}
+
+.compact-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
 }
 
 @media (max-width: 640px) {

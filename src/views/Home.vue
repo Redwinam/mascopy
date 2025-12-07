@@ -1,168 +1,179 @@
 <template>
   <div class="dashboard">
-    <!-- Mode Switching Tabs -->
-    <TabView :tabs="modeTabs" v-model:activeTab="currentMode" class="mode-tabs">
-      <div class="mode-content">
-        <!-- Configuration Section -->
-        <div class="config-grid">
-          <!-- Source Column -->
-          <div class="config-card glass-panel">
-            <div class="card-header">
-              <span class="header-tag">来源</span>
-            </div>
-            <FileSelector 
-              :title="`源目录 (${currentMode === 'sd' ? 'SD卡' : 'DJI'})`"
-              :path="config[currentMode].source_dir" 
-              @update:path="updateSource"
-              @addFavorite="addSourceFavorite"
-              placeholder="请选择包含照片/视频的文件夹"
-            >
-              <template #icon>
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                </svg>
-              </template>
-            </FileSelector>
-            
-            <div class="divider"></div>
-            
-            <div class="favorites-section">
-              <div class="section-title">收藏夹</div>
-              <div class="fav-list">
-                <div v-for="p in sourceFavorites" :key="p" class="fav-item" @click="selectSource(p)">
-                  <div class="fav-info">
-                    <span class="fav-basename">{{ basename(p) }}</span>
-                    <span class="fav-path">{{ dirname(p) }}</span>
-                  </div>
-                  <button class="btn-icon-danger" @click.stop="removeSourceFavorite(p)" title="删除">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div v-if="sourceFavorites.length === 0" class="empty-fav">暂无收藏</div>
-              </div>
-            </div>
+
+
+    <!-- Step 1: Configuration -->
+    <div v-show="currentStep === 'config'" class="step-container animate-fade-in">
+      <div class="config-grid">
+        <!-- Source Column -->
+        <div class="config-card glass-panel">
+          <div class="card-header">
+            <span class="header-tag">来源</span>
           </div>
-
-          <!-- Target Column -->
-          <div class="config-card glass-panel">
-            <div class="card-header">
-              <span class="header-tag tag-blue">目标</span>
-            </div>
-            <FileSelector 
-              title="目标目录 (NAS)" 
-              :path="config[currentMode].target_dir" 
-              @update:path="updateTarget"
-              @addFavorite="addTargetFavorite"
-              placeholder="请选择备份目标文件夹"
-            >
-              <template #icon>
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
-                </svg>
-              </template>
-            </FileSelector>
-
-            <div class="divider"></div>
-
-            <div class="favorites-section">
-              <div class="section-title">收藏夹</div>
-              <div class="fav-list">
-                <div v-for="p in targetFavorites" :key="p" class="fav-item" @click="selectTarget(p)">
-                  <div class="fav-info">
-                    <span class="fav-basename">{{ basename(p) }}</span>
-                    <span class="fav-path">{{ dirname(p) }}</span>
-                  </div>
-                  <button class="btn-icon-danger" @click.stop="removeTargetFavorite(p)" title="删除">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div v-if="targetFavorites.length === 0" class="empty-fav">暂无收藏</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Options -->
-        <div class="glass-panel p-4 options-panel">
-          <div class="options-group">
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="config[currentMode].overwrite_duplicates">
-              <span class="checkbox-custom"></span>
-              <span class="text">覆盖重复文件</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="fastMode">
-              <span class="checkbox-custom"></span>
-              <span class="text">快速扫描</span>
-            </label>
-          </div>
-          <p class="options-hint">快速模式将跳过 EXIF/元数据解析，直接使用文件修改时间</p>
-        </div>
-
-        <!-- Actions -->
-        <div class="action-bar" v-if="!isScanning && !isUploading">
-          <button @click="startScan" class="btn btn-secondary" :disabled="!canStart">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            预扫描
-          </button>
-          <button @click="startUpload" class="btn btn-primary" :disabled="!scanResult || scanResult.length === 0">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-            开始上传
-          </button>
-        </div>
-
-        <!-- Progress Bar during scan/upload -->
-        <div v-if="isScanning || isUploading" class="progress-section animate-fade-in">
-          <ProgressBar 
-            :current="progress.current" 
-            :total="progress.total" 
-            :filename="progress.filename || (isScanning ? '正在扫描...' : '正在上传...')"
-          />
+          <FileSelector 
+            :title="`源目录 (${currentMode === 'sd' ? 'SD卡' : 'DJI'})`"
+            :path="config[currentMode].source_dir" 
+            @update:path="updateSource"
+            @addFavorite="addSourceFavorite"
+            placeholder="请选择包含照片/视频的文件夹"
+          >
+            <template #icon>
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+            </template>
+          </FileSelector>
           
-          <!-- Upload controls -->
-          <div v-if="isUploading" class="upload-controls">
-            <button @click="togglePause" class="btn btn-secondary btn-sm">
-              {{ isPaused ? '继续' : '暂停' }}
-            </button>
-            <button @click="cancel" class="btn btn-danger btn-sm">
-              取消
-            </button>
+          <div class="divider"></div>
+          
+          <div class="favorites-section">
+            <div class="section-title">收藏夹</div>
+            <div class="fav-list">
+              <div v-for="p in sourceFavorites" :key="p" class="fav-item" @click="selectSource(p)">
+                <div class="fav-info">
+                  <span class="fav-basename">{{ basename(p) }}</span>
+                  <span class="fav-path" :title="p">{{ p }}</span>
+                </div>
+                <button class="btn-icon-danger" @click.stop="removeSourceFavorite(p)" title="删除">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div v-if="sourceFavorites.length === 0" class="empty-fav">暂无收藏</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Target Column -->
+        <div class="config-card glass-panel">
+          <div class="card-header">
+            <span class="header-tag tag-blue">目标</span>
+          </div>
+          <FileSelector 
+            title="目标目录 (NAS)" 
+            :path="config[currentMode].target_dir" 
+            @update:path="updateTarget"
+            @addFavorite="addTargetFavorite"
+            placeholder="请选择备份目标文件夹"
+          >
+            <template #icon>
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
+              </svg>
+            </template>
+          </FileSelector>
+
+          <div class="divider"></div>
+
+          <div class="favorites-section">
+            <div class="section-title">收藏夹</div>
+            <div class="fav-list">
+              <div v-for="p in targetFavorites" :key="p" class="fav-item" @click="selectTarget(p)">
+                <div class="fav-info">
+                  <span class="fav-basename">{{ basename(p) }}</span>
+                  <span class="fav-path" :title="p">{{ p }}</span>
+                </div>
+                <button class="btn-icon-danger" @click.stop="removeTargetFavorite(p)" title="删除">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div v-if="targetFavorites.length === 0" class="empty-fav">暂无收藏</div>
+            </div>
           </div>
         </div>
       </div>
-    </TabView>
 
-    <!-- Results & Logs Tabs -->
-    <div v-if="scanResult || logs.length > 0" class="results-section animate-fade-in">
-      <TabView :tabs="viewTabs" v-model:activeTab="activeView">
-        <div v-show="activeView === 'results'" class="tab-pane">
-          <FileTable 
-            v-if="scanResult && scanResult.length > 0"
-            :files="scanResult" 
-            v-model:filter="fileFilter"
-          />
-          <div v-else class="empty-state">
-            <div class="empty-icon">🔍</div>
-            <p>尚未扫描，请先执行预扫描操作。</p>
+      <!-- Compact Options Bar -->
+      <div class="options-bar glass-panel">
+        <div class="options-left">
+          <label class="option-chip" :class="{ active: config[currentMode].overwrite_duplicates }">
+            <input type="checkbox" v-model="config[currentMode].overwrite_duplicates">
+            <span class="check-icon" v-if="config[currentMode].overwrite_duplicates">✓</span>
+            <span>覆盖重复文件</span>
+          </label>
+          
+          <div class="option-group">
+            <label class="option-chip" :class="{ active: fastMode }">
+              <input type="checkbox" v-model="fastMode">
+              <span class="check-icon" v-if="fastMode">✓</span>
+              <span>快速扫描</span>
+            </label>
+            <span class="option-hint">跳过 EXIF 解析，仅对比修改时间</span>
           </div>
         </div>
-        <div v-show="activeView === 'logs'" class="tab-pane">
-          <LogViewer :logs="logs" />
-          <div class="log-actions">
-            <button @click="clearLogs" class="btn btn-secondary btn-sm">
-              清空日志
-            </button>
-          </div>
+
+        <div class="actions-right">
+          <button @click="startScan" class="btn btn-primary btn-lg" :disabled="!canStart || isScanning">
+            <span v-if="isScanning" class="spinner"></span>
+            {{ isScanning ? '扫描中...' : '开始扫描' }}
+          </button>
         </div>
-      </TabView>
+      </div>
+    </div>
+
+    <!-- Step 2: Results & Upload -->
+    <div v-show="currentStep === 'results'" class="step-container animate-fade-in">
+      <div class="results-header">
+        <button @click="goBack" class="btn btn-secondary btn-icon" :disabled="isUploading">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          返回配置
+        </button>
+        <div class="header-actions">
+           <button @click="startUpload" class="btn btn-primary btn-lg" :disabled="!scanResult || scanResult.length === 0 || isUploading">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            {{ isUploading ? '上传中...' : '开始上传' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Progress Section -->
+      <div v-if="isUploading" class="progress-section glass-panel p-4 animate-fade-in">
+        <ProgressBar 
+          :current="progress.current" 
+          :total="progress.total" 
+          :filename="progress.filename || '正在上传...'"
+        />
+        <div class="upload-controls">
+          <button @click="togglePause" class="btn btn-secondary btn-sm">
+            {{ isPaused ? '继续' : '暂停' }}
+          </button>
+          <button @click="cancel" class="btn btn-danger btn-sm">
+            取消
+          </button>
+        </div>
+      </div>
+
+      <!-- Results Table -->
+      <div class="results-content">
+        <TabView :tabs="viewTabs" v-model:activeTab="activeView">
+          <div v-show="activeView === 'results'" class="tab-pane">
+            <FileTable 
+              v-if="scanResult && scanResult.length > 0"
+              :files="scanResult" 
+              v-model:filter="fileFilter"
+            />
+            <div v-else class="empty-state">
+              <div class="empty-icon">🔍</div>
+              <p>未找到符合条件的文件</p>
+            </div>
+          </div>
+          <div v-show="activeView === 'logs'" class="tab-pane">
+            <LogViewer :logs="logs" />
+            <div class="log-actions">
+              <button @click="clearLogs" class="btn btn-secondary btn-sm">
+                清空日志
+              </button>
+            </div>
+          </div>
+        </TabView>
+      </div>
     </div>
   </div>
 </template>
@@ -176,27 +187,11 @@ import ProgressBar from '../components/ProgressBar.vue';
 import TabView from '../components/TabView.vue';
 import FileTable from '../components/FileTable.vue';
 import LogViewer from '../components/LogViewer.vue';
+import { useAppState } from '../composables/useAppState.js';
 
-const currentMode = ref('sd');
+const { currentMode, config } = useAppState();
+const currentStep = ref('config'); // 'config' | 'results'
 const fastMode = ref(false);
-const config = ref({
-  sd: {
-    source_dir: '',
-    target_dir: '',
-    overwrite_duplicates: false
-  },
-  dji: {
-    source_dir: '',
-    target_dir: '',
-    overwrite_duplicates: false
-  },
-  favorites: {
-    sd_sources: [],
-    sd_targets: [],
-    dji_sources: [],
-    dji_targets: []
-  }
-});
 
 const isScanning = ref(false);
 const isUploading = ref(false);
@@ -216,11 +211,6 @@ const targetFavorites = computed(() => {
   return config.value.favorites.dji_targets || [];
 });
 
-const modeTabs = [
-  { id: 'sd', label: 'SD卡模式' },
-  { id: 'dji', label: 'DJI模式' }
-];
-
 const viewTabs = [
   { id: 'results', label: '扫描结果' },
   { id: 'logs', label: '日志' }
@@ -228,15 +218,19 @@ const viewTabs = [
 
 const canStart = computed(() => {
   const modeConfig = config.value[currentMode.value];
-  return modeConfig.source_dir && modeConfig.target_dir;
+  return modeConfig && modeConfig.source_dir && modeConfig.target_dir;
 });
 
 onMounted(async () => {
   try {
     const savedConfig = await invoke('get_config');
-    config.value = { ...config.value, ...savedConfig };
-    if (!config.value.favorites) {
-      config.value.favorites = { sd_sources: [], sd_targets: [], dji_sources: [], dji_targets: [] };
+    // Merge saved config but preserve defaults if missing
+    if (savedConfig) {
+      if (savedConfig.sd) config.value.sd = { ...config.value.sd, ...savedConfig.sd };
+      if (savedConfig.dji) config.value.dji = { ...config.value.dji, ...savedConfig.dji };
+      if (savedConfig.favorites) {
+        config.value.favorites = savedConfig.favorites;
+      }
     }
   } catch (e) {
     addLog('warning', '无法加载配置: ' + e);
@@ -360,6 +354,7 @@ async function startScan() {
     
     scanResult.value = files;
     addLog('success', `扫描完成，共找到 ${files.length} 个文件`);
+    currentStep.value = 'results'; // Switch to results view
     activeView.value = 'results';
   } catch (e) {
     addLog('error', '扫描失败: ' + e);
@@ -368,6 +363,10 @@ async function startScan() {
     isScanning.value = false;
     progress.value = { current: 0, total: 0, filename: '' };
   }
+}
+
+function goBack() {
+  currentStep.value = 'config';
 }
 
 async function startUpload() {
@@ -381,6 +380,7 @@ async function startUpload() {
     addLog('success', '上传完成!');
     alert('上传完成!');
     scanResult.value = null;
+    currentStep.value = 'config'; // Return to config after success
   } catch (e) {
     addLog('error', '上传失败: ' + e);
     alert('上传失败: ' + e);
@@ -425,25 +425,31 @@ function clearLogs() {
 .dashboard {
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
+  height: 100%;
+  overflow: hidden;
 }
 
-.mode-content {
+.step-container {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
+  gap: var(--space-6);
+  padding: var(--space-6);
+  overflow-y: auto;
 }
 
+/* Config Grid */
 .config-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-6);
+  flex: 1;
+  min-height: 0; /* Allow scrolling inside if needed */
 }
 
 @media (min-width: 900px) {
   .config-grid {
     grid-template-columns: 1fr 1fr;
-    gap: var(--space-8);
   }
 }
 
@@ -486,6 +492,9 @@ function clearLogs() {
   padding: var(--space-4) var(--space-6) var(--space-6);
   background: rgba(255, 255, 255, 0.3);
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .section-title {
@@ -500,10 +509,10 @@ function clearLogs() {
 .fav-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  max-height: 240px;
+  gap: 1px; /* Minimal gap for list look */
   overflow-y: auto;
   padding-right: var(--space-2);
+  flex: 1;
 }
 
 /* Custom scrollbar for fav list */
@@ -519,48 +528,50 @@ function clearLogs() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: white;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
+  background: transparent;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
   cursor: pointer;
   transition: all var(--transition-fast);
-  box-shadow: var(--shadow-sm);
+  font-size: 0.875rem;
+  color: var(--color-text-main);
 }
 
 .fav-item:hover {
-  border-color: var(--primary-300);
-  transform: translateX(2px);
-  box-shadow: var(--shadow-md);
+  background: var(--surface-100);
+  color: var(--primary-700);
 }
 
 .fav-info {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
   overflow: hidden;
+  flex: 1;
 }
 
 .fav-basename {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--color-text-main);
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .fav-path {
   font-size: 0.75rem;
-  color: var(--color-text-muted);
+  color: var(--color-text-light);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
+  opacity: 0.7;
 }
 
 .btn-icon-danger {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.35rem;
-  border-radius: var(--radius-md);
-  color: var(--surface-400);
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-light);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -569,7 +580,7 @@ function clearLogs() {
 }
 
 .fav-item:hover .btn-icon-danger {
-  opacity: 1;
+  opacity: 1; /* Show on hover */
 }
 
 .btn-icon-danger:hover {
@@ -580,113 +591,118 @@ function clearLogs() {
 .empty-fav {
   text-align: center;
   color: var(--color-text-light);
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   padding: var(--space-4);
-  background: rgba(255,255,255,0.5);
+  border: 1px dashed var(--surface-200);
   border-radius: var(--radius-md);
-  border: 1px dashed var(--surface-300);
 }
 
-.options-panel {
+/* Options Bar */
+.options-bar {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius-xl);
+  background: white;
+  box-shadow: var(--shadow-lg);
 }
 
-.options-group {
+.options-left {
   display: flex;
+  align-items: center;
   gap: var(--space-6);
 }
 
-.checkbox-label {
-  display: flex;
+.option-chip {
+  display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  background: var(--surface-100);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
+  transition: all var(--transition-fast);
   user-select: none;
 }
 
-.checkbox-label input {
+.option-chip input {
   display: none;
 }
 
-.checkbox-custom {
-  width: 1.25rem;
-  height: 1.25rem;
-  border: 2px solid var(--surface-300);
-  border-radius: var(--radius-sm);
-  background: white;
-  position: relative;
-  transition: all var(--transition-fast);
+.option-chip.active {
+  background: var(--primary-100);
+  color: var(--primary-700);
+  box-shadow: 0 0 0 1px var(--primary-200);
 }
 
-.checkbox-label input:checked + .checkbox-custom {
-  background: var(--primary-600);
-  border-color: var(--primary-600);
+.check-icon {
+  font-size: 0.8rem;
+  font-weight: bold;
 }
 
-.checkbox-label input:checked + .checkbox-custom::after {
-  content: '';
-  position: absolute;
-  left: 6px;
-  top: 2px;
-  width: 5px;
-  height: 10px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-.options-hint {
-  font-size: 0.875rem;
-  color: var(--color-text-muted);
-  margin-left: 2rem;
-}
-
-.action-bar {
+.option-group {
   display: flex;
-  justify-content: flex-end;
-  gap: var(--space-4);
-  margin-top: var(--space-2);
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.option-hint {
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+}
+
+.btn-lg {
+  padding: 0.75rem 2rem;
+  font-size: 1.1rem;
+}
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Results View */
+.results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.btn-icon {
+  gap: var(--space-2);
+  padding-left: var(--space-3);
+}
+
+.results-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .progress-section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .upload-controls {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-2);
-}
-
-.results-section {
-  margin-top: var(--space-8);
-}
-
-.tab-pane {
-  min-height: 200px;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-12);
-  text-align: center;
-  color: var(--color-text-muted);
-  background: white;
-  border-radius: var(--radius-lg);
-  border: 1px dashed var(--surface-300);
-}
-
-.empty-icon {
-  font-size: 3rem;
-  margin-bottom: var(--space-4);
-  opacity: 0.5;
 }
 
 .log-actions {
