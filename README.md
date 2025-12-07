@@ -14,19 +14,32 @@
 
 ## 安装与运行
 
-- 环境要求：`Node.js 18+`、`Rust`、`Tauri CLI`
-- 安装依赖：
-  ```bash
-  npm install
-  ```
-- 开发模式：
-  ```bash
-  npm run tauri dev
-  ```
-- 构建前端静态资源：
-  ```bash
-  npm run build
-  ```
+### 环境要求
+- `Node.js 18+`
+- `Rust` (建议通过 rustup 安装)
+- `Tauri CLI` (自动通过 Cargo 管理)
+
+### 快速开始
+
+1. **安装依赖**
+   ```bash
+   # 进入前端目录安装依赖
+   cd src-ui
+   npm install
+   ```
+
+2. **开发模式**
+   回到根目录运行：
+   ```bash
+   # 启动 Tauri 开发环境（自动启动前端与后端）
+   cargo tauri dev
+   ```
+
+3. **构建应用**
+   ```bash
+   # 构建生产包
+   cargo tauri build
+   ```
 
 ## 扫描与上传
 
@@ -44,7 +57,7 @@
 
 - 构建 DMG：
   ```bash
-  npm run tauri build -- --bundles dmg
+  cargo tauri build -- --bundles dmg
   ```
 - 打包产物位于：`src-tauri/target/release/bundle/dmg/*.dmg`
 - 自动发布脚本：
@@ -60,20 +73,23 @@
 
 ```
 mascopy/
-├── src/                  # Vue 前端
-│   ├── components/       # 组件（文件选择器、表格、进度等）
-│   └── views/            # 主页等视图
-├── src-tauri/            # Tauri 后端（Rust）
-│   ├── src/              # 扫描/分析/上传/配置管理
-│   └── tauri.conf.json   # 打包配置
-└── scripts/              # 发布脚本
+├── Cargo.toml          # Cargo 工作区配置
+├── src-tauri/          # Tauri 后端（Rust）
+│   ├── Cargo.toml
+│   ├── tauri.conf.json # Tauri 配置文件
+│   └── src/            # 核心逻辑：扫描/分析/上传/配置
+└── src-ui/             # Vue 前端
+    ├── package.json
+    ├── vite.config.js
+    ├── src/            # 前端源码
+    └── public/
 ```
 
 ## 常见问题
 
-- 扫描速度慢：开启快速扫描或耐心等待大量文件遍历
-- 上传失败：检查目标目录写权限与网络；查看日志详情
-- DMG 构建失败：确保安装了 `Xcode Command Line Tools` 与 `Tauri CLI`
+- **扫描速度慢**：开启快速扫描或耐心等待大量文件遍历
+- **上传失败**：检查目标目录写权限与网络；查看日志详情
+- **DMG 构建失败**：确保安装了 `Xcode Command Line Tools`
 
 ## 许可证
 

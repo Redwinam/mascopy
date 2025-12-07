@@ -4,6 +4,7 @@ mod scanner;
 mod metadata;
 mod analyzer;
 mod uploader;
+mod error;
 
 use std::sync::Arc;
 use tauri::{State, Window};
@@ -11,6 +12,7 @@ use config::{Config, ConfigManager};
 use scanner::{Scanner, MediaFile};
 use analyzer::Analyzer;
 use uploader::Uploader;
+use error::{AppError, AppResult};
 use serde::Deserialize;
 
 struct AppState {
@@ -19,13 +21,13 @@ struct AppState {
 }
 
 #[tauri::command]
-fn get_config(state: State<AppState>) -> Result<Config, String> {
-    state.config_manager.load().map_err(|e| e.to_string())
+fn get_config(state: State<AppState>) -> AppResult<Config> {
+    state.config_manager.load().map_err(|e| AppError::Config(e.to_string()))
 }
 
 #[tauri::command]
-fn save_config(state: State<AppState>, config: Config) -> Result<(), String> {
-    state.config_manager.save(&config).map_err(|e| e.to_string())
+fn save_config(state: State<AppState>, config: Config) -> AppResult<()> {
+    state.config_manager.save(&config).map_err(|e| AppError::Config(e.to_string()))
 }
 
 #[derive(Deserialize)]
@@ -43,9 +45,11 @@ struct ScanArgs {
 }
 
 #[tauri::command]
-async fn scan_files(args: ScanArgs) -> Result<Vec<MediaFile>, String> {
+async fn scan_files(args: ScanArgs) -> AppResult<Vec<MediaFile>> {
     let scanner = Scanner::with_mode(&args.mode.clone().unwrap_or_else(|| "sd".to_string()));
     let mut files = scanner.scan(&args.source_dir, args.fast_mode.unwrap_or(false));
+    // 假设 Analyzer::analyze 可能失败，如果它是 void 返回，我们保持现状。
+    // 如果它返回 Result，这里应该 map_err
     Analyzer::analyze(&mut files, &args.target_dir, args.overwrite_duplicates);
     Ok(files)
 }
@@ -55,9 +59,9 @@ async fn upload_files(
     files: Vec<MediaFile>, 
     window: Window,
     state: State<'_, AppState>
-) -> Result<(), String> {
+) -> AppResult<()> {
     state.uploader.reset();
-    state.uploader.upload_files(files, window).await
+    state.uploader.upload_files(files, window).await.map_err(|e| AppError::Upload(e.to_string()))
 }
 
 #[tauri::command]

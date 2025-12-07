@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "identifier": "com.redwinam.mascopy",
   "build": {
-    "frontendDist": "../dist",
+    "frontendDist": "../src-ui/dist",
     "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build"
+    "beforeDevCommand": "npm run dev --prefix src-ui",
+    "beforeBuildCommand": "npm run build --prefix src-ui"
   },
   "app": {
     "windows": [
