@@ -41,35 +41,36 @@ function formatTime(time) {
 <style scoped>
 .log-container {
   background: #1e293b; /* Keep dark background for logs */
-  border-radius: var(--radius-xl);
+  border-radius: 16px;
   overflow: hidden;
   height: 400px;
-  border: 1px solid var(--surface-300);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .log-content {
-  padding: var(--space-4);
+  padding: 1rem;
   height: 100%;
   overflow-y: auto;
   font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', monospace;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   line-height: 1.6;
 }
 
 .log-entry {
-  padding: 0.125rem 0;
+  padding: 0.25rem 0;
   display: flex;
   align-items: flex-start;
-  gap: var(--space-3);
+  gap: 0.75rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .log-time {
   color: #64748b;
   font-size: 0.75rem;
-  min-width: 80px;
+  min-width: 70px;
   padding-top: 2px;
+  font-feature-settings: "tnum";
 }
 
 .log-message {
@@ -77,7 +78,7 @@ function formatTime(time) {
   word-break: break-all;
 }
 
-.log-info .log-message { color: #93c5fd; }
+.log-info .log-message { color: #bfdbfe; }
 .log-success .log-message { color: #86efac; }
 .log-warning .log-message { color: #fde047; }
 .log-error .log-message { color: #fca5a5; }
@@ -94,7 +95,7 @@ function formatTime(time) {
 
 .placeholder-icon {
   font-size: 2rem;
-  margin-bottom: var(--space-2);
+  margin-bottom: 0.5rem;
   opacity: 0.5;
 }
 

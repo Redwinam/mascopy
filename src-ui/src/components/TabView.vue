@@ -1,17 +1,19 @@
 <template>
   <div class="tabs-container">
-    <div class="tab-list">
-      <button 
-        v-for="tab in tabs" 
-        :key="tab.id"
-        :class="['tab-btn', { active: activeTab === tab.id }]"
-        @click="$emit('update:activeTab', tab.id)"
-      >
-        {{ tab.label }}
-        <div v-if="activeTab === tab.id" class="active-indicator" layoutId="activeTab"></div>
-      </button>
+    <div class="tab-list-wrapper">
+      <div class="tab-list">
+        <button 
+          v-for="tab in tabs" 
+          :key="tab.id"
+          :class="['tab-btn', { active: activeTab === tab.id }]"
+          @click="$emit('update:activeTab', tab.id)"
+        >
+          {{ tab.label }}
+          <div v-if="activeTab === tab.id" class="active-indicator" layoutId="activeTab"></div>
+        </button>
+      </div>
     </div>
-    <div class="tab-content">
+    <div class="tab-content" v-if="$slots.default">
       <slot></slot>
     </div>
   </div>
@@ -29,46 +31,51 @@ defineEmits(['update:activeTab']);
 <style scoped>
 .tabs-container {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-list-wrapper {
+  display: flex;
+  justify-content: center;
 }
 
 .tab-list {
   display: inline-flex;
   padding: 4px;
-  background: var(--surface-200);
-  border-radius: var(--radius-lg);
-  margin-bottom: var(--space-6);
+  background: rgba(0, 0, 0, 0.05); /* Softer background */
+  border-radius: 12px;
   position: relative;
 }
 
 .tab-btn {
   position: relative;
-  padding: 0.5rem 1.5rem;
+  padding: 0.5rem 1.25rem;
   border: none;
   background: transparent;
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  border-radius: var(--radius-md);
-  transition: color 0.2s;
+  border-radius: 10px;
+  transition: all 0.2s;
   z-index: 1;
+  white-space: nowrap;
 }
 
 .tab-btn:hover {
-  color: var(--color-text-main);
+  color: var(--text-color);
 }
 
 .tab-btn.active {
-  color: var(--primary-700);
+  color: var(--primary-color);
   font-weight: 600;
   background: white;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-/* Optional: Smooth transition for active state background if using a shared background element */
-/* For simplicity, we are just styling the button itself for now */
-
 .tab-content {
+  margin-top: 1.5rem;
   position: relative;
 }
 </style>

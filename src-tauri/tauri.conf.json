@@ -6,10 +6,11 @@
   "build": {
     "frontendDist": "../src-ui/dist",
     "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "npm run dev --prefix src-ui",
-    "beforeBuildCommand": "npm run build --prefix src-ui"
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
   },
   "app": {
+    "macOSPrivateApi": true,
     "windows": [
       {
         "title": "大师拷贝",

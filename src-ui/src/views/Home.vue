@@ -4,113 +4,134 @@
 
     <!-- Step 1: Configuration -->
     <div v-show="currentStep === 'config'" class="step-container animate-fade-in">
-      <div class="config-grid">
+      
+      <div class="transfer-flow">
         <!-- Source Column -->
-        <div class="config-card glass-panel">
-          <div class="card-header">
-            <span class="header-tag">来源</span>
+        <div class="config-card glass-panel source-card">
+          <div class="card-header-row">
+            <div class="header-badge source-badge">
+              <span class="badge-icon">📂</span>
+              <span class="badge-text">源目录</span>
+            </div>
+            <div class="mode-indicator">{{ currentMode === 'sd' ? 'SD卡模式' : 'DJI模式' }}</div>
           </div>
-          <FileSelector 
-            :title="`源目录 (${currentMode === 'sd' ? 'SD卡' : 'DJI'})`"
-            :path="config[currentMode].source_dir" 
-            @update:path="updateSource"
-            @addFavorite="addSourceFavorite"
-            placeholder="请选择包含照片/视频的文件夹"
-          >
-            <template #icon>
-              <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-              </svg>
-            </template>
-          </FileSelector>
           
-          <div class="divider"></div>
-          
-          <div class="favorites-section">
-            <div class="section-title">收藏夹</div>
-            <div class="fav-list">
-              <div v-for="p in sourceFavorites" :key="p" class="fav-item" @click="selectSource(p)">
-                <div class="fav-info">
-                  <span class="fav-basename">{{ basename(p) }}</span>
-                  <span class="fav-path" :title="p">{{ p }}</span>
-                </div>
-                <button class="btn-icon-danger" @click.stop="removeSourceFavorite(p)" title="删除">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          <div class="card-body">
+            <FileSelector 
+              :title="`选择${currentMode === 'sd' ? 'SD卡' : 'DJI设备'}路径`"
+              :path="config[currentMode].source_dir" 
+              @update:path="updateSource"
+              @addFavorite="addSourceFavorite"
+              placeholder="请选择包含照片/视频的文件夹"
+              class="main-selector"
+            >
+              <template #icon>
+                <div class="icon-circle source-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                   </svg>
-                </button>
+                </div>
+              </template>
+            </FileSelector>
+
+            <div v-if="sourceFavorites.length > 0" class="favorites-area">
+              <div class="fav-label">收藏夹</div>
+              <div class="fav-chips">
+                <div v-for="p in sourceFavorites" :key="p" class="fav-chip" @click="selectSource(p)" :title="p">
+                  <span class="fav-name">{{ basename(p) }}</span>
+                  <button class="fav-remove" @click.stop="removeSourceFavorite(p)">×</button>
+                </div>
               </div>
-              <div v-if="sourceFavorites.length === 0" class="empty-fav">暂无收藏</div>
             </div>
           </div>
         </div>
 
-        <!-- Target Column -->
-        <div class="config-card glass-panel">
-          <div class="card-header">
-            <span class="header-tag tag-blue">目标</span>
+        <!-- Arrow Connector -->
+        <div class="flow-connector">
+          <div class="connector-line"></div>
+          <div class="connector-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
           </div>
-          <FileSelector 
-            title="目标目录 (NAS)" 
-            :path="config[currentMode].target_dir" 
-            @update:path="updateTarget"
-            @addFavorite="addTargetFavorite"
-            placeholder="请选择备份目标文件夹"
-          >
-            <template #icon>
-              <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
-              </svg>
-            </template>
-          </FileSelector>
+        </div>
 
-          <div class="divider"></div>
+        <!-- Target Column -->
+        <div class="config-card glass-panel target-card">
+          <div class="card-header-row">
+            <div class="header-badge target-badge">
+              <span class="badge-icon">💾</span>
+              <span class="badge-text">目标目录</span>
+            </div>
+            <div class="mode-indicator">NAS / 备份盘</div>
+          </div>
 
-          <div class="favorites-section">
-            <div class="section-title">收藏夹</div>
-            <div class="fav-list">
-              <div v-for="p in targetFavorites" :key="p" class="fav-item" @click="selectTarget(p)">
-                <div class="fav-info">
-                  <span class="fav-basename">{{ basename(p) }}</span>
-                  <span class="fav-path" :title="p">{{ p }}</span>
-                </div>
-                <button class="btn-icon-danger" @click.stop="removeTargetFavorite(p)" title="删除">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          <div class="card-body">
+            <FileSelector 
+              title="选择备份位置" 
+              :path="config[currentMode].target_dir" 
+              @update:path="updateTarget"
+              @addFavorite="addTargetFavorite"
+              placeholder="请选择备份目标文件夹"
+              class="main-selector"
+            >
+              <template #icon>
+                <div class="icon-circle target-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
                   </svg>
-                </button>
+                </div>
+              </template>
+            </FileSelector>
+
+            <div v-if="targetFavorites.length > 0" class="favorites-area">
+              <div class="fav-label">收藏夹</div>
+              <div class="fav-chips">
+                <div v-for="p in targetFavorites" :key="p" class="fav-chip" @click="selectTarget(p)" :title="p">
+                  <span class="fav-name">{{ basename(p) }}</span>
+                  <button class="fav-remove" @click.stop="removeTargetFavorite(p)">×</button>
+                </div>
               </div>
-              <div v-if="targetFavorites.length === 0" class="empty-fav">暂无收藏</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Compact Options Bar -->
-      <div class="options-bar glass-panel">
-        <div class="options-left">
-          <label class="option-chip" :class="{ active: config[currentMode].overwrite_duplicates }">
+      <!-- Action Bar -->
+      <div class="action-footer glass-panel">
+        <div class="options-group">
+          <label class="toggle-option" :class="{ active: config[currentMode].overwrite_duplicates }">
             <input type="checkbox" v-model="config[currentMode].overwrite_duplicates">
-            <span class="check-icon" v-if="config[currentMode].overwrite_duplicates">✓</span>
-            <span>覆盖重复文件</span>
+            <div class="toggle-box">
+              <span class="check-mark" v-if="config[currentMode].overwrite_duplicates">✓</span>
+            </div>
+            <div class="option-text">
+              <span class="option-title">覆盖重复文件</span>
+              <span class="option-desc">相同文件名将被覆盖</span>
+            </div>
           </label>
           
-          <div class="option-group">
-            <label class="option-chip" :class="{ active: fastMode }">
-              <input type="checkbox" v-model="fastMode">
-              <span class="check-icon" v-if="fastMode">✓</span>
-              <span>快速扫描</span>
-            </label>
-            <span class="option-hint">跳过 EXIF 解析，仅对比修改时间</span>
-          </div>
+          <div class="divider-vertical"></div>
+
+          <label class="toggle-option" :class="{ active: fastMode }">
+            <input type="checkbox" v-model="fastMode">
+            <div class="toggle-box">
+              <span class="check-mark" v-if="fastMode">✓</span>
+            </div>
+            <div class="option-text">
+              <span class="option-title">快速扫描模式</span>
+              <span class="option-desc">仅对比修改时间 (跳过EXIF)</span>
+            </div>
+          </label>
         </div>
 
-        <div class="actions-right">
-          <button @click="startScan" class="btn btn-primary btn-lg" :disabled="!canStart || isScanning">
-            <span v-if="isScanning" class="spinner"></span>
-            {{ isScanning ? '扫描中...' : '开始扫描' }}
-          </button>
-        </div>
+        <button @click="startScan" class="start-btn" :disabled="!canStart || isScanning">
+          <span v-if="isScanning" class="spinner"></span>
+          <span class="btn-text">{{ isScanning ? '扫描中...' : '开始扫描' }}</span>
+          <svg v-if="!isScanning" xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -236,9 +257,21 @@ onMounted(async () => {
     addLog('warning', '无法加载配置: ' + e);
   }
 
-  await listen('upload-progress', (event) => {
-    progress.value = event.payload;
-  });
+  const isTauri =
+    typeof window !== 'undefined' &&
+    (window.__TAURI__ !== undefined ||
+      window.__TAURI_INTERNALS__ !== undefined ||
+      window.__TAURI_INTERNALS__?.invoke !== undefined);
+
+  if (!isTauri) return;
+
+  try {
+    await listen('upload-progress', (event) => {
+      progress.value = event.payload;
+    });
+  } catch (e) {
+    addLog('warning', '无法监听上传进度事件: ' + e);
+  }
 });
 
 async function updateSource(path) {

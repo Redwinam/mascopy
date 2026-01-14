@@ -1,8 +1,8 @@
 <template>
   <div class="file-selector">
-    <div class="selector-header">
-      <div class="selector-info">
-        <div class="icon-box">
+    <div class="selector-container">
+      <div class="selector-main">
+        <div class="icon-wrapper">
           <slot name="icon"></slot>
         </div>
         <div class="text-content">
@@ -13,9 +13,16 @@
         </div>
       </div>
       <div class="selector-actions">
-        <button @click="addFavorite" class="btn btn-secondary btn-sm compact-btn">加入收藏</button>
-        <button @click="selectPath" class="btn btn-secondary btn-sm">选择目录</button>
+        <button @click="selectPath" class="btn btn-secondary btn-sm action-btn">
+          选择目录
+        </button>
+        <button @click="addFavorite" class="btn-icon-only" title="加入收藏">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        </button>
       </div>
+    </div>
   </div>
 </template>
 
@@ -51,83 +58,83 @@ function addFavorite() {
 
 <style scoped>
 .file-selector {
-  padding: var(--space-6);
-  transition: transform var(--transition-fast);
+  width: 100%;
 }
 
-.file-selector:hover {
-  transform: translateY(-2px);
-}
-
-.selector-header {
+.selector-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: 1rem;
 }
 
-.selector-info {
+.selector-main {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: 1rem;
   flex: 1;
-  min-width: 0; /* Enable truncation */
+  min-width: 0;
 }
 
-.icon-box {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  background: var(--primary-100);
-  color: var(--primary-600);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.icon-wrapper {
   flex-shrink: 0;
 }
 
 .text-content {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .selector-title {
-  font-weight: 500; /* Removed bold */
-  font-size: 1.125rem;
-  margin: 0 0 0.25rem 0;
-  color: var(--color-text-main);
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0;
+  color: var(--text-color);
 }
 
 .selector-path {
-  font-size: 0.875rem;
-  color: var(--color-text-muted);
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   margin: 0;
+  background: rgba(0,0,0,0.03);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
 }
 
 .selector-actions {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 0.5rem;
   flex-shrink: 0;
 }
 
-.compact-btn {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
+.action-btn {
+  white-space: nowrap;
 }
 
-@media (max-width: 640px) {
-  .selector-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .selector-actions {
-    width: 100%;
-    justify-content: flex-end;
-  }
+.btn-icon-only {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-icon-only:hover {
+  background: rgba(0,0,0,0.05);
+  color: #ef4444; /* Heart color on hover */
 }
 </style>
