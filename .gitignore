@@ -2,6 +2,19 @@
 target/
 **/*.rs.bk
 
+# Node / Frontend
+**/node_modules/
+**/dist/
+**/dist-ssr/
+*.local
+
+# Bundles / Installers
+*.dmg
+*.app
+
+# Logs
+*.log
+
 # Editor directories and files
 .idea
 .DS_Store
