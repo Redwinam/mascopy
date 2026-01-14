@@ -104,6 +104,6 @@ pub fn run() {
             resume_upload,
             cancel_upload
         ])
-        .run(tauri::generate_context!())
+        .run(tauri::generate_context!("tauri.conf.json"))
         .expect("error while running tauri application");
 }

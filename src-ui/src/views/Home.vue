@@ -3,7 +3,7 @@
 
 
     <!-- Step 1: Configuration -->
-    <div v-show="currentStep === 'config'" class="step-container animate-fade-in">
+    <div v-show="currentStep === 'config'" class="step-container config-step animate-fade-in">
       
       <div class="transfer-flow">
         <!-- Source Column -->
@@ -148,7 +148,7 @@
     </div>
 
     <!-- Step 2: Results & Upload -->
-    <div v-show="currentStep === 'results'" class="step-container animate-fade-in">
+    <div v-show="currentStep === 'results'" class="step-container results-step animate-fade-in">
       <div class="results-header">
         <button @click="goBack" class="btn btn-secondary btn-icon" :disabled="isUploading">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -222,9 +222,8 @@ import FileTable from '../components/FileTable.vue';
 import LogViewer from '../components/LogViewer.vue';
 import { useAppState } from '../composables/useAppState.js';
 
-const { currentMode, config } = useAppState();
-const currentStep = ref('config'); // 'config' | 'results'
-const fastMode = ref(false);
+const { currentMode, config, currentStep } = useAppState();
+const fastMode = ref(true);
 
 const isScanning = ref(false);
 const isUploading = ref(false);
@@ -480,7 +479,16 @@ function clearLogs() {
   flex-direction: column;
   gap: var(--space-6);
   padding: var(--space-6);
+  overflow: hidden;
+}
+
+.config-step {
   overflow-y: auto;
+}
+
+.results-step {
+  overflow: hidden;
+  min-height: 0;
 }
 
 /* Config Grid */

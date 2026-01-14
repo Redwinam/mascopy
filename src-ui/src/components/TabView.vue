@@ -33,6 +33,8 @@ defineEmits(['update:activeTab']);
   width: 100%;
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .tab-list-wrapper {
@@ -77,5 +79,10 @@ defineEmits(['update:activeTab']);
 .tab-content {
   margin-top: 1.5rem;
   position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 </style>

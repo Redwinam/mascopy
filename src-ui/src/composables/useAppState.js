@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue';
 
 const currentMode = ref('sd');
+const currentStep = ref('config');
 const config = ref({
     sd: {
         source_dir: '',
@@ -23,6 +24,7 @@ const config = ref({
 export function useAppState() {
     return {
         currentMode,
+        currentStep,
         config
     };
 }

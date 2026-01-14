@@ -603,6 +603,13 @@ svg.btn-icon {
   margin-bottom: var(--space-2);
 }
 
+.tab-pane {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 @media (max-width: 768px) {
   body {
     overflow: auto;

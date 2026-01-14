@@ -1,12 +1,22 @@
 <template>
   <div class="app-container">
-    <header class="app-header animate-fade-in" data-tauri-drag-region>
+    <header
+      class="app-header animate-fade-in"
+      :class="{ 'is-config': currentStep === 'config' }"
+      data-tauri-drag-region
+    >
+      <div class="drag-strip" data-tauri-drag-region></div>
       <div class="brand">
         <!-- Brand hidden as per user request to avoid conflict with traffic lights -->
       </div>
       
       <div class="header-center">
-        <TabView :tabs="modeTabs" v-model:activeTab="currentMode" class="header-tabs" />
+        <TabView
+          v-if="currentStep === 'config'"
+          :tabs="modeTabs"
+          v-model:activeTab="currentMode"
+          class="header-tabs"
+        />
       </div>
 
       <div class="header-actions">
@@ -26,7 +36,7 @@ import TabView from './components/TabView.vue';
 import { useAppState } from './composables/useAppState.js';
 import './styles/main.css';
 
-const { currentMode } = useAppState();
+const { currentMode, currentStep } = useAppState();
 
 const modeTabs = [
   { id: 'sd', label: 'SD卡模式' },
@@ -39,10 +49,25 @@ const modeTabs = [
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
   padding: var(--space-4) var(--space-6);
-  padding-top: 2rem; /* Add padding for traffic lights */
+  padding-top: 1.25rem;
   -webkit-app-region: drag;
-  height: 80px; /* Increased height for traffic lights */
+  height: 56px;
+}
+
+.app-header.is-config {
+  padding-top: 2rem;
+  height: 80px;
+}
+
+.drag-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  -webkit-app-region: drag;
 }
 
 .brand {
@@ -80,6 +105,13 @@ const modeTabs = [
   flex: 1;
   display: flex;
   justify-content: center;
+}
+
+.header-tabs {
+  -webkit-app-region: no-drag;
+}
+
+.header-actions {
   -webkit-app-region: no-drag;
 }
 

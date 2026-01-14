@@ -32,14 +32,21 @@ fi
 echo "使用 TAG: $TAG"
 
 echo "构建前端..."
+pushd src-ui >/dev/null
 npm run build
+popd >/dev/null
 
 echo "构建 DMG..."
-npm run tauri build -- --bundles dmg
+cargo tauri build --bundles dmg
 
-DMG_PATH=$(ls src-tauri/target/release/bundle/dmg/*.dmg | head -n 1 || true)
+DMG_PATH=$(
+  ls -t target/release/bundle/dmg/*.dmg 2>/dev/null | grep -v '/rw\.' | head -n 1 || true
+)
 if [[ -z "$DMG_PATH" ]]; then
-  echo "未找到 DMG 文件，路径应位于 src-tauri/target/release/bundle/dmg/*.dmg"
+  DMG_PATH=$(ls -t src-tauri/target/release/bundle/dmg/*.dmg 2>/dev/null | grep -v '/rw\.' | head -n 1 || true)
+fi
+if [[ -z "$DMG_PATH" ]]; then
+  echo "未找到 DMG 文件，路径应位于 target/release/bundle/dmg/*.dmg"
   exit 1
 fi
 echo "找到 DMG: $DMG_PATH"

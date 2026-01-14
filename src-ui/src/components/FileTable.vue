@@ -139,6 +139,8 @@ function formatStatus(status) {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  min-height: 0;
+  flex: 1;
 }
 
 .filter-strip {
@@ -193,11 +195,12 @@ function formatStatus(status) {
 .count-skip { color: var(--color-text-light); }
 
 .table-wrapper {
-  overflow: hidden;
-  max-height: 500px;
+  overflow: auto;
   display: flex;
   flex-direction: column;
   padding: 0; /* Override glass-panel padding */
+  flex: 1;
+  min-height: 0;
 }
 
 .file-table {
@@ -298,5 +301,3 @@ function formatStatus(status) {
   color: var(--color-text-muted);
 }
 </style>
-
-
