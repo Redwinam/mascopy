@@ -36,10 +36,14 @@
 
             <div v-if="sourceFavorites.length > 0" class="favorites-area">
               <div class="fav-label">收藏夹</div>
-              <div class="fav-chips">
-                <div v-for="p in sourceFavorites" :key="p" class="fav-chip" @click="selectSource(p)" :title="p">
-                  <span class="fav-name">{{ basename(p) }}</span>
-                  <button class="fav-remove" @click.stop="removeSourceFavorite(p)">×</button>
+              <div class="fav-list">
+                <div v-for="p in sourceFavorites" :key="p" class="fav-item" @click="selectSource(p)" :title="p">
+                  <span class="fav-path">{{ p }}</span>
+                  <button class="fav-remove" @click.stop="removeSourceFavorite(p)">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
@@ -49,10 +53,12 @@
         <!-- Arrow Connector -->
         <div class="flow-connector">
           <div class="connector-line"></div>
-          <div class="connector-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
+          <div class="connector-icon-wrapper">
+            <div class="connector-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </div>
           </div>
         </div>
 
@@ -86,10 +92,14 @@
 
             <div v-if="targetFavorites.length > 0" class="favorites-area">
               <div class="fav-label">收藏夹</div>
-              <div class="fav-chips">
-                <div v-for="p in targetFavorites" :key="p" class="fav-chip" @click="selectTarget(p)" :title="p">
-                  <span class="fav-name">{{ basename(p) }}</span>
-                  <button class="fav-remove" @click.stop="removeTargetFavorite(p)">×</button>
+              <div class="fav-list">
+                <div v-for="p in targetFavorites" :key="p" class="fav-item" @click="selectTarget(p)" :title="p">
+                  <span class="fav-path">{{ p }}</span>
+                  <button class="fav-remove" @click.stop="removeTargetFavorite(p)">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
@@ -128,9 +138,11 @@
         <button @click="startScan" class="start-btn" :disabled="!canStart || isScanning">
           <span v-if="isScanning" class="spinner"></span>
           <span class="btn-text">{{ isScanning ? '扫描中...' : '开始扫描' }}</span>
-          <svg v-if="!isScanning" xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
+          <div class="btn-icon-wrapper" v-if="!isScanning">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
         </button>
       </div>
     </div>

@@ -16,7 +16,7 @@
       <table class="file-table">
         <thead>
           <tr>
-            <th>文件名</th>
+            <th>文件名 / 目标目录</th>
             <th>类型</th>
             <th>大小</th>
             <th>日期</th>
@@ -25,7 +25,10 @@
         </thead>
         <tbody>
           <tr v-for="(file, index) in filteredFiles" :key="index">
-            <td class="filename" :title="file.filename">{{ file.filename }}</td>
+            <td class="file-info-cell">
+              <div class="filename" :title="file.filename">{{ file.filename }}</div>
+              <div class="target-path" :title="file.target_path">{{ getParentDir(file.target_path) }}</div>
+            </td>
             <td>
               <span class="type-badge">{{ file.file_type === 'photo' ? '照片' : '视频' }}</span>
             </td>
@@ -74,6 +77,21 @@ const filteredFiles = computed(() => {
   if (props.filter === 'all') return props.files;
   return props.files.filter(f => f.status === props.filter);
 });
+
+function getParentDir(path) {
+  if (!path) return '-';
+  // Handle both Windows and Unix separators
+   const parts = path.split(/[/\\]/);
+   // Return the full path for tooltip context, but for display we want to show
+   // enough context. The user asked for "full target directory" but in a small font.
+   // Let's try to show the relative part from the target root if possible, 
+   // but since we don't have the target root here easily, let's show the last 2-3 segments.
+   
+   if (parts.length > 3) {
+      return '.../' + parts.slice(-3).join('/');
+   }
+   return path;
+ }
 
 function getLabel(key) {
   const labels = {
@@ -215,13 +233,30 @@ function formatStatus(status) {
   background: var(--surface-50);
 }
 
+.file-info-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 300px;
+}
+
 .file-table .filename {
   font-family: monospace;
   font-weight: 500;
-  max-width: 200px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 0.9rem;
+}
+
+.file-table .target-path {
+  font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--primary-600);
+  font-size: 0.75rem;
+  opacity: 0.8;
 }
 
 .type-badge {
