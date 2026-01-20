@@ -149,40 +149,43 @@
 
     <!-- Step 2: Results & Upload -->
     <div v-show="currentStep === 'results'" class="step-container results-step animate-fade-in">
-      <TabView :tabs="viewTabs" v-model:activeTab="activeView" class="results-tabs">
-        <template #left>
-          <button @click="goBack" class="btn btn-secondary btn-icon" :disabled="isUploading">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            返回配置
-          </button>
-        </template>
-        <template #right>
-          <button @click="startUpload" class="btn btn-primary btn-lg" :disabled="!filesToDisplay || filesToDisplay.length === 0 || isUploading">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-            {{ isUploading ? '上传中...' : '开始上传' }}
-          </button>
-        </template>
+      <Teleport to="#header-left-slot" v-if="currentStep === 'results'">
+        <button @click="goBack" class="btn btn-secondary btn-icon" :disabled="isUploading" data-no-drag>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          返回配置
+        </button>
+      </Teleport>
+      <Teleport to="#header-center-slot" v-if="currentStep === 'results'">
+        <TabView :tabs="viewTabs" v-model:activeTab="activeView" class="header-tabs" :showContent="false" data-no-drag />
+      </Teleport>
+      <Teleport to="#header-right-slot" v-if="currentStep === 'results'">
+        <button @click="startUpload" class="btn btn-primary btn-lg" :disabled="!filesToDisplay || filesToDisplay.length === 0 || isUploading" data-no-drag>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+          {{ isUploading ? '上传中...' : '开始上传' }}
+        </button>
+      </Teleport>
 
-        <div v-if="isUploading" class="progress-section glass-panel p-4 animate-fade-in">
-          <ProgressBar 
-            :current="progress.current" 
-            :total="progress.total" 
-            :filename="progress.filename || '正在上传...'"
-          />
-          <div class="upload-controls">
-            <button @click="togglePause" class="btn btn-secondary btn-sm">
-              {{ isPaused ? '继续' : '暂停' }}
-            </button>
-            <button @click="cancel" class="btn btn-danger btn-sm">
-              取消
-            </button>
-          </div>
+      <div v-if="isUploading" class="progress-section glass-panel p-4 animate-fade-in">
+        <ProgressBar 
+          :current="progress.current" 
+          :total="progress.total" 
+          :filename="progress.filename || '正在上传...'"
+        />
+        <div class="upload-controls">
+          <button @click="togglePause" class="btn btn-secondary btn-sm">
+            {{ isPaused ? '继续' : '暂停' }}
+          </button>
+          <button @click="cancel" class="btn btn-danger btn-sm">
+            取消
+          </button>
         </div>
+      </div>
 
+      <div class="results-content">
         <div v-show="activeView === 'results'" class="tab-pane">
           <div class="filter-row" v-if="availableDates.length > 0 || availableExtensions.length > 0">
             <div class="date-filter-section" v-if="availableDates.length > 0">
@@ -241,16 +244,16 @@
             <div class="empty-icon">🔍</div>
             <p>未找到符合条件的文件</p>
           </div>
-        </div>
-        <div v-show="activeView === 'logs'" class="tab-pane">
-          <LogViewer :logs="logs" />
-          <div class="log-actions">
-            <button @click="clearLogs" class="btn btn-secondary btn-sm">
-              清空日志
-            </button>
           </div>
-        </div>
-      </TabView>
+          <div v-show="activeView === 'logs'" class="tab-pane">
+            <LogViewer :logs="logs" />
+            <div class="log-actions">
+              <button @click="clearLogs" class="btn btn-secondary btn-sm">
+                清空日志
+              </button>
+            </div>
+          </div>
+      </div>
     </div>
 
     <Modal v-if="showSuccessModal" @close="showSuccessModal = false">
@@ -679,7 +682,7 @@ function clearLogs() {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  padding: var(--space-6);
+  padding: var(--space-4) var(--space-6);
   overflow: hidden;
 }
 
@@ -690,7 +693,6 @@ function clearLogs() {
 .results-step {
   overflow: hidden;
   min-height: 0;
-  padding-top: var(--space-2);
 }
 
 /* Config Grid */
@@ -934,17 +936,8 @@ function clearLogs() {
 }
 
 /* Results View */
-.results-tabs {
+.results-content {
   flex: 1;
-  min-height: 0;
-}
-
-.results-tabs .tab-list-wrapper {
-  padding: 0 var(--space-2);
-}
-
-.results-tabs .tab-content {
-  margin-top: var(--space-4);
   display: flex;
   flex-direction: column;
   min-height: 0;

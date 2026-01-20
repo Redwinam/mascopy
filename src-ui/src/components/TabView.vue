@@ -19,7 +19,7 @@
         <slot name="right"></slot>
       </div>
     </div>
-    <div class="tab-content" v-if="$slots.default">
+    <div class="tab-content" v-if="showContent && $slots.default">
       <slot></slot>
     </div>
   </div>
@@ -28,7 +28,11 @@
 <script setup>
 defineProps({
   tabs: Array,
-  activeTab: String
+  activeTab: String,
+  showContent: {
+    type: Boolean,
+    default: true
+  }
 });
 
 defineEmits(['update:activeTab']);

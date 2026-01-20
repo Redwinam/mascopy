@@ -4,21 +4,23 @@
       class="app-header animate-fade-in"
       :class="{ 'is-config': currentStep === 'config' }"
       data-tauri-drag-region
+      @mousedown="onHeaderMouseDown"
     >
       <div class="app-drag-layer" data-tauri-drag-region></div>
       <div class="drag-strip" data-tauri-drag-region></div>
-      <div class="brand" data-tauri-drag-region></div>
+      <div class="brand" id="header-left-slot" data-tauri-drag-region></div>
       
-      <div class="header-center">
+      <div class="header-center" id="header-center-slot">
         <TabView
           v-if="currentStep === 'config'"
           :tabs="modeTabs"
           v-model:activeTab="currentMode"
           class="header-tabs"
+          data-no-drag
         />
       </div>
 
-      <div class="header-actions">
+      <div class="header-actions" id="header-right-slot">
         <!-- Window controls are handled by OS with titleBarStyle: Overlay -->
       </div>
     </header>
@@ -30,10 +32,19 @@
 </template>
 
 <script setup>
+import { onBeforeUnmount, onMounted } from 'vue';
 import Home from './views/Home.vue';
 import TabView from './components/TabView.vue';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useAppState } from './composables/useAppState.js';
 import './styles/main.css';
+
+const isTauri =
+  typeof window !== 'undefined' &&
+  (window.__TAURI__ !== undefined ||
+    window.__TAURI_INTERNALS__ !== undefined ||
+    window.__TAURI_INTERNALS__?.invoke !== undefined);
+const appWindow = isTauri ? getCurrentWindow() : null;
 
 const { currentMode, currentStep } = useAppState();
 
@@ -41,6 +52,35 @@ const modeTabs = [
   { id: 'sd', label: 'SD卡模式' },
   { id: 'dji', label: 'DJI模式' }
 ];
+
+function onHeaderMouseDown(event) {
+  if (event.button !== 0) return;
+  const target = event.target;
+  if (target && target.closest && target.closest('button, a, input, select, textarea, [data-no-drag]')) return;
+  if (!appWindow) return;
+  appWindow.startDragging();
+}
+
+const headerHeight = 56;
+
+function onGlobalMouseDown(event) {
+  if (event.button !== 0) return;
+  if (event.clientY > headerHeight) return;
+  const target = event.target;
+  if (target && target.closest && target.closest('button, a, input, select, textarea, [data-no-drag]')) return;
+  if (!appWindow) return;
+  appWindow.startDragging();
+}
+
+onMounted(() => {
+  if (!isTauri) return;
+  window.addEventListener('mousedown', onGlobalMouseDown, true);
+});
+
+onBeforeUnmount(() => {
+  if (!isTauri) return;
+  window.removeEventListener('mousedown', onGlobalMouseDown, true);
+});
 </script>
 
 <style scoped>
@@ -55,11 +95,6 @@ const modeTabs = [
   height: 56px;
 }
 
-.app-header.is-config {
-  padding-top: 2rem;
-  height: 80px;
-}
-
 .app-drag-layer {
   position: absolute;
   top: 0;
@@ -68,10 +103,6 @@ const modeTabs = [
   height: 56px;
   -webkit-app-region: drag;
   z-index: 0;
-}
-
-.app-header.is-config .app-drag-layer {
-  height: 80px;
 }
 
 .drag-strip {
