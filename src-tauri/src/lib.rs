@@ -42,12 +42,18 @@ struct ScanArgs {
     mode: Option<String>,
     #[serde(default, alias = "fastMode")]
     fast_mode: Option<bool>,
+    #[serde(default, alias = "ignoreThumbnails")]
+    ignore_thumbnails: Option<bool>,
 }
 
 #[tauri::command]
 async fn scan_files(args: ScanArgs) -> AppResult<Vec<MediaFile>> {
     let scanner = Scanner::with_mode(&args.mode.clone().unwrap_or_else(|| "sd".to_string()));
-    let mut files = scanner.scan(&args.source_dir, args.fast_mode.unwrap_or(false));
+    let mut files = scanner.scan(
+        &args.source_dir,
+        args.fast_mode.unwrap_or(false),
+        args.ignore_thumbnails.unwrap_or(true),
+    );
     // 假设 Analyzer::analyze 可能失败，如果它是 void 返回，我们保持现状。
     // 如果它返回 Result，这里应该 map_err
     Analyzer::analyze(&mut files, &args.target_dir, args.overwrite_duplicates);

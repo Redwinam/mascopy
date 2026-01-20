@@ -133,6 +133,19 @@
               <span class="option-desc">仅对比修改时间 (跳过EXIF)</span>
             </div>
           </label>
+
+          <div class="divider-vertical"></div>
+
+          <label class="toggle-option" :class="{ active: ignoreThumbnails }">
+            <input type="checkbox" v-model="ignoreThumbnails">
+            <div class="toggle-box">
+              <span class="check-mark" v-if="ignoreThumbnails">✓</span>
+            </div>
+            <div class="option-text">
+              <span class="option-title">忽略缩略图文件夹</span>
+              <span class="option-desc">自动跳过 THMBNL 等缩略图目录</span>
+            </div>
+          </label>
         </div>
 
         <button @click="startScan" class="start-btn" :disabled="!canStart || isScanning">
@@ -294,6 +307,7 @@ import { useAppState } from '../composables/useAppState.js';
 
 const { currentMode, config, currentStep } = useAppState();
 const fastMode = ref(true);
+const ignoreThumbnails = ref(true);
 
 const isScanning = ref(false);
 const isUploading = ref(false);
@@ -562,7 +576,8 @@ async function startScan() {
         targetDir: modeConfig.target_dir,
         overwriteDuplicates: modeConfig.overwrite_duplicates,
         mode: currentMode.value,
-        fastMode: fastMode.value
+        fastMode: fastMode.value,
+        ignoreThumbnails: ignoreThumbnails.value
       }
     });
     

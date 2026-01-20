@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 use std::time::SystemTime;
 use crate::metadata::MetadataExtractor;
@@ -47,12 +47,18 @@ impl Scanner {
         }
     }
 
-    pub fn scan(&self, source_dir: &str, fast_mode: bool) -> Vec<MediaFile> {
+    pub fn scan(&self, source_dir: &str, fast_mode: bool, ignore_thumbnails: bool) -> Vec<MediaFile> {
         let mut files = Vec::new();
 
         for entry in WalkDir::new(source_dir).into_iter().filter_map(|e| e.ok()) {
             if entry.file_type().is_file() {
                 let path = entry.path();
+                if is_hidden_file(path) {
+                    continue;
+                }
+                if ignore_thumbnails && has_thumbnail_parent(path) {
+                    continue;
+                }
                 if let Some(ext) = path.extension() {
                     if let Some(ext_str) = ext.to_str() {
                         if self.supported_extensions.contains(&ext_str.to_lowercase()) {
@@ -87,4 +93,33 @@ impl Scanner {
         }
         files
     }
+}
+
+fn has_thumbnail_parent(path: &Path) -> bool {
+    let Some(parent) = path.parent() else {
+        return false;
+    };
+
+    parent
+        .components()
+        .filter_map(|component| match component {
+            std::path::Component::Normal(name) => name.to_str(),
+            _ => None,
+        })
+        .any(is_thumbnail_dir_name)
+}
+
+fn is_hidden_file(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .map(|name| name.starts_with("._") || name.starts_with('.'))
+        .unwrap_or(false)
+}
+
+fn is_thumbnail_dir_name(name: &str) -> bool {
+    let upper = name.to_ascii_uppercase();
+    if upper == "THMBNL" || upper == "THM" {
+        return true;
+    }
+    upper.contains("THUMB") || upper.contains("THMBNL")
 }
