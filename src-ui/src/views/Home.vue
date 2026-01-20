@@ -188,23 +188,46 @@
         <TabView :tabs="viewTabs" v-model:activeTab="activeView">
           <div v-show="activeView === 'results'" class="tab-pane">
             
-            <div class="date-filter-section" v-if="availableDates.length > 0">
-              <div class="date-filter-header">
-                <span class="section-label">日期筛选</span>
-                <div class="date-actions">
-                  <button @click="selectAllDates" class="btn-text">全选</button>
-                  <button @click="deselectAllDates" class="btn-text">全不选</button>
+            <div class="filter-row" v-if="availableDates.length > 0 || availableExtensions.length > 0">
+              <div class="date-filter-section" v-if="availableDates.length > 0">
+                <div class="date-filter-header">
+                  <span class="section-label">日期筛选</span>
+                  <div class="date-actions">
+                    <button @click="selectAllDates" class="filter-action">全选</button>
+                    <button @click="deselectAllDates" class="filter-action">全不选</button>
+                  </div>
+                </div>
+                <div class="date-list">
+                  <div 
+                    v-for="item in availableDates" 
+                    :key="item.date"
+                    :class="['date-chip', { active: selectedDates.includes(item.date) }]"
+                    @click="toggleDate(item.date)"
+                  >
+                    <span class="date-text">{{ item.date }}</span>
+                    <span class="date-count">{{ item.count }}</span>
+                  </div>
                 </div>
               </div>
-              <div class="date-list">
-                <div 
-                  v-for="item in availableDates" 
-                  :key="item.date"
-                  :class="['date-chip', { active: selectedDates.includes(item.date) }]"
-                  @click="toggleDate(item.date)"
-                >
-                  <span class="date-text">{{ item.date }}</span>
-                  <span class="date-count">{{ item.count }}</span>
+
+              <div class="ext-filter-section" v-if="availableExtensions.length > 0">
+                <div class="date-filter-header">
+                  <span class="section-label">后缀筛选</span>
+                  <div class="date-actions">
+                    <button @click="selectAllExtensions" class="filter-action">全选</button>
+                    <button @click="deselectAllExtensions" class="filter-action">全不选</button>
+                  </div>
+                </div>
+                <div class="date-list">
+                  <div
+                    v-for="item in availableExtensions"
+                    :key="item.ext"
+                    :class="['date-chip', { active: selectedExtensions.includes(item.ext) }]"
+                    @click="toggleExtension(item.ext)"
+                  >
+                    <span class="date-text">{{ item.ext }}</span>
+                    <span class="date-count">{{ item.count }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -216,7 +239,7 @@
             />
             <div v-else-if="scanResult && scanResult.length > 0" class="empty-state">
               <div class="empty-icon">📅</div>
-              <p>请选择至少一个日期以查看文件</p>
+              <p>请选择至少一个日期和后缀以查看文件</p>
             </div>
             <div v-else class="empty-state">
               <div class="empty-icon">🔍</div>
@@ -284,6 +307,7 @@ const logs = ref([]);
 const activeView = ref('results');
 const fileFilter = ref('all');
 const selectedDates = ref([]);
+const selectedExtensions = ref([]);
 
 const availableDates = computed(() => {
   if (!scanResult.value) return [];
@@ -304,9 +328,26 @@ const availableDates = computed(() => {
   return Object.values(dates).sort((a, b) => b.date.localeCompare(a.date));
 });
 
+const availableExtensions = computed(() => {
+  if (!scanResult.value) return [];
+  const extensions = {};
+  scanResult.value.forEach(file => {
+    const ext = getFileExtension(file.filename);
+    if (!extensions[ext]) {
+      extensions[ext] = { ext, count: 0 };
+    }
+    extensions[ext].count++;
+  });
+  return Object.values(extensions).sort((a, b) => {
+    if (b.count !== a.count) return b.count - a.count;
+    return a.ext.localeCompare(b.ext);
+  });
+});
+
 const filesToDisplay = computed(() => {
   if (!scanResult.value) return [];
   if (selectedDates.value.length === 0) return [];
+  if (selectedExtensions.value.length === 0) return [];
   
   return scanResult.value.filter(file => {
     let date;
@@ -316,7 +357,8 @@ const filesToDisplay = computed(() => {
       date = new Date(file.date);
     }
     const dateStr = date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
-    return selectedDates.value.includes(dateStr);
+    const ext = getFileExtension(file.filename);
+    return selectedDates.value.includes(dateStr) && selectedExtensions.value.includes(ext);
   });
 });
 
@@ -334,6 +376,30 @@ function selectAllDates() {
 
 function deselectAllDates() {
   selectedDates.value = [];
+}
+
+function toggleExtension(ext) {
+  if (selectedExtensions.value.includes(ext)) {
+    selectedExtensions.value = selectedExtensions.value.filter(e => e !== ext);
+  } else {
+    selectedExtensions.value.push(ext);
+  }
+}
+
+function selectAllExtensions() {
+  selectedExtensions.value = availableExtensions.value.map(e => e.ext);
+}
+
+function deselectAllExtensions() {
+  selectedExtensions.value = [];
+}
+
+function getFileExtension(filename) {
+  if (!filename) return '无后缀';
+  const text = String(filename);
+  const lastDot = text.lastIndexOf('.');
+  if (lastDot <= 0 || lastDot === text.length - 1) return '无后缀';
+  return text.slice(lastDot + 1).toLowerCase();
 }
 
 const sourceFavorites = computed(() => {
@@ -484,6 +550,8 @@ async function selectTarget(p) {
 async function startScan() {
   isScanning.value = true;
   scanResult.value = null;
+  selectedDates.value = [];
+  selectedExtensions.value = [];
   progress.value = { current: 0, total: 0, filename: '正在扫描...' };
   addLog('info', '开始扫描...');
 
@@ -503,6 +571,7 @@ async function startScan() {
 
     // Initialize selectedDates with all found dates
     const dates = new Set();
+    const extensions = new Set();
     files.forEach(file => {
       let date;
       if (file.date.secs_since_epoch !== undefined) {
@@ -512,8 +581,10 @@ async function startScan() {
       }
       const dateStr = date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
       dates.add(dateStr);
+      extensions.add(getFileExtension(file.filename));
     });
     selectedDates.value = Array.from(dates);
+    selectedExtensions.value = Array.from(extensions);
 
     addLog('success', `扫描完成，共找到 ${files.length} 个文件`);
     currentStep.value = 'results'; // Switch to results view
@@ -899,8 +970,21 @@ function clearLogs() {
 }
 
 /* Date Filter */
-.date-filter-section {
+.filter-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
   margin-bottom: var(--space-4);
+}
+
+@media (max-width: 900px) {
+  .filter-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.date-filter-section,
+.ext-filter-section {
   background: var(--surface-overlay-faint);
   border-radius: var(--radius-lg);
   padding: var(--space-3);
@@ -927,17 +1011,23 @@ function clearLogs() {
   gap: var(--space-3);
 }
 
-.btn-text {
-  background: none;
-  border: none;
+.filter-action {
+  background: var(--surface-0);
+  border: 1px solid var(--surface-300);
   color: var(--primary-600);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 600;
   cursor: pointer;
-  padding: 0;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
 }
 
-.btn-text:hover {
-  text-decoration: underline;
+.filter-action:hover {
+  background: var(--surface-50);
+  border-color: var(--primary-300);
+  color: var(--primary-700);
 }
 
 .date-list {
@@ -991,13 +1081,22 @@ function clearLogs() {
 }
 
 @media (prefers-color-scheme: dark) {
-  .date-filter-section {
+  .date-filter-section,
+  .ext-filter-section {
     background: var(--surface-100);
     border-color: var(--surface-300);
   }
 
-  .btn-text {
-    color: var(--primary-300);
+  .filter-action {
+    background: var(--surface-50);
+    border-color: var(--surface-300);
+    color: var(--primary-200);
+  }
+
+  .filter-action:hover {
+    background: var(--surface-100);
+    border-color: var(--primary-400);
+    color: var(--primary-100);
   }
 
   .date-chip {

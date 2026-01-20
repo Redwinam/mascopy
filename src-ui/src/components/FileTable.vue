@@ -230,12 +230,15 @@ function formatFileType(type) {
 
 .file-table td {
   padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--surface-100);
   font-size: 0.875rem;
   color: var(--color-text-main);
 }
 
-.file-table tr:last-child td {
+.file-table tr {
+  border-bottom: 1px solid var(--surface-100);
+}
+
+.file-table tr:last-child {
   border-bottom: none;
 }
 
