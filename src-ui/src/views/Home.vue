@@ -184,22 +184,6 @@
         <TabView :tabs="viewTabs" v-model:activeTab="activeView" class="header-tabs" :showContent="false" data-no-drag />
       </Teleport>
 
-      <div v-if="isUploading" class="progress-section glass-panel p-4 animate-fade-in">
-        <ProgressBar 
-          :current="progress.current" 
-          :total="progress.total" 
-          :filename="progress.filename || '正在上传...'"
-        />
-        <div class="upload-controls">
-          <button @click="togglePause" class="btn btn-secondary btn-sm">
-            {{ isPaused ? '继续' : '暂停' }}
-          </button>
-          <button @click="cancel" class="btn btn-danger btn-sm">
-            取消
-          </button>
-        </div>
-      </div>
-
       <div class="results-content">
         <div v-show="activeView === 'results'" class="tab-pane">
           <div class="filter-row" v-if="availableDates.length > 0 || availableExtensions.length > 0">
@@ -252,11 +236,38 @@
             v-model:filter="fileFilter"
           >
             <template #actions>
-              <button @click="startUpload" class="btn btn-primary btn-action-upload" :disabled="!filesToDisplay || filesToDisplay.length === 0 || isUploading">
+              <div v-if="isUploading" class="upload-status-bar animate-fade-in">
+                <div class="inline-progress">
+                  <div class="progress-text">
+                    <span class="progress-filename" :title="progress.filename">{{ progress.filename || '准备中...' }}</span>
+                    <span class="progress-count">{{ progress.current }} / {{ progress.total }}</span>
+                  </div>
+                  <div class="progress-track-mini">
+                    <div class="progress-fill-mini" :style="{ width: progressPercentage + '%' }"></div>
+                  </div>
+                </div>
+                <div class="inline-controls">
+                  <button @click="togglePause" class="btn-icon-only" :title="isPaused ? '继续' : '暂停'">
+                    <svg v-if="isPaused" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
+                  <button @click="cancel" class="btn-icon-only text-danger" title="取消">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <button v-else @click="startUpload" class="btn btn-primary btn-action-upload" :disabled="!filesToDisplay || filesToDisplay.length === 0">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
-                {{ isUploading ? '上传中...' : '开始上传' }}
+                开始上传
               </button>
             </template>
           </FileTable>
@@ -331,6 +342,11 @@ const activeView = ref('results');
 const fileFilter = ref('all');
 const selectedDates = ref([]);
 const selectedExtensions = ref([]);
+
+const progressPercentage = computed(() => {
+  if (progress.value.total === 0) return 0;
+  return Math.min(100, Math.max(0, (progress.value.current / progress.value.total) * 100));
+});
 
 const availableDates = computed(() => {
   if (!scanResult.value) return [];
@@ -1209,12 +1225,89 @@ function clearLogs() {
 }
 
 .btn-action-upload {
-  border-radius: var(--radius-sm);
-  padding: 0.35rem 0.85rem;
-  font-size: 0.9rem;
+  border-radius: var(--radius-md);
+  border:none;
+  padding: 0.5rem 1.5rem;
+  font-size: 0.95rem;
   height: auto;
-  min-height: 2rem;
+  min-height: 2.4rem;
   box-shadow: var(--shadow-sm);
+  font-weight: 600;
+}
+
+.upload-status-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--surface-overlay-faint);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--surface-200);
+}
+
+.inline-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 240px;
+}
+
+.progress-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.progress-filename {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progress-track-mini {
+  height: 4px;
+  background: var(--surface-200);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill-mini {
+  height: 100%;
+  background: var(--primary-500);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.inline-controls {
+  display: flex;
+  gap: var(--space-2);
+  border-left: 1px solid var(--surface-300);
+  padding-left: var(--space-3);
+}
+
+.btn-icon-only {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-icon-only:hover {
+  background: var(--surface-200);
+  color: var(--color-text-main);
+}
+
+.text-danger:hover {
+  background: var(--danger-soft);
+  color: var(--color-error);
 }
 
 .btn-action-upload:hover:not(:disabled) {

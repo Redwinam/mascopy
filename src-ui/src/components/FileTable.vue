@@ -303,7 +303,7 @@ function formatFileType(type) {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-4);
   min-height: 0;
   flex: 1;
 }
@@ -332,7 +332,7 @@ function formatFileType(type) {
 
 .filter-item {
   display: flex;
-  align-items: center;
+  align-items: top;
   gap: var(--space-2);
   padding: 0.35rem 0.75rem;
   border-radius: var(--radius-md);
