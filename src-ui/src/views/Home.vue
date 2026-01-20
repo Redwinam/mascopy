@@ -137,7 +137,7 @@
 
         <button @click="startScan" class="start-btn" :disabled="!canStart || isScanning">
           <span v-if="isScanning" class="spinner"></span>
-          <span class="btn-text">{{ isScanning ? '扫描中...' : '开始扫描' }}</span>
+          <span>{{ isScanning ? '扫描中...' : '开始扫描' }}</span>
           <div class="btn-icon-wrapper" v-if="!isScanning">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -157,7 +157,7 @@
           返回配置
         </button>
         <div class="header-actions">
-           <button @click="startUpload" class="btn btn-primary btn-lg" :disabled="!scanResult || scanResult.length === 0 || isUploading">
+           <button @click="startUpload" class="btn btn-primary btn-lg" :disabled="!filesToDisplay || filesToDisplay.length === 0 || isUploading">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
@@ -187,11 +187,37 @@
       <div class="results-content">
         <TabView :tabs="viewTabs" v-model:activeTab="activeView">
           <div v-show="activeView === 'results'" class="tab-pane">
+            
+            <div class="date-filter-section" v-if="availableDates.length > 0">
+              <div class="date-filter-header">
+                <span class="section-label">日期筛选</span>
+                <div class="date-actions">
+                  <button @click="selectAllDates" class="btn-text">全选</button>
+                  <button @click="deselectAllDates" class="btn-text">全不选</button>
+                </div>
+              </div>
+              <div class="date-list">
+                <div 
+                  v-for="item in availableDates" 
+                  :key="item.date"
+                  :class="['date-chip', { active: selectedDates.includes(item.date) }]"
+                  @click="toggleDate(item.date)"
+                >
+                  <span class="date-text">{{ item.date }}</span>
+                  <span class="date-count">{{ item.count }}</span>
+                </div>
+              </div>
+            </div>
+
             <FileTable 
-              v-if="scanResult && scanResult.length > 0"
-              :files="scanResult" 
+              v-if="filesToDisplay && filesToDisplay.length > 0"
+              :files="filesToDisplay" 
               v-model:filter="fileFilter"
             />
+            <div v-else-if="scanResult && scanResult.length > 0" class="empty-state">
+              <div class="empty-icon">📅</div>
+              <p>请选择至少一个日期以查看文件</p>
+            </div>
             <div v-else class="empty-state">
               <div class="empty-icon">🔍</div>
               <p>未找到符合条件的文件</p>
@@ -233,6 +259,59 @@ const progress = ref({ current: 0, total: 0, filename: '' });
 const logs = ref([]);
 const activeView = ref('results');
 const fileFilter = ref('all');
+const selectedDates = ref([]);
+
+const availableDates = computed(() => {
+  if (!scanResult.value) return [];
+  const dates = {};
+  scanResult.value.forEach(file => {
+    let date;
+    if (file.date.secs_since_epoch !== undefined) {
+      date = new Date(file.date.secs_since_epoch * 1000);
+    } else {
+      date = new Date(file.date);
+    }
+    const dateStr = date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
+    if (!dates[dateStr]) {
+      dates[dateStr] = { date: dateStr, count: 0 };
+    }
+    dates[dateStr].count++;
+  });
+  return Object.values(dates).sort((a, b) => b.date.localeCompare(a.date));
+});
+
+const filesToDisplay = computed(() => {
+  if (!scanResult.value) return [];
+  if (selectedDates.value.length === 0) return [];
+  
+  return scanResult.value.filter(file => {
+    let date;
+    if (file.date.secs_since_epoch !== undefined) {
+      date = new Date(file.date.secs_since_epoch * 1000);
+    } else {
+      date = new Date(file.date);
+    }
+    const dateStr = date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
+    return selectedDates.value.includes(dateStr);
+  });
+});
+
+function toggleDate(date) {
+  if (selectedDates.value.includes(date)) {
+    selectedDates.value = selectedDates.value.filter(d => d !== date);
+  } else {
+    selectedDates.value.push(date);
+  }
+}
+
+function selectAllDates() {
+  selectedDates.value = availableDates.value.map(d => d.date);
+}
+
+function deselectAllDates() {
+  selectedDates.value = [];
+}
+
 const sourceFavorites = computed(() => {
   if (currentMode.value === 'sd') return config.value.favorites.sd_sources || [];
   const arr = config.value.favorites.dji_sources || [];
@@ -397,6 +476,21 @@ async function startScan() {
     });
     
     scanResult.value = files;
+
+    // Initialize selectedDates with all found dates
+    const dates = new Set();
+    files.forEach(file => {
+      let date;
+      if (file.date.secs_since_epoch !== undefined) {
+        date = new Date(file.date.secs_since_epoch * 1000);
+      } else {
+        date = new Date(file.date);
+      }
+      const dateStr = date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
+      dates.add(dateStr);
+    });
+    selectedDates.value = Array.from(dates);
+
     addLog('success', `扫描完成，共找到 ${files.length} 个文件`);
     currentStep.value = 'results'; // Switch to results view
     activeView.value = 'results';
@@ -414,13 +508,13 @@ function goBack() {
 }
 
 async function startUpload() {
-  if (!scanResult.value) return;
+  if (!filesToDisplay.value || filesToDisplay.value.length === 0) return;
   isUploading.value = true;
   isPaused.value = false;
-  addLog('info', '开始上传...');
+  addLog('info', `开始上传 (${filesToDisplay.value.length} 个文件)...`);
   
   try {
-    await invoke('upload_files', { files: scanResult.value });
+    await invoke('upload_files', { files: filesToDisplay.value });
     addLog('success', '上传完成!');
     alert('上传完成!');
     scanResult.value = null;
@@ -762,5 +856,97 @@ function clearLogs() {
   margin-top: var(--space-4);
   display: flex;
   justify-content: flex-end;
+}
+
+/* Date Filter */
+.date-filter-section {
+  margin-bottom: var(--space-4);
+  background: var(--surface-overlay-faint);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  border: 1px solid var(--surface-200);
+}
+
+.date-filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.section-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.date-actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: var(--primary-600);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.btn-text:hover {
+  text-decoration: underline;
+}
+
+.date-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.date-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-md);
+  background: var(--surface-0);
+  border: 1px solid var(--surface-300);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.date-chip:hover {
+  border-color: var(--primary-300);
+  background: var(--surface-50);
+}
+
+.date-chip.active {
+  background: var(--primary-soft);
+  border-color: var(--primary-300);
+  color: var(--primary-800);
+}
+
+.date-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.date-count {
+  font-size: 0.75rem;
+  background: rgba(0,0,0,0.05);
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  color: var(--color-text-muted);
+}
+
+.date-chip.active .date-count {
+  background: rgba(255,255,255,0.5);
+  color: var(--primary-800);
 }
 </style>

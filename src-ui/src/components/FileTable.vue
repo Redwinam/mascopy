@@ -17,7 +17,6 @@
         <thead>
           <tr>
             <th>文件名 / 目标目录</th>
-            <th>类型</th>
             <th>大小</th>
             <th>日期</th>
             <th>状态</th>
@@ -28,9 +27,6 @@
             <td class="file-info-cell">
               <div class="filename" :title="file.filename">{{ file.filename }}</div>
               <div class="target-path" :title="file.target_path">{{ getParentDir(file.target_path) }}</div>
-            </td>
-            <td>
-              <span class="type-badge">{{ file.file_type === 'photo' ? '照片' : '视频' }}</span>
             </td>
             <td class="text-muted">{{ formatSize(file.size) }}</td>
             <td class="text-muted">{{ formatDate(file.date) }}</td>
@@ -260,14 +256,6 @@ function formatStatus(status) {
   color: var(--primary-600);
   font-size: 0.75rem;
   opacity: 0.8;
-}
-
-.type-badge {
-  font-size: 0.75rem;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--surface-100);
-  color: var(--color-text-muted);
 }
 
 .empty-state {
