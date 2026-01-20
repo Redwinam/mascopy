@@ -17,6 +17,7 @@
         <thead>
           <tr>
             <th>文件名 / 目标目录</th>
+            <th>类型</th>
             <th>大小</th>
             <th>日期</th>
             <th>状态</th>
@@ -25,9 +26,12 @@
         <tbody>
           <tr v-for="(file, index) in filteredFiles" :key="index">
             <td class="file-info-cell">
-              <div class="filename" :title="file.filename">{{ file.filename }}</div>
-              <div class="target-path" :title="file.target_path">{{ getParentDir(file.target_path) }}</div>
+              <div class="file-path" :title="file.target_path">
+                <span class="path-dir">{{ getTargetDir(file.target_path, file.filename) }}</span>
+                <span class="path-filename">{{ file.filename }}</span>
+              </div>
             </td>
+            <td class="text-muted">{{ formatFileType(file.file_type) }}</td>
             <td class="text-muted">{{ formatSize(file.size) }}</td>
             <td class="text-muted">{{ formatDate(file.date) }}</td>
             <td>
@@ -74,20 +78,19 @@ const filteredFiles = computed(() => {
   return props.files.filter(f => f.status === props.filter);
 });
 
-function getParentDir(path) {
+function getTargetDir(path, filename) {
   if (!path) return '-';
-  // Handle both Windows and Unix separators
-   const parts = path.split(/[/\\]/);
-   // Return the full path for tooltip context, but for display we want to show
-   // enough context. The user asked for "full target directory" but in a small font.
-   // Let's try to show the relative part from the target root if possible, 
-   // but since we don't have the target root here easily, let's show the last 2-3 segments.
-   
-   if (parts.length > 3) {
-      return '.../' + parts.slice(-3).join('/');
-   }
-   return path;
- }
+  const rawPath = String(path);
+  const separator = rawPath.includes('\\') ? '\\' : '/';
+  const parts = rawPath.split(/[/\\]/);
+  if (parts.length === 0) return rawPath;
+  const last = parts[parts.length - 1];
+  if (filename && last === filename) {
+    parts.pop();
+  }
+  const dir = parts.join(separator);
+  return dir ? dir + separator : '';
+}
 
 function getLabel(key) {
   const labels = {
@@ -126,6 +129,14 @@ function formatStatus(status) {
     pending: '未处理'
   };
   return statusMap[status] || status;
+}
+
+function formatFileType(type) {
+  const typeMap = {
+    photo: '照片',
+    video: '视频'
+  };
+  return typeMap[type] || type || '-';
 }
 </script>
 
@@ -232,30 +243,43 @@ function formatStatus(status) {
   background: var(--surface-50);
 }
 
+.file-table tr:hover {
+  background: var(--surface-50);
+}
+
 .file-info-cell {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  max-width: 300px;
+  align-items: center;
+  min-width: 0;
 }
 
-.file-table .filename {
-  font-family: monospace;
-  font-weight: 500;
+.file-path {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 0.9rem;
 }
 
-.file-table .target-path {
+.file-table .path-dir {
   font-family: monospace;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--primary-600);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   opacity: 0.8;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.file-table .path-filename {
+  font-family: monospace;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 0.95rem;
 }
 
 .empty-state {

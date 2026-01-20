@@ -979,15 +979,51 @@ function clearLogs() {
 
 .date-count {
   font-size: 0.75rem;
-  background: rgba(0,0,0,0.05);
+  background: var(--surface-200);
   padding: 0.1rem 0.4rem;
   border-radius: 999px;
   color: var(--color-text-muted);
 }
 
 .date-chip.active .date-count {
-  background: rgba(255,255,255,0.5);
+  background: var(--surface-100);
   color: var(--primary-800);
+}
+
+@media (prefers-color-scheme: dark) {
+  .date-filter-section {
+    background: var(--surface-100);
+    border-color: var(--surface-300);
+  }
+
+  .btn-text {
+    color: var(--primary-300);
+  }
+
+  .date-chip {
+    background: var(--surface-50);
+    border-color: var(--surface-300);
+  }
+
+  .date-chip:hover {
+    background: var(--surface-100);
+    border-color: var(--primary-400);
+  }
+
+  .date-chip.active {
+    border-color: var(--primary-400);
+    color: var(--primary-200);
+  }
+
+  .date-count {
+    background: var(--surface-300);
+    color: var(--surface-600);
+  }
+
+  .date-chip.active .date-count {
+    background: var(--surface-200);
+    color: var(--primary-200);
+  }
 }
 
 .success-content {
