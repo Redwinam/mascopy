@@ -932,7 +932,7 @@ function clearLogs() {
 
 .btn-icon {
   gap: var(--space-2);
-  padding-left: var(--space-3);
+  padding: 0.5rem 0.85rem;
 }
 
 /* Results View */

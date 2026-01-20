@@ -61,7 +61,7 @@ function onHeaderMouseDown(event) {
   appWindow.startDragging();
 }
 
-const headerHeight = 56;
+const headerHeight = 80;
 
 function onGlobalMouseDown(event) {
   if (event.button !== 0) return;
@@ -85,14 +85,15 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .app-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   position: relative;
   padding: var(--space-4) var(--space-6);
-  padding-top: 1.25rem;
+  padding-top: 2.5rem;
   -webkit-app-region: drag;
-  height: 56px;
+  height: 80px;
+  z-index: 100;
 }
 
 .app-drag-layer {
@@ -100,9 +101,9 @@ onBeforeUnmount(() => {
   top: 0;
   left: 0;
   right: 0;
-  height: 56px;
+  height: 100%;
   -webkit-app-region: drag;
-  z-index: 0;
+  z-index: 1;
 }
 
 .drag-strip {
@@ -110,7 +111,7 @@ onBeforeUnmount(() => {
   top: 0;
   left: 0;
   right: 0;
-  height: 32px;
+  height: 100%;
   -webkit-app-region: drag;
   z-index: 1;
 }
@@ -121,7 +122,8 @@ onBeforeUnmount(() => {
   gap: var(--space-3);
   -webkit-app-region: drag;
   position: relative;
-  z-index: 2;
+  z-index: 10;
+  justify-self: start;
 }
 
 .logo-box {
@@ -142,18 +144,19 @@ onBeforeUnmount(() => {
 }
 
 .header-center {
-  flex: 1;
   display: flex;
   justify-content: center;
   -webkit-app-region: drag;
   position: relative;
-  z-index: 2;
+  z-index: 10;
+  justify-self: center;
 }
 
 .header-actions {
   -webkit-app-region: no-drag;
   position: relative;
-  z-index: 2;
+  z-index: 10;
+  justify-self: end;
 }
 
 .app-content {
