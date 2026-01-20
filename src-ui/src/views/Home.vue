@@ -234,6 +234,28 @@
         </TabView>
       </div>
     </div>
+
+    <Modal v-if="showSuccessModal" @close="showSuccessModal = false">
+      <template #title>🎉 备份完成</template>
+      <div class="success-content">
+        <div class="success-icon-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <p class="success-message">所有选中的文件已成功备份到目标目录。</p>
+        <p class="success-submessage">现在您可以安全地移除源设备。</p>
+      </div>
+      <template #footer>
+        <button class="btn btn-secondary" @click="showSuccessModal = false">关闭</button>
+        <button class="btn btn-primary" @click="ejectVolume">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          推出设备
+        </button>
+      </template>
+    </Modal>
   </div>
 </template>
 
@@ -246,6 +268,7 @@ import ProgressBar from '../components/ProgressBar.vue';
 import TabView from '../components/TabView.vue';
 import FileTable from '../components/FileTable.vue';
 import LogViewer from '../components/LogViewer.vue';
+import Modal from '../components/Modal.vue';
 import { useAppState } from '../composables/useAppState.js';
 
 const { currentMode, config, currentStep } = useAppState();
@@ -254,6 +277,7 @@ const fastMode = ref(true);
 const isScanning = ref(false);
 const isUploading = ref(false);
 const isPaused = ref(false);
+const showSuccessModal = ref(false);
 const scanResult = ref(null);
 const progress = ref({ current: 0, total: 0, filename: '' });
 const logs = ref([]);
@@ -516,7 +540,7 @@ async function startUpload() {
   try {
     await invoke('upload_files', { files: filesToDisplay.value });
     addLog('success', '上传完成!');
-    alert('上传完成!');
+    showSuccessModal.value = true;
     scanResult.value = null;
     currentStep.value = 'config'; // Return to config after success
   } catch (e) {
@@ -524,6 +548,22 @@ async function startUpload() {
     alert('上传失败: ' + e);
   } finally {
     isUploading.value = false;
+  }
+}
+
+async function ejectVolume() {
+  const modeConfig = config.value[currentMode.value];
+  if (!modeConfig || !modeConfig.source_dir) return;
+  
+  try {
+    addLog('info', '正在推出设备...');
+    await invoke('eject_volume', { path: modeConfig.source_dir });
+    addLog('success', '设备已推出');
+    alert('设备已安全推出');
+    showSuccessModal.value = false;
+  } catch (e) {
+    addLog('error', '推出失败: ' + e);
+    alert('推出失败: ' + e);
   }
 }
 
@@ -948,5 +988,32 @@ function clearLogs() {
 .date-chip.active .date-count {
   background: rgba(255,255,255,0.5);
   color: var(--primary-800);
+}
+
+.success-content {
+  text-align: center;
+  padding: var(--space-4) 0;
+}
+
+.success-icon-wrapper {
+  margin-bottom: var(--space-4);
+  color: #10b981; /* Success Green */
+  display: flex;
+  justify-content: center;
+}
+
+.success-message {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: var(--space-2);
+}
+
+.success-submessage {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.text-success {
+  color: #10b981;
 }
 </style>

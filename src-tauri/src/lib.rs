@@ -79,6 +79,56 @@ fn cancel_upload(state: State<AppState>) {
     state.uploader.cancel();
 }
 
+#[tauri::command]
+fn eject_volume(path: String) -> AppResult<()> {
+    #[cfg(target_os = "macos")]
+    {
+        use std::process::Command;
+        use std::path::Path;
+        
+        // Naive implementation: assume /Volumes/NAME
+        let path_obj = Path::new(&path);
+        if !path_obj.starts_with("/Volumes") {
+             return Err(AppError::Unknown("Not a /Volumes path".to_string()));
+        }
+
+        let mut components = path_obj.components();
+        // Skip root /
+        components.next();
+        // Check "Volumes"
+        if let Some(std::path::Component::Normal(c)) = components.next() {
+            if c != "Volumes" {
+                 return Err(AppError::Unknown("Not in /Volumes".to_string()));
+            }
+        }
+        
+        // Get the volume name
+        if let Some(std::path::Component::Normal(vol_name)) = components.next() {
+             let volume_path = format!("/Volumes/{}", vol_name.to_string_lossy());
+             
+             let output = Command::new("diskutil")
+                 .arg("eject")
+                 .arg(&volume_path)
+                 .output()
+                 .map_err(AppError::Io)?;
+                 
+             if !output.status.success() {
+                 let stderr = String::from_utf8_lossy(&output.stderr);
+                 return Err(AppError::Unknown(format!("Eject failed: {}", stderr)));
+             }
+             
+             return Ok(());
+        }
+        
+        Err(AppError::Unknown("Could not determine volume name".to_string()))
+    }
+    
+    #[cfg(not(target_os = "macos"))]
+    {
+        Err(AppError::Unknown("Eject not supported on this OS yet".to_string()))
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let uploader = Arc::new(Uploader::new());
@@ -102,7 +152,8 @@ pub fn run() {
             upload_files,
             pause_upload,
             resume_upload,
-            cancel_upload
+            cancel_upload,
+            eject_volume
         ])
         .run(tauri::generate_context!("tauri.conf.json"))
         .expect("error while running tauri application");
