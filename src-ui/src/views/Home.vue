@@ -801,18 +801,22 @@ function clearLogs() {
   align-items: center;
   justify-content: space-between;
   background: var(--surface-overlay-soft);
-  border: 1px solid var(--surface-200);
-  border-radius: 0.65rem;
-  padding: 0.45rem 0.65rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 0.35rem 0.5rem 0.35rem 0.75rem;
   cursor: pointer;
-  transition: all var(--transition-fast);
-  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
   color: var(--color-text-main);
+  gap: var(--space-3);
+  position: relative;
 }
 
 .fav-item:hover {
   background: var(--surface-overlay);
-  border-color: var(--surface-300);
+  border-color: var(--surface-200);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .fav-info {
@@ -829,38 +833,37 @@ function clearLogs() {
 }
 
 .fav-path {
-  font-size: 0.78rem;
-  color: var(--color-text-main);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
   font-family: 'SF Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  background: var(--surface-path);
-  padding: 0.2rem 0.45rem;
-  border-radius: 0.4rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
-.btn-icon-danger {
+.fav-remove {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.25rem;
+  width: 24px;
+  height: 24px;
   border-radius: var(--radius-sm);
   color: var(--color-text-light);
   background: transparent;
   border: none;
   cursor: pointer;
   transition: all var(--transition-fast);
-  opacity: 0; /* Hidden by default */
+  opacity: 0;
+  flex-shrink: 0;
 }
 
-.fav-item:hover .btn-icon-danger {
-  opacity: 1; /* Show on hover */
+.fav-item:hover .fav-remove {
+  opacity: 1;
 }
 
-.btn-icon-danger:hover {
+.fav-remove:hover {
   color: var(--color-error);
   background: var(--danger-soft);
 }

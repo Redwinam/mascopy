@@ -7,7 +7,6 @@
       @pointerdown="onHeaderPointerDown"
     >
       <div class="brand" id="header-left-slot" data-tauri-drag-region>
-        <span class="app-title">大师拷贝</span>
       </div>
       
       <div class="header-center" id="header-center-slot">
@@ -67,8 +66,8 @@ async function onHeaderPointerDown(event) {
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   position: relative;
-  padding: 1.2rem var(--space-6) var(--space-3);
-  height: 72px;
+  padding: 0 var(--space-6);
+  height: 64px;
   z-index: 100;
   background: linear-gradient(180deg, var(--surface-overlay-strong), var(--surface-overlay-soft));
   border-bottom: 1px solid var(--divider-color);
@@ -84,16 +83,8 @@ async function onHeaderPointerDown(event) {
   position: relative;
   z-index: 10;
   justify-self: start;
-  padding-left: 3.5rem;
-}
-
-.app-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text-main);
-  opacity: 0.9;
+  padding-left: 5rem;
+  height: 100%;
 }
 
 .logo-box {
