@@ -394,8 +394,10 @@ function formatFileType(type) {
   color: var(--color-text-muted);
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 10;
   border-bottom: 1px solid var(--surface-200);
+  /* Fix sticky header gap issue */
+  box-shadow: 0 -1px 0 var(--surface-50); 
 }
 
 .file-table td {
