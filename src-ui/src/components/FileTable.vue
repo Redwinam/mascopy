@@ -1,14 +1,19 @@
 <template>
   <div class="file-table-container">
-    <div class="filter-strip" v-if="stats">
-      <div 
-        v-for="(stat, key) in stats" 
-        :key="key"
-        :class="['filter-item', { active: filter === key }]"
-        @click="$emit('update:filter', key)"
-      >
-        <span class="filter-label">{{ getLabel(key) }}</span>
-        <span class="filter-count" :class="`count-${key}`">{{ stat }}</span>
+    <div class="table-header-row" v-if="stats">
+      <div class="filter-strip">
+        <div 
+          v-for="(stat, key) in stats" 
+          :key="key"
+          :class="['filter-item', { active: filter === key }]"
+          @click="$emit('update:filter', key)"
+        >
+          <span class="filter-label">{{ getLabel(key) }}</span>
+          <span class="filter-count" :class="`count-${key}`">{{ stat }}</span>
+        </div>
+      </div>
+      <div class="table-actions">
+        <slot name="actions"></slot>
       </div>
     </div>
 
@@ -301,6 +306,18 @@ function formatFileType(type) {
   gap: var(--space-6);
   min-height: 0;
   flex: 1;
+}
+
+.table-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.table-actions {
+  display: flex;
+  align-items: center;
 }
 
 .filter-strip {

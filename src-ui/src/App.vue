@@ -83,7 +83,7 @@ async function onHeaderPointerDown(event) {
   position: relative;
   z-index: 10;
   justify-self: start;
-  padding-left: 5rem;
+  padding-left: 4rem;
   height: 100%;
 }
 

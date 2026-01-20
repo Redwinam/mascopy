@@ -38,9 +38,14 @@
               <div class="fav-label">收藏夹</div>
               <div class="fav-list">
                 <div v-for="p in sourceFavorites" :key="p" class="fav-item" @click="selectSource(p)" :title="p">
+                  <div class="fav-icon-box">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="fav-folder-icon">
+                      <path d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />
+                    </svg>
+                  </div>
                   <span class="fav-path">{{ p }}</span>
                   <button class="fav-remove" @click.stop="removeSourceFavorite(p)">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -94,9 +99,14 @@
               <div class="fav-label">收藏夹</div>
               <div class="fav-list">
                 <div v-for="p in targetFavorites" :key="p" class="fav-item" @click="selectTarget(p)" :title="p">
+                  <div class="fav-icon-box">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="fav-folder-icon">
+                      <path d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />
+                    </svg>
+                  </div>
                   <span class="fav-path">{{ p }}</span>
                   <button class="fav-remove" @click.stop="removeTargetFavorite(p)">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -162,8 +172,8 @@
 
     <!-- Step 2: Results & Upload -->
     <div v-show="currentStep === 'results'" class="step-container results-step animate-fade-in">
-      <Teleport to="#header-left-slot" v-if="currentStep === 'results'">
-        <button @click="goBack" class="btn btn-secondary btn-icon" :disabled="isUploading" data-no-drag>
+      <Teleport to="#header-right-slot" v-if="currentStep === 'results'">
+        <button @click="goBack" class="btn btn-weak btn-icon" :disabled="isUploading" data-no-drag>
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
@@ -172,14 +182,6 @@
       </Teleport>
       <Teleport to="#header-center-slot" v-if="currentStep === 'results'">
         <TabView :tabs="viewTabs" v-model:activeTab="activeView" class="header-tabs" :showContent="false" data-no-drag />
-      </Teleport>
-      <Teleport to="#header-right-slot" v-if="currentStep === 'results'">
-        <button @click="startUpload" class="btn btn-primary btn-lg" :disabled="!filesToDisplay || filesToDisplay.length === 0 || isUploading" data-no-drag>
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-          {{ isUploading ? '上传中...' : '开始上传' }}
-        </button>
       </Teleport>
 
       <div v-if="isUploading" class="progress-section glass-panel p-4 animate-fade-in">
@@ -205,8 +207,8 @@
               <div class="date-filter-header">
                 <span class="section-label">日期筛选</span>
                 <div class="date-actions">
-                  <button @click="selectAllDates" class="filter-action">全选</button>
-                  <button @click="deselectAllDates" class="filter-action">全不选</button>
+                  <button @click="selectAllDates" class="filter-action">全部</button>
+                  <button @click="deselectAllDates" class="filter-action">清除</button>
                 </div>
               </div>
               <div class="date-list">
@@ -226,8 +228,8 @@
               <div class="date-filter-header">
                 <span class="section-label">后缀筛选</span>
                 <div class="date-actions">
-                  <button @click="selectAllExtensions" class="filter-action">全选</button>
-                  <button @click="deselectAllExtensions" class="filter-action">全不选</button>
+                  <button @click="selectAllExtensions" class="filter-action">全部</button>
+                  <button @click="deselectAllExtensions" class="filter-action">清除</button>
                 </div>
               </div>
               <div class="date-list">
@@ -248,7 +250,16 @@
             v-if="filesToDisplay && filesToDisplay.length > 0"
             :files="filesToDisplay" 
             v-model:filter="fileFilter"
-          />
+          >
+            <template #actions>
+              <button @click="startUpload" class="btn btn-primary btn-action-upload" :disabled="!filesToDisplay || filesToDisplay.length === 0 || isUploading">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                {{ isUploading ? '上传中...' : '开始上传' }}
+              </button>
+            </template>
+          </FileTable>
           <div v-else-if="scanResult && scanResult.length > 0" class="empty-state">
             <div class="empty-icon">📅</div>
             <p>请选择至少一个日期和后缀以查看文件</p>
@@ -800,23 +811,37 @@ function clearLogs() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--surface-overlay-soft);
+  background: var(--surface-overlay-faint);
   border: 1px solid transparent;
   border-radius: var(--radius-md);
-  padding: 0.35rem 0.5rem 0.35rem 0.75rem;
+  padding: 0.4rem 0.6rem;
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.85rem;
   color: var(--color-text-main);
   gap: var(--space-3);
   position: relative;
+  margin-bottom: 2px;
 }
 
 .fav-item:hover {
-  background: var(--surface-overlay);
+  background: var(--surface-overlay-soft);
   border-color: var(--surface-200);
-  transform: translateY(-1px);
+  transform: translateX(2px);
   box-shadow: var(--shadow-sm);
+}
+
+.fav-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-400);
+  flex-shrink: 0;
+}
+
+.fav-folder-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .fav-info {
@@ -841,14 +866,15 @@ function clearLogs() {
   text-overflow: ellipsis;
   flex: 1;
   opacity: 0.9;
+  line-height: 1.4;
 }
 
 .fav-remove {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: var(--radius-sm);
   color: var(--color-text-light);
   background: transparent;
@@ -1024,26 +1050,24 @@ function clearLogs() {
 
 .date-actions {
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-1);
 }
 
 .filter-action {
-  background: var(--surface-0);
-  border: 1px solid var(--surface-300);
-  color: var(--primary-600);
-  font-size: 0.75rem;
-  font-weight: 600;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
   cursor: pointer;
-  padding: 0.2rem 0.6rem;
-  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
-  box-shadow: var(--shadow-sm);
 }
 
 .filter-action:hover {
-  background: var(--surface-50);
-  border-color: var(--primary-300);
-  color: var(--primary-700);
+  background: var(--surface-100);
+  color: var(--primary-600);
 }
 
 .date-list {
@@ -1166,5 +1190,35 @@ function clearLogs() {
 
 .text-success {
   color: #10b981;
+}
+
+.btn-weak {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--color-text-muted);
+  box-shadow: none;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+.btn-weak:hover:not(:disabled) {
+  background: var(--surface-overlay-soft);
+  color: var(--color-text-main);
+  box-shadow: none;
+  opacity: 1;
+}
+
+.btn-action-upload {
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.85rem;
+  font-size: 0.9rem;
+  height: auto;
+  min-height: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-action-upload:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 </style>
