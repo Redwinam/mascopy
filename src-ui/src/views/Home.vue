@@ -512,7 +512,7 @@ function clearLogs() {
   height: 100%;
   overflow: hidden;
   border: 1px solid var(--glass-border);
-  background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0.6));
+  background: linear-gradient(to bottom, var(--surface-overlay-strong), var(--surface-overlay-soft));
 }
 
 .card-header {
@@ -522,7 +522,7 @@ function clearLogs() {
 .header-tag {
   display: inline-block;
   padding: 0.25rem 0.75rem;
-  background: var(--primary-100);
+  background: var(--primary-soft);
   color: var(--primary-700);
   font-size: 0.75rem;
   font-weight: 700;
@@ -531,8 +531,8 @@ function clearLogs() {
 }
 
 .tag-blue {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--primary-soft);
+  color: var(--primary-700);
 }
 
 .divider {
@@ -543,7 +543,7 @@ function clearLogs() {
 
 .favorites-section {
   padding: var(--space-4) var(--space-6) var(--space-6);
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--surface-overlay-faint);
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -638,7 +638,7 @@ function clearLogs() {
 
 .btn-icon-danger:hover {
   color: var(--color-error);
-  background: #fef2f2;
+  background: var(--danger-soft);
 }
 
 .empty-fav {
@@ -657,7 +657,7 @@ function clearLogs() {
   justify-content: space-between;
   padding: var(--space-4) var(--space-6);
   border-radius: var(--radius-xl);
-  background: white;
+  background: var(--surface-0);
   box-shadow: var(--shadow-lg);
 }
 
@@ -687,9 +687,9 @@ function clearLogs() {
 }
 
 .option-chip.active {
-  background: var(--primary-100);
+  background: var(--primary-soft);
   color: var(--primary-700);
-  box-shadow: 0 0 0 1px var(--primary-200);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.35);
 }
 
 .check-icon {
@@ -716,8 +716,8 @@ function clearLogs() {
 .spinner {
   width: 1rem;
   height: 1rem;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: white;
+  border: 2px solid var(--surface-rail);
+  border-top-color: var(--surface-0);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

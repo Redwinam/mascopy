@@ -103,7 +103,7 @@ function addFavorite() {
   overflow: hidden;
   text-overflow: ellipsis;
   margin: 0;
-  background: rgba(0,0,0,0.03);
+  background: var(--surface-path);
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
 }
@@ -134,7 +134,7 @@ function addFavorite() {
 }
 
 .btn-icon-only:hover {
-  background: rgba(0,0,0,0.05);
+  background: var(--surface-rail);
   color: #ef4444; /* Heart color on hover */
 }
 </style>

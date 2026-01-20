@@ -99,13 +99,13 @@ a {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--surface-overlay-soft);
   color: var(--color-text-main);
-  border-color: rgba(15, 23, 42, 0.08);
+  border-color: var(--divider-color);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--surface-overlay-strong);
   box-shadow: var(--shadow-sm);
 }
 
@@ -207,7 +207,7 @@ svg.btn-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--surface-overlay);
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-sm);
   color: var(--primary-700);
@@ -232,13 +232,13 @@ svg.btn-icon {
 }
 
 .source-badge {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--primary-soft);
+  color: var(--primary-700);
 }
 
 .target-badge {
-  background: #ede9fe;
-  color: #6d28d9;
+  background: var(--accent-soft);
+  color: var(--accent-600);
 }
 
 .badge-icon {
@@ -267,7 +267,7 @@ svg.btn-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.75);
+  background: var(--surface-overlay);
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-sm);
 }
@@ -305,7 +305,7 @@ svg.btn-icon {
   gap: var(--space-2);
   padding: 0.35rem 0.6rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--surface-overlay-soft);
   border: 1px solid var(--surface-200);
   cursor: pointer;
   max-width: 100%;
@@ -313,7 +313,7 @@ svg.btn-icon {
 }
 
 .fav-chip:hover {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--surface-overlay-strong);
   border-color: rgba(37, 99, 235, 0.2);
 }
 
@@ -365,7 +365,7 @@ svg.btn-icon {
 .divider-vertical {
   width: 1px;
   align-self: stretch;
-  background: rgba(15, 23, 42, 0.08);
+  background: var(--divider-color);
 }
 
 .toggle-option {
@@ -385,7 +385,7 @@ svg.btn-icon {
   height: 22px;
   border-radius: 7px;
   border: 1px solid var(--surface-300);
-  background: rgba(255, 255, 255, 0.75);
+  background: var(--surface-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -394,7 +394,7 @@ svg.btn-icon {
 
 .toggle-option.active .toggle-box {
   border-color: rgba(37, 99, 235, 0.35);
-  background: rgba(219, 234, 254, 0.95);
+  background: var(--primary-soft);
 }
 
 .check-mark {
@@ -465,16 +465,16 @@ svg.btn-icon {
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 0.75rem;
-  background: rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--surface-overlay-faint);
+  border: 1px solid var(--divider-color);
   border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .fav-item:hover {
-  background: rgba(255, 255, 255, 0.7);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: var(--surface-overlay);
+  border-color: var(--divider-color);
   transform: translateX(2px);
 }
 
@@ -574,7 +574,7 @@ svg.btn-icon {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
-  background: white;
+  background: var(--surface-overlay);
   display: flex;
   align-items: center;
   justify-content: center;

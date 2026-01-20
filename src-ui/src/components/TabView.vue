@@ -45,7 +45,7 @@ defineEmits(['update:activeTab']);
 .tab-list {
   display: inline-flex;
   padding: 4px;
-  background: rgba(0, 0, 0, 0.05); /* Softer background */
+  background: var(--surface-rail); /* Softer background */
   border-radius: 12px;
   position: relative;
 }
@@ -72,7 +72,7 @@ defineEmits(['update:activeTab']);
 .tab-btn.active {
   color: var(--primary-color);
   font-weight: 600;
-  background: white;
+  background: var(--surface-0);
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 

@@ -166,12 +166,12 @@ function formatStatus(status) {
 }
 
 .filter-item:hover {
-  background: rgba(255,255,255,0.5);
+  background: var(--surface-overlay-faint);
   color: var(--color-text-main);
 }
 
 .filter-item.active {
-  background: white;
+  background: var(--surface-0);
   color: var(--primary-700);
   box-shadow: var(--shadow-sm);
   font-weight: 500;
@@ -186,7 +186,7 @@ function formatStatus(status) {
 }
 
 .filter-item.active .filter-count {
-  background: var(--primary-100);
+  background: var(--primary-soft);
   color: var(--primary-700);
 }
 
@@ -287,13 +287,13 @@ function formatStatus(status) {
 }
 
 .status-upload {
-  background: var(--primary-100);
+  background: var(--primary-soft);
   color: var(--primary-700);
 }
 
 .status-overwrite {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--warning-soft);
+  color: var(--color-warning);
 }
 
 .status-skip {
