@@ -5,10 +5,9 @@
       :class="{ 'is-config': currentStep === 'config' }"
       data-tauri-drag-region
     >
+      <div class="app-drag-layer" data-tauri-drag-region></div>
       <div class="drag-strip" data-tauri-drag-region></div>
-      <div class="brand">
-        <!-- Brand hidden as per user request to avoid conflict with traffic lights -->
-      </div>
+      <div class="brand" data-tauri-drag-region></div>
       
       <div class="header-center">
         <TabView
@@ -61,6 +60,20 @@ const modeTabs = [
   height: 80px;
 }
 
+.app-drag-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  -webkit-app-region: drag;
+  z-index: 0;
+}
+
+.app-header.is-config .app-drag-layer {
+  height: 80px;
+}
+
 .drag-strip {
   position: absolute;
   top: 0;
@@ -68,12 +81,16 @@ const modeTabs = [
   right: 0;
   height: 32px;
   -webkit-app-region: drag;
+  z-index: 1;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  -webkit-app-region: drag;
+  position: relative;
+  z-index: 2;
 }
 
 .logo-box {
@@ -93,26 +110,19 @@ const modeTabs = [
   height: 1.25rem;
 }
 
-.brand-text h1 {
-  font-size: 1.125rem;
-  margin: 0;
-  line-height: 1.2;
-  font-weight: 700;
-  color: var(--color-text-main);
-}
-
 .header-center {
   flex: 1;
   display: flex;
   justify-content: center;
-}
-
-.header-tabs {
-  -webkit-app-region: no-drag;
+  -webkit-app-region: drag;
+  position: relative;
+  z-index: 2;
 }
 
 .header-actions {
   -webkit-app-region: no-drag;
+  position: relative;
+  z-index: 2;
 }
 
 .app-content {

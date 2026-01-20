@@ -1,6 +1,9 @@
 <template>
   <div class="tabs-container">
     <div class="tab-list-wrapper">
+      <div class="tab-side tab-side-left">
+        <slot name="left"></slot>
+      </div>
       <div class="tab-list">
         <button 
           v-for="tab in tabs" 
@@ -11,6 +14,9 @@
           {{ tab.label }}
           <div v-if="activeTab === tab.id" class="active-indicator" layoutId="activeTab"></div>
         </button>
+      </div>
+      <div class="tab-side tab-side-right">
+        <slot name="right"></slot>
       </div>
     </div>
     <div class="tab-content" v-if="$slots.default">
@@ -38,13 +44,29 @@ defineEmits(['update:activeTab']);
 }
 
 .tab-list-wrapper {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.tab-side {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  min-width: 0;
+}
+
+.tab-side-left {
+  justify-content: flex-start;
+}
+
+.tab-side-right {
+  justify-content: flex-end;
 }
 
 .tab-list {
   display: inline-flex;
-  padding: 4px;
+  padding: 3px;
   background: var(--surface-rail); /* Softer background */
   border-radius: 12px;
   position: relative;
@@ -52,17 +74,18 @@ defineEmits(['update:activeTab']);
 
 .tab-btn {
   position: relative;
-  padding: 0.5rem 1.25rem;
+  padding: 0.45rem 1.1rem;
   border: none;
   background: transparent;
   color: var(--text-secondary);
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   cursor: pointer;
   border-radius: 10px;
   transition: all 0.2s;
   z-index: 1;
   white-space: nowrap;
+  -webkit-app-region: no-drag;
 }
 
 .tab-btn:hover {

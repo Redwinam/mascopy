@@ -149,113 +149,108 @@
 
     <!-- Step 2: Results & Upload -->
     <div v-show="currentStep === 'results'" class="step-container results-step animate-fade-in">
-      <div class="results-header">
-        <button @click="goBack" class="btn btn-secondary btn-icon" :disabled="isUploading">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          返回配置
-        </button>
-        <div class="header-actions">
-           <button @click="startUpload" class="btn btn-primary btn-lg" :disabled="!filesToDisplay || filesToDisplay.length === 0 || isUploading">
+      <TabView :tabs="viewTabs" v-model:activeTab="activeView" class="results-tabs">
+        <template #left>
+          <button @click="goBack" class="btn btn-secondary btn-icon" :disabled="isUploading">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            返回配置
+          </button>
+        </template>
+        <template #right>
+          <button @click="startUpload" class="btn btn-primary btn-lg" :disabled="!filesToDisplay || filesToDisplay.length === 0 || isUploading">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
             {{ isUploading ? '上传中...' : '开始上传' }}
           </button>
-        </div>
-      </div>
+        </template>
 
-      <!-- Progress Section -->
-      <div v-if="isUploading" class="progress-section glass-panel p-4 animate-fade-in">
-        <ProgressBar 
-          :current="progress.current" 
-          :total="progress.total" 
-          :filename="progress.filename || '正在上传...'"
-        />
-        <div class="upload-controls">
-          <button @click="togglePause" class="btn btn-secondary btn-sm">
-            {{ isPaused ? '继续' : '暂停' }}
-          </button>
-          <button @click="cancel" class="btn btn-danger btn-sm">
-            取消
-          </button>
+        <div v-if="isUploading" class="progress-section glass-panel p-4 animate-fade-in">
+          <ProgressBar 
+            :current="progress.current" 
+            :total="progress.total" 
+            :filename="progress.filename || '正在上传...'"
+          />
+          <div class="upload-controls">
+            <button @click="togglePause" class="btn btn-secondary btn-sm">
+              {{ isPaused ? '继续' : '暂停' }}
+            </button>
+            <button @click="cancel" class="btn btn-danger btn-sm">
+              取消
+            </button>
+          </div>
         </div>
-      </div>
 
-      <!-- Results Table -->
-      <div class="results-content">
-        <TabView :tabs="viewTabs" v-model:activeTab="activeView">
-          <div v-show="activeView === 'results'" class="tab-pane">
-            
-            <div class="filter-row" v-if="availableDates.length > 0 || availableExtensions.length > 0">
-              <div class="date-filter-section" v-if="availableDates.length > 0">
-                <div class="date-filter-header">
-                  <span class="section-label">日期筛选</span>
-                  <div class="date-actions">
-                    <button @click="selectAllDates" class="filter-action">全选</button>
-                    <button @click="deselectAllDates" class="filter-action">全不选</button>
-                  </div>
-                </div>
-                <div class="date-list">
-                  <div 
-                    v-for="item in availableDates" 
-                    :key="item.date"
-                    :class="['date-chip', { active: selectedDates.includes(item.date) }]"
-                    @click="toggleDate(item.date)"
-                  >
-                    <span class="date-text">{{ item.date }}</span>
-                    <span class="date-count">{{ item.count }}</span>
-                  </div>
+        <div v-show="activeView === 'results'" class="tab-pane">
+          <div class="filter-row" v-if="availableDates.length > 0 || availableExtensions.length > 0">
+            <div class="date-filter-section" v-if="availableDates.length > 0">
+              <div class="date-filter-header">
+                <span class="section-label">日期筛选</span>
+                <div class="date-actions">
+                  <button @click="selectAllDates" class="filter-action">全选</button>
+                  <button @click="deselectAllDates" class="filter-action">全不选</button>
                 </div>
               </div>
-
-              <div class="ext-filter-section" v-if="availableExtensions.length > 0">
-                <div class="date-filter-header">
-                  <span class="section-label">后缀筛选</span>
-                  <div class="date-actions">
-                    <button @click="selectAllExtensions" class="filter-action">全选</button>
-                    <button @click="deselectAllExtensions" class="filter-action">全不选</button>
-                  </div>
-                </div>
-                <div class="date-list">
-                  <div
-                    v-for="item in availableExtensions"
-                    :key="item.ext"
-                    :class="['date-chip', { active: selectedExtensions.includes(item.ext) }]"
-                    @click="toggleExtension(item.ext)"
-                  >
-                    <span class="date-text">{{ item.ext }}</span>
-                    <span class="date-count">{{ item.count }}</span>
-                  </div>
+              <div class="date-list">
+                <div 
+                  v-for="item in availableDates" 
+                  :key="item.date"
+                  :class="['date-chip', { active: selectedDates.includes(item.date) }]"
+                  @click="toggleDate(item.date)"
+                >
+                  <span class="date-text">{{ item.date }}</span>
+                  <span class="date-count">{{ item.count }}</span>
                 </div>
               </div>
             </div>
 
-            <FileTable 
-              v-if="filesToDisplay && filesToDisplay.length > 0"
-              :files="filesToDisplay" 
-              v-model:filter="fileFilter"
-            />
-            <div v-else-if="scanResult && scanResult.length > 0" class="empty-state">
-              <div class="empty-icon">📅</div>
-              <p>请选择至少一个日期和后缀以查看文件</p>
-            </div>
-            <div v-else class="empty-state">
-              <div class="empty-icon">🔍</div>
-              <p>未找到符合条件的文件</p>
+            <div class="ext-filter-section" v-if="availableExtensions.length > 0">
+              <div class="date-filter-header">
+                <span class="section-label">后缀筛选</span>
+                <div class="date-actions">
+                  <button @click="selectAllExtensions" class="filter-action">全选</button>
+                  <button @click="deselectAllExtensions" class="filter-action">全不选</button>
+                </div>
+              </div>
+              <div class="date-list">
+                <div
+                v-for="item in availableExtensions"
+                :key="item.key"
+                :class="['date-chip', { active: selectedExtensions.includes(item.key) }]"
+                @click="toggleExtension(item.key)"
+                >
+                <span class="date-text">{{ item.label }}</span>
+                  <span class="date-count">{{ item.count }}</span>
+                </div>
+              </div>
             </div>
           </div>
-          <div v-show="activeView === 'logs'" class="tab-pane">
-            <LogViewer :logs="logs" />
-            <div class="log-actions">
-              <button @click="clearLogs" class="btn btn-secondary btn-sm">
-                清空日志
-              </button>
-            </div>
+
+          <FileTable 
+            v-if="filesToDisplay && filesToDisplay.length > 0"
+            :files="filesToDisplay" 
+            v-model:filter="fileFilter"
+          />
+          <div v-else-if="scanResult && scanResult.length > 0" class="empty-state">
+            <div class="empty-icon">📅</div>
+            <p>请选择至少一个日期和后缀以查看文件</p>
           </div>
-        </TabView>
-      </div>
+          <div v-else class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <p>未找到符合条件的文件</p>
+          </div>
+        </div>
+        <div v-show="activeView === 'logs'" class="tab-pane">
+          <LogViewer :logs="logs" />
+          <div class="log-actions">
+            <button @click="clearLogs" class="btn btn-secondary btn-sm">
+              清空日志
+            </button>
+          </div>
+        </div>
+      </TabView>
     </div>
 
     <Modal v-if="showSuccessModal" @close="showSuccessModal = false">
@@ -332,15 +327,15 @@ const availableExtensions = computed(() => {
   if (!scanResult.value) return [];
   const extensions = {};
   scanResult.value.forEach(file => {
-    const ext = getFileExtension(file.filename);
-    if (!extensions[ext]) {
-      extensions[ext] = { ext, count: 0 };
+    const info = getFileExtensionInfo(file.filename);
+    if (!extensions[info.key]) {
+      extensions[info.key] = { key: info.key, label: info.label, count: 0 };
     }
-    extensions[ext].count++;
+    extensions[info.key].count++;
   });
   return Object.values(extensions).sort((a, b) => {
     if (b.count !== a.count) return b.count - a.count;
-    return a.ext.localeCompare(b.ext);
+    return a.label.localeCompare(b.label);
   });
 });
 
@@ -357,8 +352,8 @@ const filesToDisplay = computed(() => {
       date = new Date(file.date);
     }
     const dateStr = date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
-    const ext = getFileExtension(file.filename);
-    return selectedDates.value.includes(dateStr) && selectedExtensions.value.includes(ext);
+    const info = getFileExtensionInfo(file.filename);
+    return selectedDates.value.includes(dateStr) && selectedExtensions.value.includes(info.key);
   });
 });
 
@@ -378,28 +373,29 @@ function deselectAllDates() {
   selectedDates.value = [];
 }
 
-function toggleExtension(ext) {
-  if (selectedExtensions.value.includes(ext)) {
-    selectedExtensions.value = selectedExtensions.value.filter(e => e !== ext);
+function toggleExtension(key) {
+  if (selectedExtensions.value.includes(key)) {
+    selectedExtensions.value = selectedExtensions.value.filter(e => e !== key);
   } else {
-    selectedExtensions.value.push(ext);
+    selectedExtensions.value.push(key);
   }
 }
 
 function selectAllExtensions() {
-  selectedExtensions.value = availableExtensions.value.map(e => e.ext);
+  selectedExtensions.value = availableExtensions.value.map(e => e.key);
 }
 
 function deselectAllExtensions() {
   selectedExtensions.value = [];
 }
 
-function getFileExtension(filename) {
-  if (!filename) return '无后缀';
+function getFileExtensionInfo(filename) {
+  if (!filename) return { key: 'noext', label: '无后缀' };
   const text = String(filename);
   const lastDot = text.lastIndexOf('.');
-  if (lastDot <= 0 || lastDot === text.length - 1) return '无后缀';
-  return text.slice(lastDot + 1).toLowerCase();
+  if (lastDot <= 0 || lastDot === text.length - 1) return { key: 'noext', label: '无后缀' };
+  const label = text.slice(lastDot + 1);
+  return { key: label.toLowerCase(), label: label.toUpperCase() };
 }
 
 const sourceFavorites = computed(() => {
@@ -581,7 +577,7 @@ async function startScan() {
       }
       const dateStr = date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
       dates.add(dateStr);
-      extensions.add(getFileExtension(file.filename));
+      extensions.add(getFileExtensionInfo(file.filename).key);
     });
     selectedDates.value = Array.from(dates);
     selectedExtensions.value = Array.from(extensions);
@@ -694,6 +690,7 @@ function clearLogs() {
 .results-step {
   overflow: hidden;
   min-height: 0;
+  padding-top: var(--space-2);
 }
 
 /* Config Grid */
@@ -931,24 +928,27 @@ function clearLogs() {
   to { transform: rotate(360deg); }
 }
 
-/* Results View */
-.results-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-2);
-}
-
 .btn-icon {
   gap: var(--space-2);
   padding-left: var(--space-3);
 }
 
-.results-content {
+/* Results View */
+.results-tabs {
   flex: 1;
+  min-height: 0;
+}
+
+.results-tabs .tab-list-wrapper {
+  padding: 0 var(--space-2);
+}
+
+.results-tabs .tab-content {
+  margin-top: var(--space-4);
   display: flex;
   flex-direction: column;
   min-height: 0;
+  gap: var(--space-4);
 }
 
 .progress-section {
