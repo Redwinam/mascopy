@@ -13,7 +13,7 @@
     "macOSPrivateApi": true,
     "windows": [
       {
-        "title": "大师拷贝",
+        "title": "",
         "width": 1400,
         "height": 900,
         "resizable": true,

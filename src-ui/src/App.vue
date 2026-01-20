@@ -4,11 +4,11 @@
       class="app-header animate-fade-in"
       :class="{ 'is-config': currentStep === 'config' }"
       data-tauri-drag-region
-      @mousedown="onHeaderMouseDown"
+      @pointerdown="onHeaderPointerDown"
     >
-      <div class="app-drag-layer" data-tauri-drag-region></div>
-      <div class="drag-strip" data-tauri-drag-region></div>
-      <div class="brand" id="header-left-slot" data-tauri-drag-region></div>
+      <div class="brand" id="header-left-slot" data-tauri-drag-region>
+        <span class="app-title">大师拷贝</span>
+      </div>
       
       <div class="header-center" id="header-center-slot">
         <TabView
@@ -17,11 +17,11 @@
           v-model:activeTab="currentMode"
           class="header-tabs"
           data-no-drag
+          data-tauri-no-drag
         />
       </div>
 
       <div class="header-actions" id="header-right-slot">
-        <!-- Window controls are handled by OS with titleBarStyle: Overlay -->
       </div>
     </header>
 
@@ -32,7 +32,6 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted } from 'vue';
 import Home from './views/Home.vue';
 import TabView from './components/TabView.vue';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -53,34 +52,13 @@ const modeTabs = [
   { id: 'dji', label: 'DJI模式' }
 ];
 
-function onHeaderMouseDown(event) {
+async function onHeaderPointerDown(event) {
   if (event.button !== 0) return;
   const target = event.target;
-  if (target && target.closest && target.closest('button, a, input, select, textarea, [data-no-drag]')) return;
+  if (target && target.closest && target.closest('button, a, input, select, textarea, [data-no-drag], [data-tauri-no-drag]')) return;
   if (!appWindow) return;
-  appWindow.startDragging();
+  await appWindow.startDragging();
 }
-
-const headerHeight = 80;
-
-function onGlobalMouseDown(event) {
-  if (event.button !== 0) return;
-  if (event.clientY > headerHeight) return;
-  const target = event.target;
-  if (target && target.closest && target.closest('button, a, input, select, textarea, [data-no-drag]')) return;
-  if (!appWindow) return;
-  appWindow.startDragging();
-}
-
-onMounted(() => {
-  if (!isTauri) return;
-  window.addEventListener('mousedown', onGlobalMouseDown, true);
-});
-
-onBeforeUnmount(() => {
-  if (!isTauri) return;
-  window.removeEventListener('mousedown', onGlobalMouseDown, true);
-});
 </script>
 
 <style scoped>
@@ -89,41 +67,33 @@ onBeforeUnmount(() => {
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   position: relative;
-  padding: var(--space-4) var(--space-6);
-  padding-top: 2.5rem;
-  -webkit-app-region: drag;
-  height: 80px;
+  padding: 1.2rem var(--space-6) var(--space-3);
+  height: 72px;
   z-index: 100;
-}
-
-.app-drag-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 100%;
-  -webkit-app-region: drag;
-  z-index: 1;
-}
-
-.drag-strip {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 100%;
-  -webkit-app-region: drag;
-  z-index: 1;
+  background: linear-gradient(180deg, var(--surface-overlay-strong), var(--surface-overlay-soft));
+  border-bottom: 1px solid var(--divider-color);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  user-select: none;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  -webkit-app-region: drag;
   position: relative;
   z-index: 10;
   justify-self: start;
+  padding-left: 3.5rem;
+}
+
+.app-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-main);
+  opacity: 0.9;
 }
 
 .logo-box {
@@ -146,14 +116,12 @@ onBeforeUnmount(() => {
 .header-center {
   display: flex;
   justify-content: center;
-  -webkit-app-region: drag;
   position: relative;
   z-index: 10;
   justify-self: center;
 }
 
 .header-actions {
-  -webkit-app-region: no-drag;
   position: relative;
   z-index: 10;
   justify-self: end;

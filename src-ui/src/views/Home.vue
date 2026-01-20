@@ -781,7 +781,7 @@ function clearLogs() {
 .fav-list {
   display: flex;
   flex-direction: column;
-  gap: 1px; /* Minimal gap for list look */
+  gap: 0.35rem;
   overflow-y: auto;
   padding-right: var(--space-2);
   flex: 1;
@@ -800,9 +800,10 @@ function clearLogs() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: transparent;
-  border-radius: var(--radius-sm);
-  padding: var(--space-2) var(--space-3);
+  background: var(--surface-overlay-soft);
+  border: 1px solid var(--surface-200);
+  border-radius: 0.65rem;
+  padding: 0.45rem 0.65rem;
   cursor: pointer;
   transition: all var(--transition-fast);
   font-size: 0.875rem;
@@ -810,8 +811,8 @@ function clearLogs() {
 }
 
 .fav-item:hover {
-  background: var(--surface-100);
-  color: var(--primary-700);
+  background: var(--surface-overlay);
+  border-color: var(--surface-300);
 }
 
 .fav-info {
@@ -828,13 +829,17 @@ function clearLogs() {
 }
 
 .fav-path {
-  font-size: 0.75rem;
-  color: var(--color-text-light);
+  font-size: 0.78rem;
+  color: var(--color-text-main);
+  font-family: 'SF Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  background: var(--surface-path);
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.4rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
-  opacity: 0.7;
+  opacity: 0.85;
 }
 
 .btn-icon-danger {
