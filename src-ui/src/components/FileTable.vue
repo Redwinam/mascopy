@@ -24,7 +24,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(file, index) in filteredFiles" :key="index">
+          <tr v-for="(file, index) in filteredFiles" :key="index" @contextmenu="openContextMenu(file, $event)">
             <td class="file-info-cell">
               <div class="file-path" :title="file.target_path">
                 <span class="path-dir">{{ getTargetDir(file.target_path, file.filename) }}</span>
@@ -46,11 +46,24 @@
         {{ filter === 'all' ? '暂无文件' : '该状态下暂无文件' }}
       </div>
     </div>
+    <teleport to="body">
+      <div
+        v-if="contextMenu.visible"
+        ref="contextMenuRef"
+        class="context-menu"
+        :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
+        @click.stop
+      >
+        <button class="context-menu-item" @click="revealInFinder">在 Finder 中显示</button>
+        <button class="context-menu-item" @click="copyFilePath">复制路径</button>
+      </div>
+    </teleport>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { invoke } from '@tauri-apps/api/core';
 
 const props = defineProps({
   files: Array,
@@ -77,6 +90,146 @@ const filteredFiles = computed(() => {
   if (props.filter === 'all') return props.files;
   return props.files.filter(f => f.status === props.filter);
 });
+
+const contextMenu = ref({
+  visible: false,
+  x: 0,
+  y: 0,
+  file: null
+});
+const contextMenuRef = ref(null);
+
+function isTauriApp() {
+  return (
+    typeof window !== 'undefined' &&
+    (window.__TAURI__ !== undefined ||
+      window.__TAURI_INTERNALS__ !== undefined ||
+      window.__TAURI_INTERNALS__?.invoke !== undefined)
+  );
+}
+
+function openContextMenu(file, event) {
+  event.preventDefault();
+  const x = event.clientX;
+  const y = event.clientY;
+  contextMenu.value = {
+    visible: true,
+    x,
+    y,
+    file
+  };
+  nextTick(() => {
+    const menu = contextMenuRef.value;
+    if (!menu) return;
+    const rect = menu.getBoundingClientRect();
+    let nextX = x;
+    let nextY = y;
+    if (rect.right > window.innerWidth) {
+      nextX = Math.max(8, window.innerWidth - rect.width - 8);
+    }
+    if (rect.bottom > window.innerHeight) {
+      nextY = Math.max(8, window.innerHeight - rect.height - 8);
+    }
+    if (nextX !== x || nextY !== y) {
+      contextMenu.value = {
+        ...contextMenu.value,
+        x: nextX,
+        y: nextY
+      };
+    }
+  });
+}
+
+function closeContextMenu() {
+  if (!contextMenu.value.visible) return;
+  contextMenu.value = { visible: false, x: 0, y: 0, file: null };
+}
+
+async function revealInFinder() {
+  const file = contextMenu.value.file;
+  closeContextMenu();
+  if (!file || !isTauriApp()) return;
+  const rawPath = normalizePath(file.path) || normalizePath(file.target_path);
+  if (!rawPath) return;
+  try {
+    await invoke('reveal_in_finder', { path: String(rawPath) });
+  } catch (e) {
+    alert('无法在 Finder 中显示文件: ' + e);
+  }
+}
+
+async function copyFilePath() {
+  const file = contextMenu.value.file;
+  closeContextMenu();
+  if (!file) return;
+  const rawPath = normalizePath(file.path) || normalizePath(file.target_path);
+  if (!rawPath) return;
+  try {
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(String(rawPath));
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = String(rawPath);
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+  } catch (e) {
+    alert('复制路径失败: ' + e);
+  }
+}
+
+function onWindowBlur() {
+  closeContextMenu();
+}
+
+function onWindowResize() {
+  closeContextMenu();
+}
+
+function onWindowScroll() {
+  closeContextMenu();
+}
+
+function onWindowClick(event) {
+  const target = event.target;
+  if (target && target.closest && target.closest('.context-menu')) return;
+  closeContextMenu();
+}
+
+function onWindowContextMenu(event) {
+  if (!contextMenu.value.visible) return;
+  const target = event.target;
+  if (target && target.closest && target.closest('.context-menu')) return;
+  closeContextMenu();
+}
+
+onMounted(() => {
+  window.addEventListener('click', onWindowClick, true);
+  window.addEventListener('contextmenu', onWindowContextMenu, true);
+  window.addEventListener('blur', onWindowBlur);
+  window.addEventListener('resize', onWindowResize);
+  window.addEventListener('scroll', onWindowScroll, true);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('click', onWindowClick, true);
+  window.removeEventListener('contextmenu', onWindowContextMenu, true);
+  window.removeEventListener('blur', onWindowBlur);
+  window.removeEventListener('resize', onWindowResize);
+  window.removeEventListener('scroll', onWindowScroll, true);
+});
+
+function normalizePath(value) {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object' && typeof value.path === 'string') return value.path;
+  return String(value);
+}
 
 function getTargetDir(path, filename) {
   if (!path) return '-';
@@ -314,5 +467,32 @@ function formatFileType(type) {
 .status-skip {
   background: var(--surface-100);
   color: var(--color-text-muted);
+}
+
+.context-menu {
+  position: fixed;
+  z-index: 9999;
+  min-width: 160px;
+  background: var(--surface-0);
+  border: 1px solid var(--surface-200);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 0.35rem;
+}
+
+.context-menu-item {
+  width: 100%;
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border: none;
+  background: transparent;
+  color: var(--color-text-main);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.context-menu-item:hover {
+  background: var(--surface-100);
 }
 </style>

@@ -129,6 +129,29 @@ fn eject_volume(path: String) -> AppResult<()> {
     }
 }
 
+#[tauri::command]
+fn reveal_in_finder(path: String) -> AppResult<()> {
+    #[cfg(target_os = "macos")]
+    {
+        use std::process::Command;
+        let status = Command::new("open")
+            .arg("-R")
+            .arg(&path)
+            .status()
+            .map_err(AppError::Io)?;
+        if status.success() {
+            Ok(())
+        } else {
+            Err(AppError::Unknown("Open failed".to_string()))
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        Err(AppError::Unknown("Reveal not supported on this OS yet".to_string()))
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let uploader = Arc::new(Uploader::new());
@@ -153,7 +176,8 @@ pub fn run() {
             pause_upload,
             resume_upload,
             cancel_upload,
-            eject_volume
+            eject_volume,
+            reveal_in_finder
         ])
         .run(tauri::generate_context!("tauri.conf.json"))
         .expect("error while running tauri application");
