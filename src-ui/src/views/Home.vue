@@ -312,6 +312,28 @@
         </button>
       </template>
     </Modal>
+
+    <Modal v-if="noticeModal.visible" @close="closeNotice">
+      <template #title>{{ noticeModal.title }}</template>
+      <div class="notice-content">
+        <div class="notice-icon-wrapper" :class="`notice-${noticeModal.type}`">
+          <svg v-if="noticeModal.type === 'success'" xmlns="http://www.w3.org/2000/svg" class="w-14 h-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <svg v-else-if="noticeModal.type === 'warning'" xmlns="http://www.w3.org/2000/svg" class="w-14 h-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 4h.01M10.29 3.86l-8.5 14.69A1 1 0 002.64 20h16.72a1 1 0 00.86-1.45l-8.5-14.69a1 1 0 00-1.73 0z" />
+          </svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-14 h-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 4h.01M12 5a7 7 0 11-.001 14.001A7 7 0 0112 5z" />
+          </svg>
+        </div>
+        <p class="notice-message">{{ noticeModal.message }}</p>
+        <p v-if="noticeModal.submessage" class="notice-submessage">{{ noticeModal.submessage }}</p>
+      </div>
+      <template #footer>
+        <button class="btn btn-primary" @click="closeNotice">知道了</button>
+      </template>
+    </Modal>
   </div>
 </template>
 
@@ -335,6 +357,13 @@ const isScanning = ref(false);
 const isUploading = ref(false);
 const isPaused = ref(false);
 const showSuccessModal = ref(false);
+const noticeModal = ref({
+  visible: false,
+  title: '',
+  message: '',
+  submessage: '',
+  type: 'info'
+});
 const scanResult = ref(null);
 const progress = ref({ current: 0, total: 0, filename: '' });
 const logs = ref([]);
@@ -631,8 +660,21 @@ async function startScan() {
     currentStep.value = 'results'; // Switch to results view
     activeView.value = 'results';
   } catch (e) {
-    addLog('error', '扫描失败: ' + e);
-    alert('扫描失败: ' + e);
+    const errorText = String(e);
+    addLog('error', '扫描失败: ' + errorText);
+    if (errorText.includes('源路径不存在')) {
+      openNotice({
+        title: '源路径不可用',
+        message: '未检测到源设备，请确认已挂载并重新选择目录。',
+        type: 'warning'
+      });
+    } else {
+      openNotice({
+        title: '扫描失败',
+        message: errorText,
+        type: 'error'
+      });
+    }
   } finally {
     isScanning.value = false;
     progress.value = { current: 0, total: 0, filename: '' };
@@ -656,8 +698,13 @@ async function startUpload() {
     scanResult.value = null;
     currentStep.value = 'config'; // Return to config after success
   } catch (e) {
-    addLog('error', '上传失败: ' + e);
-    alert('上传失败: ' + e);
+    const errorText = String(e);
+    addLog('error', '上传失败: ' + errorText);
+    openNotice({
+      title: '上传失败',
+      message: errorText,
+      type: 'error'
+    });
   } finally {
     isUploading.value = false;
   }
@@ -671,11 +718,20 @@ async function ejectVolume() {
     addLog('info', '正在推出设备...');
     await invoke('eject_volume', { path: modeConfig.source_dir });
     addLog('success', '设备已推出');
-    alert('设备已安全推出');
     showSuccessModal.value = false;
+    openNotice({
+      title: '设备已安全推出',
+      message: '现在可以安全移除源设备。',
+      type: 'success'
+    });
   } catch (e) {
-    addLog('error', '推出失败: ' + e);
-    alert('推出失败: ' + e);
+    const errorText = String(e);
+    addLog('error', '推出失败: ' + errorText);
+    openNotice({
+      title: '推出失败',
+      message: errorText,
+      type: 'error'
+    });
   }
 }
 
@@ -708,6 +764,26 @@ function addLog(type, message) {
 
 function clearLogs() {
   logs.value = [];
+}
+
+function openNotice({ title, message, submessage = '', type = 'info' }) {
+  noticeModal.value = {
+    visible: true,
+    title,
+    message,
+    submessage,
+    type
+  };
+}
+
+function closeNotice() {
+  noticeModal.value = {
+    visible: false,
+    title: '',
+    message: '',
+    submessage: '',
+    type: 'info'
+  };
 }
 </script>
 
@@ -1206,6 +1282,44 @@ function clearLogs() {
 
 .text-success {
   color: #10b981;
+}
+
+.notice-content {
+  text-align: center;
+  padding: var(--space-4) 0;
+}
+
+.notice-icon-wrapper {
+  margin-bottom: var(--space-4);
+  display: flex;
+  justify-content: center;
+}
+
+.notice-message {
+  font-size: 1.05rem;
+  font-weight: 500;
+  margin-bottom: var(--space-2);
+}
+
+.notice-submessage {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.notice-success {
+  color: #10b981;
+}
+
+.notice-warning {
+  color: #f59e0b;
+}
+
+.notice-error {
+  color: #ef4444;
+}
+
+.notice-info {
+  color: #38bdf8;
 }
 
 .btn-weak {

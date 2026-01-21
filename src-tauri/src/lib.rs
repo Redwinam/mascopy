@@ -7,6 +7,7 @@ mod uploader;
 mod error;
 
 use std::sync::Arc;
+use std::path::Path;
 use tauri::{State, Window};
 use config::{Config, ConfigManager};
 use scanner::{Scanner, MediaFile};
@@ -48,6 +49,13 @@ struct ScanArgs {
 
 #[tauri::command]
 async fn scan_files(args: ScanArgs) -> AppResult<Vec<MediaFile>> {
+    let source_path = Path::new(&args.source_dir);
+    if !source_path.exists() {
+        return Err(AppError::Scan("源路径不存在".to_string()));
+    }
+    if !source_path.is_dir() {
+        return Err(AppError::Scan("源路径不是目录".to_string()));
+    }
     let scanner = Scanner::with_mode(&args.mode.clone().unwrap_or_else(|| "sd".to_string()));
     let mut files = scanner.scan(
         &args.source_dir,

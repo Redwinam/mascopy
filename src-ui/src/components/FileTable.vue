@@ -63,12 +63,28 @@
         <button class="context-menu-item" @click="copyFilePath">复制路径</button>
       </div>
     </teleport>
+
+    <Modal v-if="noticeModal.visible" @close="closeNotice">
+      <template #title>{{ noticeModal.title }}</template>
+      <div class="notice-content">
+        <div class="notice-icon-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 4h.01M12 5a7 7 0 11-.001 14.001A7 7 0 0112 5z" />
+          </svg>
+        </div>
+        <p class="notice-message">{{ noticeModal.message }}</p>
+      </div>
+      <template #footer>
+        <button class="btn btn-primary" @click="closeNotice">知道了</button>
+      </template>
+    </Modal>
   </div>
 </template>
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
+import Modal from './Modal.vue';
 
 const props = defineProps({
   files: Array,
@@ -103,6 +119,11 @@ const contextMenu = ref({
   file: null
 });
 const contextMenuRef = ref(null);
+const noticeModal = ref({
+  visible: false,
+  title: '',
+  message: ''
+});
 
 function isTauriApp() {
   return (
@@ -159,7 +180,7 @@ async function revealInFinder() {
   try {
     await invoke('reveal_in_finder', { path: String(rawPath) });
   } catch (e) {
-    alert('无法在 Finder 中显示文件: ' + e);
+    openNotice('无法在 Finder 中显示文件', String(e));
   }
 }
 
@@ -184,7 +205,7 @@ async function copyFilePath() {
       document.body.removeChild(textarea);
     }
   } catch (e) {
-    alert('复制路径失败: ' + e);
+    openNotice('复制路径失败', String(e));
   }
 }
 
@@ -296,6 +317,22 @@ function formatFileType(type) {
   };
   return typeMap[type] || type || '-';
 }
+
+function openNotice(title, message) {
+  noticeModal.value = {
+    visible: true,
+    title,
+    message
+  };
+}
+
+function closeNotice() {
+  noticeModal.value = {
+    visible: false,
+    title: '',
+    message: ''
+  };
+}
 </script>
 
 <style scoped>
@@ -306,6 +343,23 @@ function formatFileType(type) {
   gap: var(--space-4);
   min-height: 0;
   flex: 1;
+}
+
+.notice-content {
+  text-align: center;
+  padding: var(--space-4) 0;
+}
+
+.notice-icon-wrapper {
+  margin-bottom: var(--space-4);
+  color: #f59e0b;
+  display: flex;
+  justify-content: center;
+}
+
+.notice-message {
+  font-size: 1rem;
+  font-weight: 500;
 }
 
 .table-header-row {
