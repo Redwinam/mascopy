@@ -39,8 +39,19 @@
             <td class="text-muted">{{ formatFileType(file.file_type) }}</td>
             <td class="text-muted">{{ formatSize(file.size) }}</td>
             <td class="text-muted">{{ formatDate(file.date) }}</td>
-            <td>
-              <span :class="['status-badge', `status-${file.status}`]">
+            <td class="status-cell">
+              <template v-if="getProgress(file)">
+                <div v-if="getProgress(file).status === 'uploading'" class="row-progress">
+                  <div class="row-progress-track">
+                    <div class="row-progress-fill" :style="{ width: filePercent(file) + '%' }"></div>
+                  </div>
+                  <span class="row-progress-label">{{ filePercent(file).toFixed(0) }}%</span>
+                </div>
+                <span v-else :class="['status-badge', resultClass(getProgress(file).status)]">
+                  {{ resultLabel(getProgress(file).status) }}
+                </span>
+              </template>
+              <span v-else :class="['status-badge', `status-${file.status}`]">
                 {{ formatStatus(file.status) }}
               </span>
             </td>
@@ -91,6 +102,11 @@ const props = defineProps({
   filter: {
     type: String,
     default: 'all'
+  },
+  // 单文件上传进度，按源文件路径索引：{ [path]: { status, done, total } }
+  progressMap: {
+    type: Object,
+    default: () => ({})
   }
 });
 
@@ -318,6 +334,36 @@ function formatFileType(type) {
   return typeMap[type] || type || '-';
 }
 
+function getProgress(file) {
+  const key = normalizePath(file?.path);
+  if (!key) return null;
+  return props.progressMap?.[key] || null;
+}
+
+function filePercent(file) {
+  const p = getProgress(file);
+  if (!p || !p.total) return 0;
+  return Math.min(100, Math.max(0, (p.done / p.total) * 100));
+}
+
+function resultClass(status) {
+  const map = {
+    done: 'status-done',
+    skipped: 'status-skip',
+    error: 'status-error'
+  };
+  return map[status] || 'status-skip';
+}
+
+function resultLabel(status) {
+  const map = {
+    done: '已完成',
+    skipped: '已跳过',
+    error: '失败'
+  };
+  return map[status] || status;
+}
+
 function openNotice(title, message) {
   noticeModal.value = {
     visible: true,
@@ -540,6 +586,53 @@ function closeNotice() {
 .status-skip {
   background: var(--surface-100);
   color: var(--color-text-muted);
+}
+
+.status-done {
+  background: var(--success-soft, rgba(16, 185, 129, 0.15));
+  color: #10b981;
+}
+
+.status-error {
+  background: var(--danger-soft, rgba(239, 68, 68, 0.15));
+  color: #ef4444;
+}
+
+.status-cell {
+  min-width: 140px;
+}
+
+.row-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 120px;
+}
+
+.row-progress-track {
+  flex: 1;
+  height: 6px;
+  background: var(--surface-200);
+  border-radius: 999px;
+  overflow: hidden;
+  min-width: 64px;
+}
+
+.row-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-500), var(--primary-400));
+  border-radius: 999px;
+  transition: width 0.2s ease-out;
+}
+
+.row-progress-label {
+  font-size: 0.72rem;
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--primary-600);
+  flex-shrink: 0;
+  width: 34px;
+  text-align: right;
 }
 
 .context-menu {

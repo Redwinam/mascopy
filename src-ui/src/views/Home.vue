@@ -233,6 +233,7 @@
           <FileTable 
             v-if="filesToDisplay && filesToDisplay.length > 0"
             :files="filesToDisplay" 
+            :progress-map="fileProgress"
             v-model:filter="fileFilter"
           >
             <template #actions>
@@ -240,10 +241,21 @@
                 <div class="inline-progress">
                   <div class="progress-text">
                     <span class="progress-filename" :title="progress.filename">{{ progress.filename || '准备中...' }}</span>
-                    <span class="progress-count">{{ progress.current }} / {{ progress.total }}</span>
+                    <span class="progress-percent">{{ progressPercentage.toFixed(1) }}%</span>
                   </div>
                   <div class="progress-track-mini">
                     <div class="progress-fill-mini" :style="{ width: progressPercentage + '%' }"></div>
+                  </div>
+                  <div class="progress-meta">
+                    <span>{{ formatBytes(progress.overall_done) }} / {{ formatBytes(progress.overall_total) }}</span>
+                    <span class="progress-dot">·</span>
+                    <span>{{ progress.current }}/{{ progress.total }} 文件</span>
+                    <span class="progress-dot">·</span>
+                    <span>{{ formatSpeed(progress.speed) }}</span>
+                    <template v-if="etaText">
+                      <span class="progress-dot">·</span>
+                      <span>{{ etaText }}</span>
+                    </template>
                   </div>
                 </div>
                 <div class="inline-controls">
@@ -365,16 +377,53 @@ const noticeModal = ref({
   type: 'info'
 });
 const scanResult = ref(null);
-const progress = ref({ current: 0, total: 0, filename: '' });
+const progress = ref({
+  current: 0,
+  total: 0,
+  filename: '',
+  overall_done: 0,
+  overall_total: 0,
+  speed: 0
+});
+// 单文件进度，按源文件路径索引：{ [path]: { status, done, total } }
+const fileProgress = ref({});
 const logs = ref([]);
 const activeView = ref('results');
 const fileFilter = ref('all');
 const selectedDates = ref([]);
 const selectedExtensions = ref([]);
 
+// 整体进度按已传字节 / 总字节计算，避免大小悬殊文件造成跳变
 const progressPercentage = computed(() => {
-  if (progress.value.total === 0) return 0;
-  return Math.min(100, Math.max(0, (progress.value.current / progress.value.total) * 100));
+  const total = progress.value.overall_total;
+  if (!total) return 0;
+  return Math.min(100, Math.max(0, (progress.value.overall_done / total) * 100));
+});
+
+function formatBytes(bytes) {
+  if (!bytes || bytes < 0) return '0 B';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+}
+
+function formatSpeed(bytesPerSec) {
+  if (!bytesPerSec) return '--';
+  return formatBytes(bytesPerSec) + '/s';
+}
+
+const etaText = computed(() => {
+  const { overall_done, overall_total, speed } = progress.value;
+  if (!speed || !overall_total || overall_done >= overall_total) return '';
+  const remaining = overall_total - overall_done;
+  const seconds = Math.round(remaining / speed);
+  if (seconds < 60) return `约 ${seconds} 秒`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  if (m < 60) return `约 ${m} 分 ${s} 秒`;
+  const h = Math.floor(m / 60);
+  return `约 ${h} 时 ${m % 60} 分`;
 });
 
 const availableDates = computed(() => {
@@ -516,7 +565,18 @@ onMounted(async () => {
 
   try {
     await listen('upload-progress', (event) => {
-      progress.value = event.payload;
+      const p = event.payload;
+      progress.value = p;
+      if (p.path) {
+        fileProgress.value = {
+          ...fileProgress.value,
+          [p.path]: {
+            status: p.status,
+            done: p.file_done,
+            total: p.file_total
+          }
+        };
+      }
     });
   } catch (e) {
     addLog('warning', '无法监听上传进度事件: ' + e);
@@ -689,6 +749,18 @@ async function startUpload() {
   if (!filesToDisplay.value || filesToDisplay.value.length === 0) return;
   isUploading.value = true;
   isPaused.value = false;
+  fileProgress.value = {};
+  const totalBytes = filesToDisplay.value
+    .filter(f => f.status === 'upload' || f.status === 'overwrite')
+    .reduce((sum, f) => sum + (f.size || 0), 0);
+  progress.value = {
+    current: 0,
+    total: filesToDisplay.value.length,
+    filename: '准备中...',
+    overall_done: 0,
+    overall_total: totalBytes,
+    speed: 0
+  };
   addLog('info', `开始上传 (${filesToDisplay.value.length} 个文件)...`);
   
   try {
@@ -1362,22 +1434,47 @@ function closeNotice() {
 .inline-progress {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  width: 240px;
+  gap: 3px;
+  width: 320px;
 }
 
 .progress-text {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
   font-size: 0.75rem;
   color: var(--color-text-muted);
 }
 
 .progress-filename {
-  max-width: 160px;
+  max-width: 230px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--color-text-main);
+  font-weight: 500;
+}
+
+.progress-percent {
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--primary-600);
+  flex-shrink: 0;
+}
+
+.progress-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  font-size: 0.7rem;
+  color: var(--color-text-light);
+  font-family: monospace;
+}
+
+.progress-dot {
+  opacity: 0.5;
 }
 
 .progress-track-mini {
