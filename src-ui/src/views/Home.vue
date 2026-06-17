@@ -211,7 +211,7 @@
             </div>
           </div>
 
-          <FileTable v-if="filesToDisplay && filesToDisplay.length > 0" :files="filesToDisplay" :progress-map="fileProgress" v-model:filter="fileFilter">
+          <FileTable v-if="filesToDisplay && filesToDisplay.length > 0" :files="filesToDisplay" :progress-map="fileProgress" v-model:filter="fileFilter" :selectable="selectionMode" v-model:selectedKeys="selectedKeys">
             <template #actions>
               <div v-if="isUploading" class="upload-status-bar animate-fade-in">
                 <div class="inline-progress">
@@ -251,12 +251,31 @@
                   </button>
                 </div>
               </div>
-              <button v-else @click="startUpload" class="btn btn-primary btn-action-upload" :disabled="!filesToDisplay || filesToDisplay.length === 0">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                开始上传
-              </button>
+              <div v-else class="action-buttons">
+                <template v-if="selectionMode">
+                  <button @click="exitSelectionMode" class="btn btn-secondary">退出选择</button>
+                  <button @click="startUpload(selectedUploadFiles)" class="btn btn-primary btn-action-upload" :disabled="selectedCount === 0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    上传选中 ({{ selectedCount }})
+                  </button>
+                </template>
+                <template v-else>
+                  <button @click="enterSelectionMode" class="btn btn-secondary" :disabled="!filesToDisplay || filesToDisplay.length === 0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7l-2 2-1-1" />
+                    </svg>
+                    选择文件
+                  </button>
+                  <button @click="startUpload(filesToDisplay)" class="btn btn-primary btn-action-upload" :disabled="!filesToDisplay || filesToDisplay.length === 0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    开始上传
+                  </button>
+                </template>
+              </div>
             </template>
           </FileTable>
           <div v-else-if="scanResult && scanResult.length > 0" class="empty-state">
@@ -366,6 +385,9 @@ const activeView = ref("results");
 const fileFilter = ref("all");
 const selectedDates = ref([]);
 const selectedExtensions = ref([]);
+// 选择模式：用户手动勾选要上传的文件（key = 源文件路径）
+const selectionMode = ref(false);
+const selectedKeys = ref([]);
 
 // 整体进度按已传字节 / 总字节计算，避免大小悬殊文件造成跳变
 const progressPercentage = computed(() => {
@@ -452,6 +474,32 @@ const filesToDisplay = computed(() => {
     return selectedDates.value.includes(dateStr) && selectedExtensions.value.includes(info.key);
   });
 });
+
+function normalizePath(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && typeof value.path === "string") return value.path;
+  return String(value);
+}
+
+// 选择模式下实际会上传的文件：当前显示、可上传(将上传/将覆盖)且被勾选
+const selectedUploadFiles = computed(() => {
+  if (!selectionMode.value) return [];
+  const set = new Set(selectedKeys.value);
+  return filesToDisplay.value.filter((f) => (f.status === "upload" || f.status === "overwrite") && set.has(normalizePath(f.path)));
+});
+
+const selectedCount = computed(() => selectedUploadFiles.value.length);
+
+function enterSelectionMode() {
+  selectionMode.value = true;
+  selectedKeys.value = [];
+}
+
+function exitSelectionMode() {
+  selectionMode.value = false;
+  selectedKeys.value = [];
+}
 
 function toggleDate(date) {
   if (selectedDates.value.includes(date)) {
@@ -651,6 +699,8 @@ async function startScan() {
   scanResult.value = null;
   selectedDates.value = [];
   selectedExtensions.value = [];
+  selectionMode.value = false;
+  selectedKeys.value = [];
   // 清空上一轮上传的逐文件进度，否则改目标目录后重新扫描时
   // 残留的 skipped/done 记录会按源路径命中，覆盖新的扫描状态
   fileProgress.value = {};
@@ -718,27 +768,30 @@ function goBack() {
   currentStep.value = "config";
 }
 
-async function startUpload() {
-  if (!filesToDisplay.value || filesToDisplay.value.length === 0) return;
+async function startUpload(files) {
+  const uploadList = Array.isArray(files) ? files : filesToDisplay.value;
+  if (!uploadList || uploadList.length === 0) return;
   isUploading.value = true;
   isPaused.value = false;
   fileProgress.value = {};
-  const totalBytes = filesToDisplay.value.filter((f) => f.status === "upload" || f.status === "overwrite").reduce((sum, f) => sum + (f.size || 0), 0);
+  const totalBytes = uploadList.filter((f) => f.status === "upload" || f.status === "overwrite").reduce((sum, f) => sum + (f.size || 0), 0);
   progress.value = {
     current: 0,
-    total: filesToDisplay.value.length,
+    total: uploadList.length,
     filename: "准备中...",
     overall_done: 0,
     overall_total: totalBytes,
     speed: 0,
   };
-  addLog("info", `开始上传 (${filesToDisplay.value.length} 个文件)...`);
+  addLog("info", `开始上传 (${uploadList.length} 个文件)...`);
 
   try {
-    await invoke("upload_files", { files: filesToDisplay.value });
+    await invoke("upload_files", { files: uploadList });
     addLog("success", "上传完成!");
     showSuccessModal.value = true;
     scanResult.value = null;
+    selectionMode.value = false;
+    selectedKeys.value = [];
     currentStep.value = "config"; // Return to config after success
   } catch (e) {
     const errorText = String(e);
@@ -1381,6 +1434,12 @@ function closeNotice() {
   color: var(--color-text-main);
   box-shadow: none;
   opacity: 1;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .btn-action-upload {

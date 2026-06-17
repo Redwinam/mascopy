@@ -21,6 +21,17 @@
       <table class="file-table">
         <thead>
           <tr>
+            <th v-if="selectable" class="checkbox-col">
+              <input
+                type="checkbox"
+                class="row-checkbox"
+                :checked="allVisibleSelected"
+                :indeterminate="someVisibleSelected"
+                :disabled="selectableVisible.length === 0"
+                title="全选 / 全不选"
+                @change="toggleAll"
+              />
+            </th>
             <th>文件名 / 目标目录</th>
             <th>类型</th>
             <th>大小</th>
@@ -29,7 +40,22 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(file, index) in filteredFiles" :key="index" @contextmenu="openContextMenu(file, $event)">
+          <tr
+            v-for="(file, index) in filteredFiles"
+            :key="index"
+            :class="{ 'row-selectable': selectable && isSelectable(file), 'row-selected': selectable && isSelected(file) }"
+            @contextmenu="openContextMenu(file, $event)"
+            @click="onRowClick(file)"
+          >
+            <td v-if="selectable" class="checkbox-col" @click.stop>
+              <input
+                type="checkbox"
+                class="row-checkbox"
+                :checked="isSelected(file)"
+                :disabled="!isSelectable(file)"
+                @change="toggleFile(file)"
+              />
+            </td>
             <td class="file-info-cell">
               <div class="file-path" :title="file.target_path">
                 <span class="path-dir">{{ getTargetDir(file.target_path) }}</span>
@@ -107,10 +133,20 @@ const props = defineProps({
   progressMap: {
     type: Object,
     default: () => ({})
+  },
+  // 选择模式：开启后第一列显示勾选框
+  selectable: {
+    type: Boolean,
+    default: false
+  },
+  // 已勾选文件的 key 列表（key = 源文件路径）
+  selectedKeys: {
+    type: Array,
+    default: () => []
   }
 });
 
-defineEmits(['update:filter']);
+const emit = defineEmits(['update:filter', 'update:selectedKeys']);
 
 const stats = computed(() => {
   if (!props.files || props.files.length === 0) return null;
@@ -127,6 +163,60 @@ const filteredFiles = computed(() => {
   if (props.filter === 'all') return props.files;
   return props.files.filter(f => f.status === props.filter);
 });
+
+// ---- 选择模式 ----
+const selectedSet = computed(() => new Set(props.selectedKeys));
+
+function fileKey(file) {
+  return normalizePath(file?.path);
+}
+
+// 仅「将上传 / 将覆盖」的文件可勾选，跳过的文件不会被拷贝
+function isSelectable(file) {
+  return !!file && (file.status === 'upload' || file.status === 'overwrite');
+}
+
+function isSelected(file) {
+  return selectedSet.value.has(fileKey(file));
+}
+
+// 当前可见且可勾选的文件（受顶部状态过滤影响）
+const selectableVisible = computed(() => filteredFiles.value.filter(isSelectable));
+
+const allVisibleSelected = computed(
+  () => selectableVisible.value.length > 0 && selectableVisible.value.every(f => selectedSet.value.has(fileKey(f)))
+);
+
+const someVisibleSelected = computed(
+  () => !allVisibleSelected.value && selectableVisible.value.some(f => selectedSet.value.has(fileKey(f)))
+);
+
+function toggleFile(file) {
+  if (!isSelectable(file)) return;
+  const key = fileKey(file);
+  const set = new Set(props.selectedKeys);
+  if (set.has(key)) {
+    set.delete(key);
+  } else {
+    set.add(key);
+  }
+  emit('update:selectedKeys', Array.from(set));
+}
+
+function toggleAll() {
+  const set = new Set(props.selectedKeys);
+  if (allVisibleSelected.value) {
+    selectableVisible.value.forEach(f => set.delete(fileKey(f)));
+  } else {
+    selectableVisible.value.forEach(f => set.add(fileKey(f)));
+  }
+  emit('update:selectedKeys', Array.from(set));
+}
+
+function onRowClick(file) {
+  if (!props.selectable) return;
+  toggleFile(file);
+}
 
 const contextMenu = ref({
   visible: false,
@@ -532,6 +622,42 @@ function closeNotice() {
 
 .file-table tr:hover {
   background: var(--surface-50);
+}
+
+/* 选择模式 */
+.checkbox-col {
+  width: 44px;
+  text-align: center;
+  padding-left: var(--space-3);
+  padding-right: 0;
+}
+
+.row-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--primary-500);
+  vertical-align: middle;
+}
+
+.row-checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.row-selectable {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* 选中行：用更高的选择器权重压过通用的 tr:hover，避免悬停时被 hover 底色盖掉，
+   只有移开鼠标才显示着重色的矛盾 */
+.file-table tr.row-selected td {
+  background: var(--primary-soft);
+}
+
+.file-table tr.row-selected:hover td {
+  background: var(--primary-soft-strong);
 }
 
 /* 第一列：放开换行，文字超长时在列内折行而不是被省略号截断 */

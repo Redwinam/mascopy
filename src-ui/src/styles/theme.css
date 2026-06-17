@@ -43,6 +43,7 @@
     --color-warning: #f59e0b;
     --color-error: #ef4444;
     --primary-soft: rgba(59, 130, 246, 0.15);
+    --primary-soft-strong: rgba(59, 130, 246, 0.26);
     --accent-soft: rgba(139, 92, 246, 0.15);
     --warning-soft: rgba(245, 158, 11, 0.2);
     --danger-soft: rgba(239, 68, 68, 0.12);
@@ -113,6 +114,7 @@
         --surface-800: #e2e8f0;
         --surface-900: #f8fafc;
         --primary-soft: rgba(59, 130, 246, 0.25);
+        --primary-soft-strong: rgba(59, 130, 246, 0.4);
         --accent-soft: rgba(139, 92, 246, 0.25);
         --warning-soft: rgba(245, 158, 11, 0.25);
         --danger-soft: rgba(239, 68, 68, 0.18);
