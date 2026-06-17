@@ -225,7 +225,7 @@
                   <div class="progress-meta">
                     <span>{{ formatBytes(progress.overall_done) }} / {{ formatBytes(progress.overall_total) }}</span>
                     <span class="progress-dot">·</span>
-                    <span>{{ progress.current }}/{{ progress.total }} 文件</span>
+                    <span>{{ progress.current }}/{{ progress.total }}文件</span>
                     <span class="progress-dot">·</span>
                     <span>{{ formatSpeed(progress.speed) }}</span>
                     <template v-if="etaText">
@@ -1509,6 +1509,7 @@ function closeNotice() {
   line-height: 1.3;
   color: var(--color-text-light);
   font-family: monospace;
+  text-autospace: normal;
 }
 
 .progress-dot {
