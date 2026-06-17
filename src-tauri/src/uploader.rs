@@ -196,8 +196,8 @@ impl Uploader {
                             .unwrap_or_default();
                     }
                     CopyOutcome::Cancelled => {
-                        // 删除未完成的半成品文件，避免留下损坏数据
-                        let _ = std::fs::remove_file(&file.target_path);
+                        // 半成品写在 .part 临时文件中并已由 copy_with_progress 清理，
+                        // 正式文件（覆盖场景下的原文件）保持不变
                         break;
                     }
                     CopyOutcome::Failed(err) => {
@@ -268,7 +268,15 @@ impl Uploader {
             Ok(f) => f,
             Err(e) => return CopyOutcome::Failed(e.to_string()),
         };
-        let mut dst = match std::fs::File::create(&file.target_path) {
+        // 先写入同目录下的临时文件（追加 .part 后缀），全部写完再原子重命名为正式名。
+        // 这样中断/失败不会留下与正式文件同名的半成品，重新扫描也不会误判为重复而生成 _1，
+        // 覆盖（overwrite）场景下原文件在重命名成功前也保持完整。
+        let temp_path = {
+            let mut os = file.target_path.clone().into_os_string();
+            os.push(".part");
+            std::path::PathBuf::from(os)
+        };
+        let mut dst = match std::fs::File::create(&temp_path) {
             Ok(f) => f,
             Err(e) => return CopyOutcome::Failed(e.to_string()),
         };
@@ -279,12 +287,14 @@ impl Uploader {
 
         loop {
             if self.is_cancelled() {
+                let _ = std::fs::remove_file(&temp_path);
                 return CopyOutcome::Cancelled;
             }
 
             // 文件传输中途也支持暂停
             while self.is_paused() {
                 if self.is_cancelled() {
+                    let _ = std::fs::remove_file(&temp_path);
                     return CopyOutcome::Cancelled;
                 }
                 tokio::time::sleep(Duration::from_millis(100)).await;
@@ -296,10 +306,14 @@ impl Uploader {
             let n = match src.read(&mut buf) {
                 Ok(0) => break,
                 Ok(n) => n,
-                Err(e) => return CopyOutcome::Failed(e.to_string()),
+                Err(e) => {
+                    let _ = std::fs::remove_file(&temp_path);
+                    return CopyOutcome::Failed(e.to_string());
+                }
             };
 
             if let Err(e) = dst.write_all(&buf[..n]) {
+                let _ = std::fs::remove_file(&temp_path);
                 return CopyOutcome::Failed(e.to_string());
             }
 
@@ -339,6 +353,13 @@ impl Uploader {
         }
 
         if let Err(e) = dst.flush() {
+            let _ = std::fs::remove_file(&temp_path);
+            return CopyOutcome::Failed(e.to_string());
+        }
+        // 关闭文件句柄后再重命名，确保数据落盘且文件未被占用
+        drop(dst);
+        if let Err(e) = std::fs::rename(&temp_path, &file.target_path) {
+            let _ = std::fs::remove_file(&temp_path);
             return CopyOutcome::Failed(e.to_string());
         }
 

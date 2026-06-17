@@ -32,13 +32,13 @@
           <tr v-for="(file, index) in filteredFiles" :key="index" @contextmenu="openContextMenu(file, $event)">
             <td class="file-info-cell">
               <div class="file-path" :title="file.target_path">
-                <span class="path-dir">{{ getTargetDir(file.target_path, file.filename) }}</span>
-                <span class="path-filename">{{ file.filename }}</span>
+                <span class="path-dir">{{ getTargetDir(file.target_path) }}</span>
+                <span class="path-filename">{{ getTargetName(file.target_path, file.filename) }}</span>
               </div>
             </td>
             <td class="text-muted">{{ formatFileType(file.file_type) }}</td>
             <td class="text-muted">{{ formatSize(file.size) }}</td>
-            <td class="text-muted">{{ formatDate(file.date) }}</td>
+            <td class="text-muted date-cell">{{ formatDate(file.date) }}</td>
             <td class="status-cell">
               <template v-if="getProgress(file)">
                 <div v-if="getProgress(file).status === 'uploading'" class="row-progress">
@@ -273,18 +273,22 @@ function normalizePath(value) {
   return String(value);
 }
 
-function getTargetDir(path, filename) {
-  if (!path) return '-';
+function getTargetDir(path) {
+  if (!path) return '';
   const rawPath = String(path);
   const separator = rawPath.includes('\\') ? '\\' : '/';
   const parts = rawPath.split(/[/\\]/);
-  if (parts.length === 0) return rawPath;
-  const last = parts[parts.length - 1];
-  if (filename && last === filename) {
-    parts.pop();
-  }
+  // target_path 始终是完整文件路径，去掉末段文件名即为目录
+  parts.pop();
   const dir = parts.join(separator);
   return dir ? dir + separator : '';
+}
+
+// 实际写入磁盘的目标文件名（去重时可能被改成 _1/_2，与源文件名不同）
+function getTargetName(path, fallback) {
+  if (!path) return fallback || '';
+  const parts = String(path).split(/[/\\]/).filter(Boolean);
+  return parts[parts.length - 1] || fallback || '';
 }
 
 function getLabel(key) {
@@ -412,12 +416,16 @@ function closeNotice() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-4);
 }
 
 .table-actions {
   display: flex;
   align-items: center;
+  flex: 1 1 360px;
+  min-width: 0;
+  justify-content: flex-end;
 }
 
 .filter-strip {
@@ -496,14 +504,18 @@ function closeNotice() {
   top: 0;
   z-index: 10;
   border-bottom: 1px solid var(--surface-200);
+  white-space: nowrap;
   /* Fix sticky header gap issue */
-  box-shadow: 0 -1px 0 var(--surface-50); 
+  box-shadow: 0 -1px 0 var(--surface-50);
 }
 
 .file-table td {
   padding: var(--space-3) var(--space-4);
   font-size: 0.875rem;
   color: var(--color-text-main);
+  /* 后面几列默认不换行；第一列在下方单独放开 */
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
 .file-table tr {
@@ -522,38 +534,34 @@ function closeNotice() {
   background: var(--surface-50);
 }
 
-.file-info-cell {
-  display: flex;
-  align-items: center;
-  min-width: 0;
+/* 第一列：放开换行，文字超长时在列内折行而不是被省略号截断 */
+.file-table td.file-info-cell {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 220px;
+}
+
+/* 日期时间列：允许在日期与时间之间换行 */
+.file-table td.date-cell {
+  white-space: normal;
 }
 
 .file-path {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
   min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
+  line-height: 1.45;
 }
 
 .file-table .path-dir {
   font-family: monospace;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   color: var(--primary-600);
   font-size: 0.8rem;
   opacity: 0.8;
-  min-width: 0;
-  flex: 1 1 auto;
 }
 
 .file-table .path-filename {
   font-family: monospace;
   font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
   font-size: 0.95rem;
 }
 

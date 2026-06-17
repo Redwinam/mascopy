@@ -1,10 +1,7 @@
 <template>
   <div class="dashboard">
-
-
     <!-- Step 1: Configuration -->
     <div v-show="currentStep === 'config'" class="step-container config-step animate-fade-in">
-      
       <div class="transfer-flow">
         <!-- Source Column -->
         <div class="config-card glass-panel source-card">
@@ -13,18 +10,17 @@
               <span class="badge-icon">📂</span>
               <span class="badge-text">源目录</span>
             </div>
-            <div class="mode-indicator">{{ currentMode === 'sd' ? 'SD卡模式' : 'DJI模式' }}</div>
+            <div class="mode-indicator">{{ currentMode === "sd" ? "SD卡模式" : "DJI模式" }}</div>
           </div>
-          
+
           <div class="card-body">
-            <FileSelector 
+            <FileSelector
               :title="`选择${currentMode === 'sd' ? 'SD卡' : 'DJI设备'}路径`"
-              :path="config[currentMode].source_dir" 
+              :path="config[currentMode].source_dir"
               @update:path="updateSource"
               @addFavorite="addSourceFavorite"
               placeholder="请选择包含照片/视频的文件夹"
-              class="main-selector"
-            >
+              class="main-selector">
               <template #icon>
                 <div class="icon-circle source-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -40,12 +36,13 @@
                 <div v-for="p in sourceFavorites" :key="p" class="fav-item" @click="selectSource(p)" :title="p">
                   <div class="fav-icon-box">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="fav-folder-icon">
-                      <path d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />
+                      <path
+                        d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />
                     </svg>
                   </div>
                   <span class="fav-path">{{ p }}</span>
                   <button class="fav-remove" @click.stop="removeSourceFavorite(p)">
-                    <svg xmlns="http://www.w3.org/2000/svg" style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" style="width: 14px; height: 14px" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -78,14 +75,7 @@
           </div>
 
           <div class="card-body">
-            <FileSelector 
-              title="选择备份位置" 
-              :path="config[currentMode].target_dir" 
-              @update:path="updateTarget"
-              @addFavorite="addTargetFavorite"
-              placeholder="请选择备份目标文件夹"
-              class="main-selector"
-            >
+            <FileSelector title="选择备份位置" :path="config[currentMode].target_dir" @update:path="updateTarget" @addFavorite="addTargetFavorite" placeholder="请选择备份目标文件夹" class="main-selector">
               <template #icon>
                 <div class="icon-circle target-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -101,12 +91,13 @@
                 <div v-for="p in targetFavorites" :key="p" class="fav-item" @click="selectTarget(p)" :title="p">
                   <div class="fav-icon-box">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="fav-folder-icon">
-                      <path d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />
+                      <path
+                        d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />
                     </svg>
                   </div>
                   <span class="fav-path">{{ p }}</span>
                   <button class="fav-remove" @click.stop="removeTargetFavorite(p)">
-                    <svg xmlns="http://www.w3.org/2000/svg" style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" style="width: 14px; height: 14px" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -121,7 +112,7 @@
       <div class="action-footer glass-panel">
         <div class="options-group">
           <label class="toggle-option" :class="{ active: config[currentMode].overwrite_duplicates }">
-            <input type="checkbox" v-model="config[currentMode].overwrite_duplicates">
+            <input type="checkbox" v-model="config[currentMode].overwrite_duplicates" />
             <div class="toggle-box">
               <span class="check-mark" v-if="config[currentMode].overwrite_duplicates">✓</span>
             </div>
@@ -130,11 +121,11 @@
               <span class="option-desc">相同文件名将被覆盖</span>
             </div>
           </label>
-          
+
           <div class="divider-vertical"></div>
 
           <label class="toggle-option" :class="{ active: fastMode }">
-            <input type="checkbox" v-model="fastMode">
+            <input type="checkbox" v-model="fastMode" />
             <div class="toggle-box">
               <span class="check-mark" v-if="fastMode">✓</span>
             </div>
@@ -147,7 +138,7 @@
           <div class="divider-vertical"></div>
 
           <label class="toggle-option" :class="{ active: ignoreThumbnails }">
-            <input type="checkbox" v-model="ignoreThumbnails">
+            <input type="checkbox" v-model="ignoreThumbnails" />
             <div class="toggle-box">
               <span class="check-mark" v-if="ignoreThumbnails">✓</span>
             </div>
@@ -160,7 +151,7 @@
 
         <button @click="startScan" class="start-btn" :disabled="!canStart || isScanning">
           <span v-if="isScanning" class="spinner"></span>
-          <span>{{ isScanning ? '扫描中...' : '开始扫描' }}</span>
+          <span>{{ isScanning ? "扫描中..." : "开始扫描" }}</span>
           <div class="btn-icon-wrapper" v-if="!isScanning">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -196,12 +187,7 @@
                 </div>
               </div>
               <div class="date-list">
-                <div 
-                  v-for="item in availableDates" 
-                  :key="item.date"
-                  :class="['date-chip', { active: selectedDates.includes(item.date) }]"
-                  @click="toggleDate(item.date)"
-                >
+                <div v-for="item in availableDates" :key="item.date" :class="['date-chip', { active: selectedDates.includes(item.date) }]" @click="toggleDate(item.date)">
                   <span class="date-text">{{ item.date }}</span>
                   <span class="date-count">{{ item.count }}</span>
                 </div>
@@ -217,30 +203,20 @@
                 </div>
               </div>
               <div class="date-list">
-                <div
-                v-for="item in availableExtensions"
-                :key="item.key"
-                :class="['date-chip', { active: selectedExtensions.includes(item.key) }]"
-                @click="toggleExtension(item.key)"
-                >
-                <span class="date-text">{{ item.label }}</span>
+                <div v-for="item in availableExtensions" :key="item.key" :class="['date-chip', { active: selectedExtensions.includes(item.key) }]" @click="toggleExtension(item.key)">
+                  <span class="date-text">{{ item.label }}</span>
                   <span class="date-count">{{ item.count }}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <FileTable 
-            v-if="filesToDisplay && filesToDisplay.length > 0"
-            :files="filesToDisplay" 
-            :progress-map="fileProgress"
-            v-model:filter="fileFilter"
-          >
+          <FileTable v-if="filesToDisplay && filesToDisplay.length > 0" :files="filesToDisplay" :progress-map="fileProgress" v-model:filter="fileFilter">
             <template #actions>
               <div v-if="isUploading" class="upload-status-bar animate-fade-in">
                 <div class="inline-progress">
                   <div class="progress-text">
-                    <span class="progress-filename" :title="progress.filename">{{ progress.filename || '准备中...' }}</span>
+                    <span class="progress-filename" :title="progress.filename">{{ progress.filename || "准备中..." }}</span>
                     <span class="progress-percent">{{ progressPercentage.toFixed(1) }}%</span>
                   </div>
                   <div class="progress-track-mini">
@@ -291,15 +267,13 @@
             <div class="empty-icon">🔍</div>
             <p>未找到符合条件的文件</p>
           </div>
+        </div>
+        <div v-show="activeView === 'logs'" class="tab-pane">
+          <LogViewer :logs="logs" />
+          <div class="log-actions">
+            <button @click="clearLogs" class="btn btn-secondary btn-sm">清空日志</button>
           </div>
-          <div v-show="activeView === 'logs'" class="tab-pane">
-            <LogViewer :logs="logs" />
-            <div class="log-actions">
-              <button @click="clearLogs" class="btn btn-secondary btn-sm">
-                清空日志
-              </button>
-            </div>
-          </div>
+        </div>
       </div>
     </div>
 
@@ -350,16 +324,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
-import FileSelector from '../components/FileSelector.vue';
-import ProgressBar from '../components/ProgressBar.vue';
-import TabView from '../components/TabView.vue';
-import FileTable from '../components/FileTable.vue';
-import LogViewer from '../components/LogViewer.vue';
-import Modal from '../components/Modal.vue';
-import { useAppState } from '../composables/useAppState.js';
+import { ref, computed, onMounted } from "vue";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import FileSelector from "../components/FileSelector.vue";
+import ProgressBar from "../components/ProgressBar.vue";
+import TabView from "../components/TabView.vue";
+import FileTable from "../components/FileTable.vue";
+import LogViewer from "../components/LogViewer.vue";
+import Modal from "../components/Modal.vue";
+import { useAppState } from "../composables/useAppState.js";
 
 const { currentMode, config, currentStep } = useAppState();
 const fastMode = ref(true);
@@ -371,25 +345,25 @@ const isPaused = ref(false);
 const showSuccessModal = ref(false);
 const noticeModal = ref({
   visible: false,
-  title: '',
-  message: '',
-  submessage: '',
-  type: 'info'
+  title: "",
+  message: "",
+  submessage: "",
+  type: "info",
 });
 const scanResult = ref(null);
 const progress = ref({
   current: 0,
   total: 0,
-  filename: '',
+  filename: "",
   overall_done: 0,
   overall_total: 0,
-  speed: 0
+  speed: 0,
 });
 // 单文件进度，按源文件路径索引：{ [path]: { status, done, total } }
 const fileProgress = ref({});
 const logs = ref([]);
-const activeView = ref('results');
-const fileFilter = ref('all');
+const activeView = ref("results");
+const fileFilter = ref("all");
 const selectedDates = ref([]);
 const selectedExtensions = ref([]);
 
@@ -401,42 +375,42 @@ const progressPercentage = computed(() => {
 });
 
 function formatBytes(bytes) {
-  if (!bytes || bytes < 0) return '0 B';
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-  return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+  if (!bytes || bytes < 0) return "0 B";
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
 }
 
 function formatSpeed(bytesPerSec) {
-  if (!bytesPerSec) return '--';
-  return formatBytes(bytesPerSec) + '/s';
+  if (!bytesPerSec) return "--";
+  return formatBytes(bytesPerSec) + "/s";
 }
 
 const etaText = computed(() => {
   const { overall_done, overall_total, speed } = progress.value;
-  if (!speed || !overall_total || overall_done >= overall_total) return '';
+  if (!speed || !overall_total || overall_done >= overall_total) return "";
   const remaining = overall_total - overall_done;
   const seconds = Math.round(remaining / speed);
-  if (seconds < 60) return `约 ${seconds} 秒`;
+  if (seconds < 60) return `约${seconds}秒`;
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  if (m < 60) return `约 ${m} 分 ${s} 秒`;
+  if (m < 60) return `约${m}分${s}秒`;
   const h = Math.floor(m / 60);
-  return `约 ${h} 时 ${m % 60} 分`;
+  return `约${h}时${m % 60}分`;
 });
 
 const availableDates = computed(() => {
   if (!scanResult.value) return [];
   const dates = {};
-  scanResult.value.forEach(file => {
+  scanResult.value.forEach((file) => {
     let date;
     if (file.date.secs_since_epoch !== undefined) {
       date = new Date(file.date.secs_since_epoch * 1000);
     } else {
       date = new Date(file.date);
     }
-    const dateStr = date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
+    const dateStr = date.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-");
     if (!dates[dateStr]) {
       dates[dateStr] = { date: dateStr, count: 0 };
     }
@@ -448,7 +422,7 @@ const availableDates = computed(() => {
 const availableExtensions = computed(() => {
   if (!scanResult.value) return [];
   const extensions = {};
-  scanResult.value.forEach(file => {
+  scanResult.value.forEach((file) => {
     const info = getFileExtensionInfo(file.filename);
     if (!extensions[info.key]) {
       extensions[info.key] = { key: info.key, label: info.label, count: 0 };
@@ -465,15 +439,15 @@ const filesToDisplay = computed(() => {
   if (!scanResult.value) return [];
   if (selectedDates.value.length === 0) return [];
   if (selectedExtensions.value.length === 0) return [];
-  
-  return scanResult.value.filter(file => {
+
+  return scanResult.value.filter((file) => {
     let date;
     if (file.date.secs_since_epoch !== undefined) {
       date = new Date(file.date.secs_since_epoch * 1000);
     } else {
       date = new Date(file.date);
     }
-    const dateStr = date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
+    const dateStr = date.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-");
     const info = getFileExtensionInfo(file.filename);
     return selectedDates.value.includes(dateStr) && selectedExtensions.value.includes(info.key);
   });
@@ -481,14 +455,14 @@ const filesToDisplay = computed(() => {
 
 function toggleDate(date) {
   if (selectedDates.value.includes(date)) {
-    selectedDates.value = selectedDates.value.filter(d => d !== date);
+    selectedDates.value = selectedDates.value.filter((d) => d !== date);
   } else {
     selectedDates.value.push(date);
   }
 }
 
 function selectAllDates() {
-  selectedDates.value = availableDates.value.map(d => d.date);
+  selectedDates.value = availableDates.value.map((d) => d.date);
 }
 
 function deselectAllDates() {
@@ -497,14 +471,14 @@ function deselectAllDates() {
 
 function toggleExtension(key) {
   if (selectedExtensions.value.includes(key)) {
-    selectedExtensions.value = selectedExtensions.value.filter(e => e !== key);
+    selectedExtensions.value = selectedExtensions.value.filter((e) => e !== key);
   } else {
     selectedExtensions.value.push(key);
   }
 }
 
 function selectAllExtensions() {
-  selectedExtensions.value = availableExtensions.value.map(e => e.key);
+  selectedExtensions.value = availableExtensions.value.map((e) => e.key);
 }
 
 function deselectAllExtensions() {
@@ -512,27 +486,27 @@ function deselectAllExtensions() {
 }
 
 function getFileExtensionInfo(filename) {
-  if (!filename) return { key: 'noext', label: '无后缀' };
+  if (!filename) return { key: "noext", label: "无后缀" };
   const text = String(filename);
-  const lastDot = text.lastIndexOf('.');
-  if (lastDot <= 0 || lastDot === text.length - 1) return { key: 'noext', label: '无后缀' };
+  const lastDot = text.lastIndexOf(".");
+  if (lastDot <= 0 || lastDot === text.length - 1) return { key: "noext", label: "无后缀" };
   const label = text.slice(lastDot + 1);
   return { key: label.toLowerCase(), label: label.toUpperCase() };
 }
 
 const sourceFavorites = computed(() => {
-  if (currentMode.value === 'sd') return config.value.favorites.sd_sources || [];
+  if (currentMode.value === "sd") return config.value.favorites.sd_sources || [];
   const arr = config.value.favorites.dji_sources || [];
-  return Array.isArray(arr) ? arr.map((x) => (typeof x === 'string' ? x : x.path)) : [];
+  return Array.isArray(arr) ? arr.map((x) => (typeof x === "string" ? x : x.path)) : [];
 });
 const targetFavorites = computed(() => {
-  if (currentMode.value === 'sd') return config.value.favorites.sd_targets || [];
+  if (currentMode.value === "sd") return config.value.favorites.sd_targets || [];
   return config.value.favorites.dji_targets || [];
 });
 
 const viewTabs = [
-  { id: 'results', label: '扫描结果' },
-  { id: 'logs', label: '日志' }
+  { id: "results", label: "扫描结果" },
+  { id: "logs", label: "日志" },
 ];
 
 const canStart = computed(() => {
@@ -542,7 +516,7 @@ const canStart = computed(() => {
 
 onMounted(async () => {
   try {
-    const savedConfig = await invoke('get_config');
+    const savedConfig = await invoke("get_config");
     // Merge saved config but preserve defaults if missing
     if (savedConfig) {
       if (savedConfig.sd) config.value.sd = { ...config.value.sd, ...savedConfig.sd };
@@ -552,19 +526,15 @@ onMounted(async () => {
       }
     }
   } catch (e) {
-    addLog('warning', '无法加载配置: ' + e);
+    addLog("warning", "无法加载配置: " + e);
   }
 
-  const isTauri =
-    typeof window !== 'undefined' &&
-    (window.__TAURI__ !== undefined ||
-      window.__TAURI_INTERNALS__ !== undefined ||
-      window.__TAURI_INTERNALS__?.invoke !== undefined);
+  const isTauri = typeof window !== "undefined" && (window.__TAURI__ !== undefined || window.__TAURI_INTERNALS__ !== undefined || window.__TAURI_INTERNALS__?.invoke !== undefined);
 
   if (!isTauri) return;
 
   try {
-    await listen('upload-progress', (event) => {
+    await listen("upload-progress", (event) => {
       const p = event.payload;
       progress.value = p;
       if (p.path) {
@@ -573,13 +543,13 @@ onMounted(async () => {
           [p.path]: {
             status: p.status,
             done: p.file_done,
-            total: p.file_total
-          }
+            total: p.file_total,
+          },
         };
       }
     });
   } catch (e) {
-    addLog('warning', '无法监听上传进度事件: ' + e);
+    addLog("warning", "无法监听上传进度事件: " + e);
   }
 });
 
@@ -595,35 +565,35 @@ async function updateTarget(path) {
 
 async function saveConfig() {
   try {
-    await invoke('save_config', { config: config.value });
+    await invoke("save_config", { config: config.value });
   } catch (e) {
-    addLog('error', '保存配置失败: ' + e);
+    addLog("error", "保存配置失败: " + e);
   }
 }
 
 function basename(p) {
-  if (!p) return '';
+  if (!p) return "";
   const parts = p.split(/[\\/]/).filter(Boolean);
   return parts[parts.length - 1] || p;
 }
 
 function dirname(p) {
-  if (!p) return '';
-  const idx = Math.max(p.lastIndexOf('/'), p.lastIndexOf('\\'));
-  if (idx <= 0) return '';
+  if (!p) return "";
+  const idx = Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\"));
+  if (idx <= 0) return "";
   return p.slice(0, idx);
 }
 
 async function addSourceFavorite() {
   const p = config.value[currentMode.value].source_dir;
   if (!p) return;
-  if (currentMode.value === 'sd') {
+  if (currentMode.value === "sd") {
     const arr = config.value.favorites.sd_sources;
     if (!arr.includes(p)) arr.unshift(p);
     config.value.favorites.sd_sources = arr.slice(0, 8);
   } else {
     const arr = config.value.favorites.dji_sources || [];
-    const exists = Array.isArray(arr) && arr.some(x => (typeof x === 'string' ? x === p : x.path === p));
+    const exists = Array.isArray(arr) && arr.some((x) => (typeof x === "string" ? x === p : x.path === p));
     if (!exists) {
       const item = { path: p };
       arr.unshift(item);
@@ -634,10 +604,10 @@ async function addSourceFavorite() {
 }
 
 async function removeSourceFavorite(item) {
-  if (currentMode.value === 'sd') {
-    config.value.favorites.sd_sources = (config.value.favorites.sd_sources || []).filter(x => x !== item);
+  if (currentMode.value === "sd") {
+    config.value.favorites.sd_sources = (config.value.favorites.sd_sources || []).filter((x) => x !== item);
   } else {
-    config.value.favorites.dji_sources = (config.value.favorites.dji_sources || []).filter(x => (typeof x === 'string' ? x !== item : x.path !== item));
+    config.value.favorites.dji_sources = (config.value.favorites.dji_sources || []).filter((x) => (typeof x === "string" ? x !== item : x.path !== item));
   }
   await saveConfig();
 }
@@ -650,7 +620,7 @@ async function selectSource(p) {
 async function addTargetFavorite() {
   const p = config.value[currentMode.value].target_dir;
   if (!p) return;
-  if (currentMode.value === 'sd') {
+  if (currentMode.value === "sd") {
     const arr = config.value.favorites.sd_targets || [];
     if (!arr.includes(p)) arr.unshift(p);
     config.value.favorites.sd_targets = arr.slice(0, 8);
@@ -663,10 +633,10 @@ async function addTargetFavorite() {
 }
 
 async function removeTargetFavorite(p) {
-  if (currentMode.value === 'sd') {
-    config.value.favorites.sd_targets = (config.value.favorites.sd_targets || []).filter(x => x !== p);
+  if (currentMode.value === "sd") {
+    config.value.favorites.sd_targets = (config.value.favorites.sd_targets || []).filter((x) => x !== p);
   } else {
-    config.value.favorites.dji_targets = (config.value.favorites.dji_targets || []).filter(x => x !== p);
+    config.value.favorites.dji_targets = (config.value.favorites.dji_targets || []).filter((x) => x !== p);
   }
   await saveConfig();
 }
@@ -681,68 +651,71 @@ async function startScan() {
   scanResult.value = null;
   selectedDates.value = [];
   selectedExtensions.value = [];
-  progress.value = { current: 0, total: 0, filename: '正在扫描...' };
-  addLog('info', '开始扫描...');
+  // 清空上一轮上传的逐文件进度，否则改目标目录后重新扫描时
+  // 残留的 skipped/done 记录会按源路径命中，覆盖新的扫描状态
+  fileProgress.value = {};
+  progress.value = { current: 0, total: 0, filename: "正在扫描..." };
+  addLog("info", "开始扫描...");
 
   try {
     const modeConfig = config.value[currentMode.value];
-    const files = await invoke('scan_files', {
+    const files = await invoke("scan_files", {
       args: {
         sourceDir: modeConfig.source_dir,
         targetDir: modeConfig.target_dir,
         overwriteDuplicates: modeConfig.overwrite_duplicates,
         mode: currentMode.value,
         fastMode: fastMode.value,
-        ignoreThumbnails: ignoreThumbnails.value
-      }
+        ignoreThumbnails: ignoreThumbnails.value,
+      },
     });
-    
+
     scanResult.value = files;
 
     // Initialize selectedDates with all found dates
     const dates = new Set();
     const extensions = new Set();
-    files.forEach(file => {
+    files.forEach((file) => {
       let date;
       if (file.date.secs_since_epoch !== undefined) {
         date = new Date(file.date.secs_since_epoch * 1000);
       } else {
         date = new Date(file.date);
       }
-      const dateStr = date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
+      const dateStr = date.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-");
       dates.add(dateStr);
       extensions.add(getFileExtensionInfo(file.filename).key);
     });
     selectedDates.value = Array.from(dates);
     selectedExtensions.value = Array.from(extensions);
 
-    addLog('success', `扫描完成，共找到 ${files.length} 个文件`);
-    currentStep.value = 'results'; // Switch to results view
-    activeView.value = 'results';
+    addLog("success", `扫描完成，共找到 ${files.length} 个文件`);
+    currentStep.value = "results"; // Switch to results view
+    activeView.value = "results";
   } catch (e) {
     const errorText = String(e);
-    addLog('error', '扫描失败: ' + errorText);
-    if (errorText.includes('源路径不存在')) {
+    addLog("error", "扫描失败: " + errorText);
+    if (errorText.includes("源路径不存在")) {
       openNotice({
-        title: '源路径不可用',
-        message: '未检测到源设备，请确认已挂载并重新选择目录。',
-        type: 'warning'
+        title: "源路径不可用",
+        message: "未检测到源设备，请确认已挂载并重新选择目录。",
+        type: "warning",
       });
     } else {
       openNotice({
-        title: '扫描失败',
+        title: "扫描失败",
         message: errorText,
-        type: 'error'
+        type: "error",
       });
     }
   } finally {
     isScanning.value = false;
-    progress.value = { current: 0, total: 0, filename: '' };
+    progress.value = { current: 0, total: 0, filename: "" };
   }
 }
 
 function goBack() {
-  currentStep.value = 'config';
+  currentStep.value = "config";
 }
 
 async function startUpload() {
@@ -750,32 +723,30 @@ async function startUpload() {
   isUploading.value = true;
   isPaused.value = false;
   fileProgress.value = {};
-  const totalBytes = filesToDisplay.value
-    .filter(f => f.status === 'upload' || f.status === 'overwrite')
-    .reduce((sum, f) => sum + (f.size || 0), 0);
+  const totalBytes = filesToDisplay.value.filter((f) => f.status === "upload" || f.status === "overwrite").reduce((sum, f) => sum + (f.size || 0), 0);
   progress.value = {
     current: 0,
     total: filesToDisplay.value.length,
-    filename: '准备中...',
+    filename: "准备中...",
     overall_done: 0,
     overall_total: totalBytes,
-    speed: 0
+    speed: 0,
   };
-  addLog('info', `开始上传 (${filesToDisplay.value.length} 个文件)...`);
-  
+  addLog("info", `开始上传 (${filesToDisplay.value.length} 个文件)...`);
+
   try {
-    await invoke('upload_files', { files: filesToDisplay.value });
-    addLog('success', '上传完成!');
+    await invoke("upload_files", { files: filesToDisplay.value });
+    addLog("success", "上传完成!");
     showSuccessModal.value = true;
     scanResult.value = null;
-    currentStep.value = 'config'; // Return to config after success
+    currentStep.value = "config"; // Return to config after success
   } catch (e) {
     const errorText = String(e);
-    addLog('error', '上传失败: ' + errorText);
+    addLog("error", "上传失败: " + errorText);
     openNotice({
-      title: '上传失败',
+      title: "上传失败",
       message: errorText,
-      type: 'error'
+      type: "error",
     });
   } finally {
     isUploading.value = false;
@@ -785,52 +756,52 @@ async function startUpload() {
 async function ejectVolume() {
   const modeConfig = config.value[currentMode.value];
   if (!modeConfig || !modeConfig.source_dir) return;
-  
+
   try {
-    addLog('info', '正在推出设备...');
-    await invoke('eject_volume', { path: modeConfig.source_dir });
-    addLog('success', '设备已推出');
+    addLog("info", "正在推出设备...");
+    await invoke("eject_volume", { path: modeConfig.source_dir });
+    addLog("success", "设备已推出");
     showSuccessModal.value = false;
     openNotice({
-      title: '设备已安全推出',
-      message: '现在可以安全移除源设备。',
-      type: 'success'
+      title: "设备已安全推出",
+      message: "现在可以安全移除源设备。",
+      type: "success",
     });
   } catch (e) {
     const errorText = String(e);
-    addLog('error', '推出失败: ' + errorText);
+    addLog("error", "推出失败: " + errorText);
     openNotice({
-      title: '推出失败',
+      title: "推出失败",
       message: errorText,
-      type: 'error'
+      type: "error",
     });
   }
 }
 
 async function togglePause() {
   if (isPaused.value) {
-    await invoke('resume_upload');
+    await invoke("resume_upload");
     isPaused.value = false;
-    addLog('info', '继续上传');
+    addLog("info", "继续上传");
   } else {
-    await invoke('pause_upload');
+    await invoke("pause_upload");
     isPaused.value = true;
-    addLog('warning', '上传已暂停');
+    addLog("warning", "上传已暂停");
   }
 }
 
 async function cancel() {
-  await invoke('cancel_upload');
+  await invoke("cancel_upload");
   isUploading.value = false;
   isPaused.value = false;
-  addLog('warning', '上传已取消');
+  addLog("warning", "上传已取消");
 }
 
 function addLog(type, message) {
   logs.value.push({
     type,
     message,
-    time: new Date()
+    time: new Date(),
   });
 }
 
@@ -838,23 +809,23 @@ function clearLogs() {
   logs.value = [];
 }
 
-function openNotice({ title, message, submessage = '', type = 'info' }) {
+function openNotice({ title, message, submessage = "", type = "info" }) {
   noticeModal.value = {
     visible: true,
     title,
     message,
     submessage,
-    type
+    type,
   };
 }
 
 function closeNotice() {
   noticeModal.value = {
     visible: false,
-    title: '',
-    message: '',
-    submessage: '',
-    type: 'info'
+    title: "",
+    message: "",
+    submessage: "",
+    type: "info",
   };
 }
 </script>
@@ -1024,7 +995,7 @@ function closeNotice() {
 .fav-path {
   font-size: 0.75rem;
   color: var(--color-text-muted);
-  font-family: 'SF Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1140,7 +1111,9 @@ function closeNotice() {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .btn-icon {
@@ -1412,7 +1385,7 @@ function closeNotice() {
 
 .btn-action-upload {
   border-radius: var(--radius-md);
-  border:none;
+  border: none;
   padding: 0.5rem 1.5rem;
   font-size: 0.95rem;
   height: auto;
@@ -1426,29 +1399,34 @@ function closeNotice() {
   align-items: center;
   gap: var(--space-4);
   background: var(--surface-overlay-faint);
-  padding: 0.25rem 0.75rem;
+  padding: 0.4rem 0.85rem;
   border-radius: var(--radius-lg);
   border: 1px solid var(--surface-200);
+  flex: 1;
+  min-width: 0;
 }
 
 .inline-progress {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  width: 320px;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
 }
 
 .progress-text {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-2);
   font-size: 0.75rem;
+  line-height: 1.4;
   color: var(--color-text-muted);
 }
 
 .progress-filename {
-  max-width: 230px;
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1467,8 +1445,9 @@ function closeNotice() {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--space-1);
+  gap: 2px var(--space-1);
   font-size: 0.7rem;
+  line-height: 1.3;
   color: var(--color-text-light);
   font-family: monospace;
 }
