@@ -792,7 +792,7 @@ async function startUpload(files) {
   addLog("info", `开始上传 (${uploadList.length} 个文件)...`);
 
   try {
-    await invoke("upload_files", { files: uploadList });
+    await invoke("upload_files", { files: uploadList, targetDir: config.value[currentMode.value].target_dir });
     addLog("success", "上传完成!");
     showSuccessModal.value = true;
     scanResult.value = null;
@@ -802,11 +802,19 @@ async function startUpload(files) {
   } catch (e) {
     const errorText = String(e);
     addLog("error", "上传失败: " + errorText);
-    openNotice({
-      title: "上传失败",
-      message: errorText,
-      type: "error",
-    });
+    if (errorText.includes("目标路径不存在")) {
+      openNotice({
+        title: "目标路径不可用",
+        message: "目标磁盘可能未挂载或目录已被移动，请确认后重新选择备份位置。",
+        type: "warning",
+      });
+    } else {
+      openNotice({
+        title: "上传失败",
+        message: errorText,
+        type: "error",
+      });
+    }
   } finally {
     isUploading.value = false;
   }

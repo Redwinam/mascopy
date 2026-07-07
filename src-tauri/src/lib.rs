@@ -77,10 +77,18 @@ async fn scan_files(args: ScanArgs) -> AppResult<Vec<MediaFile>> {
 
 #[tauri::command]
 async fn upload_files(
-    files: Vec<MediaFile>, 
+    files: Vec<MediaFile>,
+    target_dir: String,
     window: Window,
     state: State<'_, AppState>
 ) -> AppResult<()> {
+    let target_path = Path::new(&target_dir);
+    if !target_path.exists() {
+        return Err(AppError::Upload("目标路径不存在".to_string()));
+    }
+    if !target_path.is_dir() {
+        return Err(AppError::Upload("目标路径不是目录".to_string()));
+    }
     state.uploader.reset();
     state.uploader.upload_files(files, window).await.map_err(|e| AppError::Upload(e.to_string()))
 }
