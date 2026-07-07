@@ -751,6 +751,12 @@ async function startScan() {
         message: "未检测到源设备，请确认已挂载并重新选择目录。",
         type: "warning",
       });
+    } else if (errorText.includes("目标路径不存在")) {
+      openNotice({
+        title: "目标路径不可用",
+        message: "目标磁盘可能未挂载或目录已被移动，请确认后重新选择备份位置。",
+        type: "warning",
+      });
     } else {
       openNotice({
         title: "扫描失败",
