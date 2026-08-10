@@ -7,9 +7,10 @@ mod uploader;
 mod error;
 mod imaging;
 mod eagle;
+mod tether;
 
 use std::sync::Arc;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tauri::{State, Window};
 use tokio::sync::Semaphore;
 use config::{Config, ConfigManager};
@@ -26,6 +27,8 @@ struct AppState {
     imaging_semaphore: Arc<Semaphore>,
     // 同一张图连续裁剪时复用转码结果（仅内存，单槽）
     crop_source_cache: Arc<imaging::CropSourceCache>,
+    // 联机拍摄会话（监听/FTP）
+    tether: tether::TetherState,
 }
 
 #[tauri::command]
@@ -295,6 +298,180 @@ async fn eagle_import_crop(
     .map_err(|e| AppError::Unknown(e.to_string()))?
 }
 
+#[derive(Deserialize)]
+struct TetherArgs {
+    mode: String, // "watch" | "ftp"
+    #[serde(default, alias = "watchDir")]
+    watch_dir: Option<String>,
+    #[serde(alias = "targetDir")]
+    target_dir: String,
+    #[serde(default, alias = "ftpPort")]
+    ftp_port: Option<u16>,
+    #[serde(default, alias = "ftpUser")]
+    ftp_user: Option<String>,
+    #[serde(default, alias = "ftpPass")]
+    ftp_pass: Option<String>,
+    #[serde(default, alias = "deleteSource")]
+    delete_source: bool,
+}
+
+#[derive(serde::Serialize)]
+struct TetherStartInfo {
+    lan_ip: String,
+    ftp_port: Option<u16>,
+    inbox: Option<String>,
+}
+
+#[tauri::command]
+async fn start_tether(
+    args: TetherArgs,
+    window: Window,
+    state: State<'_, AppState>,
+) -> AppResult<TetherStartInfo> {
+    {
+        let guard = state
+            .tether
+            .lock()
+            .map_err(|e| AppError::Unknown(e.to_string()))?;
+        if guard.is_some() {
+            return Err(AppError::Tether("联机会话已在运行，请先结束当前会话".into()));
+        }
+    }
+
+    let target = PathBuf::from(&args.target_dir);
+    if !target.is_dir() {
+        return Err(AppError::Tether("目标目录不存在".into()));
+    }
+
+    let stop = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let lan_ip = tether::lan_ip().unwrap_or_else(|| "127.0.0.1".to_string());
+
+    let handle = match args.mode.as_str() {
+        "watch" => {
+            let watch = PathBuf::from(
+                args.watch_dir
+                    .as_deref()
+                    .filter(|s| !s.trim().is_empty())
+                    .ok_or_else(|| AppError::Tether("请先选择监听目录".into()))?,
+            );
+            if !watch.is_dir() {
+                return Err(AppError::Tether("监听目录不存在".into()));
+            }
+            let wc = watch.canonicalize().unwrap_or_else(|_| watch.clone());
+            let tc = target.canonicalize().unwrap_or_else(|_| target.clone());
+            if tc.starts_with(&wc) {
+                return Err(AppError::Tether(
+                    "目标目录不能位于监听目录内，否则会循环入库".into(),
+                ));
+            }
+            tether::spawn_watcher(
+                tether::TetherOptions {
+                    watch_dir: watch,
+                    target_dir: target,
+                    move_files: args.delete_source,
+                    process_existing: false,
+                },
+                stop.clone(),
+                window,
+            )
+            .map_err(AppError::Tether)?;
+            tether::TetherHandle {
+                stop,
+                ftp_task: None,
+            }
+        }
+        "ftp" => {
+            let port = args.ftp_port.unwrap_or(2121);
+            // 预检端口占用，避免异步启动后静默失败
+            std::net::TcpListener::bind(("0.0.0.0", port))
+                .map_err(|e| AppError::Tether(format!("端口 {port} 无法使用: {e}")))?;
+
+            let inbox = target.join(".mascopy-inbox");
+            std::fs::create_dir_all(&inbox)
+                .map_err(|e| AppError::Tether(format!("创建收件箱失败: {e}")))?;
+
+            let user = args
+                .ftp_user
+                .filter(|s| !s.trim().is_empty())
+                .unwrap_or_else(|| "eos".to_string());
+            let pass = args
+                .ftp_pass
+                .filter(|s| !s.trim().is_empty())
+                .unwrap_or_else(|| "eos".to_string());
+
+            tether::spawn_watcher(
+                tether::TetherOptions {
+                    watch_dir: inbox.clone(),
+                    target_dir: target,
+                    move_files: true,
+                    process_existing: true,
+                },
+                stop.clone(),
+                window,
+            )
+            .map_err(AppError::Tether)?;
+
+            let ftp_task = tether::spawn_ftp_server(inbox.clone(), port, user, pass);
+            return finish_start_tether(
+                state,
+                tether::TetherHandle {
+                    stop,
+                    ftp_task: Some(ftp_task),
+                },
+                TetherStartInfo {
+                    lan_ip,
+                    ftp_port: Some(port),
+                    inbox: Some(inbox.to_string_lossy().to_string()),
+                },
+            );
+        }
+        _ => return Err(AppError::Tether("未知联机模式".into())),
+    };
+
+    finish_start_tether(
+        state,
+        handle,
+        TetherStartInfo {
+            lan_ip,
+            ftp_port: None,
+            inbox: None,
+        },
+    )
+}
+
+fn finish_start_tether(
+    state: State<'_, AppState>,
+    handle: tether::TetherHandle,
+    info: TetherStartInfo,
+) -> AppResult<TetherStartInfo> {
+    let mut guard = state
+        .tether
+        .lock()
+        .map_err(|e| AppError::Unknown(e.to_string()))?;
+    *guard = Some(handle);
+    Ok(info)
+}
+
+#[tauri::command]
+fn stop_tether(state: State<AppState>) -> AppResult<()> {
+    let mut guard = state
+        .tether
+        .lock()
+        .map_err(|e| AppError::Unknown(e.to_string()))?;
+    if let Some(handle) = guard.take() {
+        handle.stop.store(true, std::sync::atomic::Ordering::Relaxed);
+        if let Some(task) = handle.ftp_task {
+            task.abort();
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn get_lan_ip() -> String {
+    tether::lan_ip().unwrap_or_else(|| "127.0.0.1".to_string())
+}
+
 #[tauri::command]
 fn reveal_in_finder(path: String) -> AppResult<()> {
     #[cfg(target_os = "macos")]
@@ -335,6 +512,7 @@ pub fn run() {
             uploader,
             imaging_semaphore: Arc::new(Semaphore::new(4)),
             crop_source_cache: Arc::new(imaging::CropSourceCache::default()),
+            tether: tether::TetherState::default(),
         })
         .invoke_handler(tauri::generate_handler![
             get_config,
@@ -351,7 +529,10 @@ pub fn run() {
             eagle_ping,
             eagle_folders,
             eagle_import,
-            eagle_import_crop
+            eagle_import_crop,
+            start_tether,
+            stop_tether,
+            get_lan_ip
         ])
         .run(tauri::generate_context!("tauri.conf.json"))
         .expect("error while running tauri application");

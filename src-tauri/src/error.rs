@@ -19,6 +19,8 @@ pub enum AppError {
     Image(String),
     #[error("Eagle: {0}")]
     Eagle(String),
+    #[error("联机: {0}")]
+    Tether(String),
     #[allow(dead_code)]
     #[error("Unknown error: {0}")]
     Unknown(String),

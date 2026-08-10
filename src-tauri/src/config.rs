@@ -57,6 +57,50 @@ impl Default for EagleConfig {
     }
 }
 
+fn default_tether_mode() -> String {
+    "ftp".to_string()
+}
+
+fn default_ftp_port() -> u16 {
+    2121
+}
+
+fn default_ftp_user() -> String {
+    "eos".to_string()
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TetherConfig {
+    #[serde(default = "default_tether_mode")]
+    pub mode: String, // "ftp" | "watch"
+    #[serde(default)]
+    pub watch_dir: String,
+    #[serde(default)]
+    pub target_dir: String,
+    #[serde(default = "default_ftp_port")]
+    pub ftp_port: u16,
+    #[serde(default = "default_ftp_user")]
+    pub ftp_user: String,
+    #[serde(default = "default_ftp_user")]
+    pub ftp_pass: String,
+    #[serde(default)]
+    pub delete_source: bool,
+}
+
+impl Default for TetherConfig {
+    fn default() -> Self {
+        Self {
+            mode: default_tether_mode(),
+            watch_dir: String::new(),
+            target_dir: String::new(),
+            ftp_port: default_ftp_port(),
+            ftp_user: default_ftp_user(),
+            ftp_pass: default_ftp_user(),
+            delete_source: false,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     #[serde(default)]
@@ -67,6 +111,8 @@ pub struct Config {
     pub favorites: Favorites,
     #[serde(default)]
     pub eagle: EagleConfig,
+    #[serde(default)]
+    pub tether: TetherConfig,
 }
 
 impl Default for Config {
@@ -76,6 +122,7 @@ impl Default for Config {
             dji: ModeConfig::default(),
             favorites: Favorites::default(),
             eagle: EagleConfig::default(),
+            tether: TetherConfig::default(),
         }
     }
 }

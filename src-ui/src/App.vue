@@ -48,7 +48,8 @@ const { currentMode, currentStep } = useAppState();
 
 const modeTabs = [
   { id: 'sd', label: 'SD卡模式' },
-  { id: 'dji', label: 'DJI模式' }
+  { id: 'dji', label: 'DJI模式' },
+  { id: 'tether', label: '联机拍摄' }
 ];
 
 async function onHeaderPointerDown(event) {

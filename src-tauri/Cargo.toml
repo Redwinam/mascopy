@@ -35,6 +35,11 @@ tauri-plugin-dialog = "2.4.2"
 thiserror = "2.0.17"
 # Eagle 本地 API（纯 http，无需 TLS）
 ureq = { version = "2.12", default-features = false, features = ["json"] }
+# 联机拍摄：文件夹监听 + 内置 FTP 服务器（相机 WiFi 直传）
+notify = "6.1"
+libunftp = "0.22"
+unftp-sbe-fs = "0.3"
+async-trait = "0.1"
 # 内存中裁剪/编码 JPEG（RAW/HEIC 解码交给 macOS 自带 sips）
 image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 base64 = "0.22"

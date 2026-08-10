@@ -2,6 +2,8 @@
   <div class="dashboard">
     <!-- Step 1: Configuration -->
     <div v-show="currentStep === 'config'" class="step-container config-step animate-fade-in">
+      <TetherPanel v-if="currentMode === 'tether'" @pick="openPickerFromTether" />
+      <template v-else>
       <div class="transfer-flow">
         <!-- Source Column -->
         <div class="config-card glass-panel source-card">
@@ -159,6 +161,7 @@
           </div>
         </button>
       </div>
+      </template>
     </div>
 
     <!-- Step 2: Results & Upload -->
@@ -367,9 +370,10 @@ import FileTable from "../components/FileTable.vue";
 import LogViewer from "../components/LogViewer.vue";
 import Modal from "../components/Modal.vue";
 import EaglePicker from "../components/EaglePicker.vue";
+import TetherPanel from "../components/TetherPanel.vue";
 import { useAppState } from "../composables/useAppState.js";
 
-const { currentMode, config, currentStep } = useAppState();
+const { currentMode, config, currentStep, tetherFiles } = useAppState();
 const fastMode = ref(true);
 const ignoreThumbnails = ref(true);
 
@@ -543,6 +547,12 @@ function openPickerFromUpload() {
   currentStep.value = "picker";
 }
 
+function openPickerFromTether(items) {
+  pickerItems.value = items;
+  pickerReturnStep.value = "config";
+  currentStep.value = "picker";
+}
+
 function openPickerFromResults() {
   pickerItems.value = (filesToDisplay.value || []).filter(isPhoto).map((f) => {
     // 已在目标目录存在的（备份过/重复的）用目标路径，SD 卡可以随时拔；否则读源文件
@@ -642,6 +652,9 @@ onMounted(async () => {
       if (savedConfig.eagle) {
         config.value.eagle = { ...config.value.eagle, ...savedConfig.eagle };
       }
+      if (savedConfig.tether) {
+        config.value.tether = { ...config.value.tether, ...savedConfig.tether };
+      }
     }
   } catch (e) {
     addLog("warning", "无法加载配置: " + e);
@@ -668,6 +681,31 @@ onMounted(async () => {
     });
   } catch (e) {
     addLog("warning", "无法监听上传进度事件: " + e);
+  }
+
+  try {
+    // 联机会话文件事件：按 key 就地更新，列表在 useAppState 中跨页签共享
+    await listen("tether-file", (event) => {
+      const p = event.payload;
+      const arr = tetherFiles.value;
+      const idx = arr.findIndex((f) => f.key === p.key);
+      if (p.status === "removed") {
+        if (idx >= 0) arr.splice(idx, 1);
+        return;
+      }
+      if (idx >= 0) {
+        arr[idx] = { ...arr[idx], ...p };
+      } else {
+        arr.push({ ...p });
+      }
+      if (p.status === "done") {
+        addLog("success", `联机入库: ${p.filename}`);
+      } else if (p.status === "error") {
+        addLog("error", `联机入库失败: ${p.filename} - ${p.error}`);
+      }
+    });
+  } catch (e) {
+    addLog("warning", "无法监听联机事件: " + e);
   }
 });
 
