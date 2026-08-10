@@ -15,6 +15,10 @@ pub enum AppError {
     #[allow(dead_code)]
     #[error("Analysis error: {0}")]
     Analyze(String),
+    #[error("图片处理失败: {0}")]
+    Image(String),
+    #[error("Eagle: {0}")]
+    Eagle(String),
     #[allow(dead_code)]
     #[error("Unknown error: {0}")]
     Unknown(String),

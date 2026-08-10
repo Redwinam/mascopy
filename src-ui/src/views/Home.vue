@@ -262,6 +262,12 @@
                   </button>
                 </template>
                 <template v-else>
+                  <button @click="openPickerFromResults" class="btn btn-secondary" :disabled="resultsPickerCount === 0" title="画廊模式挑选照片导入 Eagle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    挑图导入
+                  </button>
                   <button @click="enterSelectionMode" class="btn btn-secondary" :disabled="!filesToDisplay || filesToDisplay.length === 0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7l-2 2-1-1" />
@@ -296,6 +302,11 @@
       </div>
     </div>
 
+    <!-- Step 3: Eagle 挑图导入 -->
+    <div v-if="currentStep === 'picker'" class="step-container picker-step animate-fade-in">
+      <EaglePicker :items="pickerItems" @back="closePicker" />
+    </div>
+
     <Modal v-if="showSuccessModal" @close="showSuccessModal = false">
       <template #title>🎉 备份完成</template>
       <div class="success-content">
@@ -309,6 +320,9 @@
       </div>
       <template #footer>
         <button class="btn btn-secondary" @click="showSuccessModal = false">关闭</button>
+        <button class="btn btn-secondary" @click="openPickerFromUpload" :disabled="uploadPickerCount === 0" title="画廊模式挑选刚备份的照片导入 Eagle">
+          🖼️ 挑图导入 Eagle{{ uploadPickerCount > 0 ? ` (${uploadPickerCount})` : "" }}
+        </button>
         <button class="btn btn-primary" @click="ejectVolume">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -352,6 +366,7 @@ import TabView from "../components/TabView.vue";
 import FileTable from "../components/FileTable.vue";
 import LogViewer from "../components/LogViewer.vue";
 import Modal from "../components/Modal.vue";
+import EaglePicker from "../components/EaglePicker.vue";
 import { useAppState } from "../composables/useAppState.js";
 
 const { currentMode, config, currentStep } = useAppState();
@@ -388,6 +403,10 @@ const selectedExtensions = ref([]);
 // 选择模式：用户手动勾选要上传的文件（key = 源文件路径）
 const selectionMode = ref(false);
 const selectedKeys = ref([]);
+// Eagle 挑图：面板数据与返回位置；lastUploadList 记录最近一次上传的文件清单
+const pickerItems = ref([]);
+const pickerReturnStep = ref("config");
+const lastUploadList = ref([]);
 
 // 整体进度按已传字节 / 总字节计算，避免大小悬殊文件造成跳变
 const progressPercentage = computed(() => {
@@ -491,6 +510,54 @@ const selectedUploadFiles = computed(() => {
 
 const selectedCount = computed(() => selectedUploadFiles.value.length);
 
+/* ---------- Eagle 挑图入口 ---------- */
+
+function isPhoto(f) {
+  return f.file_type === "photo";
+}
+
+function toPickerItem(f, useTarget) {
+  const p = normalizePath(useTarget ? f.target_path : f.path);
+  return { key: p, path: p, filename: basename(p), size: f.size };
+}
+
+// 备份完成后可挑选的照片：本次上传成功（done）或目标已存在（skipped）的
+function uploadPickerItems() {
+  return lastUploadList.value
+    .filter(isPhoto)
+    .filter((f) => {
+      const st = fileProgress.value[normalizePath(f.path)]?.status;
+      return st === "done" || st === "skipped";
+    })
+    .map((f) => toPickerItem(f, true));
+}
+
+const uploadPickerCount = computed(() => uploadPickerItems().length);
+
+const resultsPickerCount = computed(() => (filesToDisplay.value || []).filter(isPhoto).length);
+
+function openPickerFromUpload() {
+  pickerItems.value = uploadPickerItems();
+  showSuccessModal.value = false;
+  pickerReturnStep.value = "config";
+  currentStep.value = "picker";
+}
+
+function openPickerFromResults() {
+  pickerItems.value = (filesToDisplay.value || []).filter(isPhoto).map((f) => {
+    // 已在目标目录存在的（备份过/重复的）用目标路径，SD 卡可以随时拔；否则读源文件
+    const st = fileProgress.value[normalizePath(f.path)]?.status;
+    const useTarget = f.status === "skip" || st === "done" || st === "skipped";
+    return toPickerItem(f, useTarget);
+  });
+  pickerReturnStep.value = "results";
+  currentStep.value = "picker";
+}
+
+function closePicker() {
+  currentStep.value = pickerReturnStep.value;
+}
+
 function enterSelectionMode() {
   selectionMode.value = true;
   selectedKeys.value = [];
@@ -571,6 +638,9 @@ onMounted(async () => {
       if (savedConfig.dji) config.value.dji = { ...config.value.dji, ...savedConfig.dji };
       if (savedConfig.favorites) {
         config.value.favorites = savedConfig.favorites;
+      }
+      if (savedConfig.eagle) {
+        config.value.eagle = { ...config.value.eagle, ...savedConfig.eagle };
       }
     }
   } catch (e) {
@@ -794,6 +864,8 @@ async function startUpload(files) {
   try {
     await invoke("upload_files", { files: uploadList, targetDir: config.value[currentMode.value].target_dir });
     addLog("success", "上传完成!");
+    // 记录本次上传清单，供“挑图导入 Eagle”使用（目标路径为准）
+    lastUploadList.value = uploadList;
     showSuccessModal.value = true;
     scanResult.value = null;
     selectionMode.value = false;
@@ -919,6 +991,11 @@ function closeNotice() {
 }
 
 .results-step {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.picker-step {
   overflow: hidden;
   min-height: 0;
 }

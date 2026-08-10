@@ -1,3 +1,24 @@
 [workspace]
 members = ["src-tauri"]
 resolver = "2"
+
+# 降低 Tauri 开发构建的磁盘占用：应用保留文件/行号回溯，依赖不生成完整调试信息。
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+# 图像解码在 opt-level 0 下极慢（大 JPEG 数秒级），单独提速这几个 crate
+[profile.dev.package.image]
+opt-level = 3
+[profile.dev.package.zune-jpeg]
+opt-level = 3
+[profile.dev.package.zune-core]
+opt-level = 3
+[profile.dev.package.png]
+opt-level = 3
+[profile.dev.package.fdeflate]
+opt-level = 3
+[profile.dev.package.miniz_oxide]
+opt-level = 3

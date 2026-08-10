@@ -18,6 +18,11 @@ const config = ref({
         sd_targets: [],
         dji_sources: [],
         dji_targets: []
+    },
+    eagle: {
+        base_url: 'http://localhost:41595',
+        token: '',
+        last_folder_id: ''
     }
 });
 

@@ -5,10 +5,13 @@ mod metadata;
 mod analyzer;
 mod uploader;
 mod error;
+mod imaging;
+mod eagle;
 
 use std::sync::Arc;
 use std::path::Path;
 use tauri::{State, Window};
+use tokio::sync::Semaphore;
 use config::{Config, ConfigManager};
 use scanner::{Scanner, MediaFile};
 use analyzer::Analyzer;
@@ -19,6 +22,10 @@ use serde::Deserialize;
 struct AppState {
     config_manager: ConfigManager,
     uploader: Arc<Uploader>,
+    // 限制并发的 sips/解码任务数，避免滚动缩略图时进程风暴
+    imaging_semaphore: Arc<Semaphore>,
+    // 同一张图连续裁剪时复用转码结果（仅内存，单槽）
+    crop_source_cache: Arc<imaging::CropSourceCache>,
 }
 
 #[tauri::command]
@@ -159,6 +166,136 @@ fn eject_volume(path: String) -> AppResult<()> {
 }
 
 #[tauri::command]
+async fn get_thumbnail(
+    path: String,
+    size: Option<u32>,
+    state: State<'_, AppState>,
+) -> AppResult<String> {
+    let permit = state
+        .imaging_semaphore
+        .clone()
+        .acquire_owned()
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let _permit = permit;
+        imaging::thumbnail_data_url(&path, size.unwrap_or(512))
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+    .map_err(AppError::Image)
+}
+
+#[tauri::command]
+async fn get_preview(
+    path: String,
+    max_dim: Option<u32>,
+    state: State<'_, AppState>,
+) -> AppResult<String> {
+    let permit = state
+        .imaging_semaphore
+        .clone()
+        .acquire_owned()
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let _permit = permit;
+        imaging::preview_data_url(&path, max_dim.unwrap_or(2560))
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+    .map_err(AppError::Image)
+}
+
+#[tauri::command]
+async fn eagle_ping(base_url: String, token: String) -> AppResult<String> {
+    tauri::async_runtime::spawn_blocking(move || eagle::ping(&base_url, &token))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+        .map_err(AppError::Eagle)
+}
+
+#[tauri::command]
+async fn eagle_folders(base_url: String, token: String) -> AppResult<serde_json::Value> {
+    tauri::async_runtime::spawn_blocking(move || eagle::folders(&base_url, &token))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+        .map_err(AppError::Eagle)
+}
+
+#[tauri::command]
+async fn eagle_import(
+    base_url: String,
+    token: String,
+    items: Vec<eagle::PathImportItem>,
+    folder_id: Option<String>,
+) -> AppResult<eagle::ImportOutcome> {
+    tauri::async_runtime::spawn_blocking(move || {
+        eagle::import_paths(&base_url, &token, &items, &folder_id)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))
+}
+
+#[derive(Deserialize)]
+struct CropRect {
+    x: f64,
+    y: f64,
+    w: f64,
+    h: f64,
+}
+
+#[derive(serde::Serialize)]
+struct CropImportResult {
+    width: u32,
+    height: u32,
+}
+
+/// 内存中裁剪并直接推送 Eagle：不写 SD 卡，也不在磁盘留下任何裁剪文件
+#[tauri::command]
+async fn eagle_import_crop(
+    path: String,
+    rect: CropRect,
+    name: Option<String>,
+    tags: Option<Vec<String>>,
+    folder_id: Option<String>,
+    base_url: String,
+    token: String,
+    state: State<'_, AppState>,
+) -> AppResult<CropImportResult> {
+    let cache = state.crop_source_cache.clone();
+    let permit = state
+        .imaging_semaphore
+        .clone()
+        .acquire_owned()
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let _permit = permit;
+        let source = imaging::crop_source_bytes(&path, &cache).map_err(AppError::Image)?;
+        let out = imaging::crop_in_memory(&source, rect.x, rect.y, rect.w, rect.h)
+            .map_err(AppError::Image)?;
+        let annotation = Some(format!("裁剪自 {path}"));
+        eagle::import_jpeg_bytes(
+            &base_url,
+            &token,
+            &out.jpeg,
+            name.as_deref().unwrap_or(""),
+            &tags.unwrap_or_default(),
+            &annotation,
+            &folder_id,
+        )
+        .map_err(AppError::Eagle)?;
+        Ok(CropImportResult {
+            width: out.width,
+            height: out.height,
+        })
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[tauri::command]
 fn reveal_in_finder(path: String) -> AppResult<()> {
     #[cfg(target_os = "macos")]
     {
@@ -196,6 +333,8 @@ pub fn run() {
         .manage(AppState {
             config_manager,
             uploader,
+            imaging_semaphore: Arc::new(Semaphore::new(4)),
+            crop_source_cache: Arc::new(imaging::CropSourceCache::default()),
         })
         .invoke_handler(tauri::generate_handler![
             get_config,
@@ -206,7 +345,13 @@ pub fn run() {
             resume_upload,
             cancel_upload,
             eject_volume,
-            reveal_in_finder
+            reveal_in_finder,
+            get_thumbnail,
+            get_preview,
+            eagle_ping,
+            eagle_folders,
+            eagle_import,
+            eagle_import_crop
         ])
         .run(tauri::generate_context!("tauri.conf.json"))
         .expect("error while running tauri application");

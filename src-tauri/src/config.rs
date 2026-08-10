@@ -33,6 +33,30 @@ pub struct Favorites {
     pub dji_targets: Vec<String>,
 }
 
+fn default_eagle_base_url() -> String {
+    "http://localhost:41595".to_string()
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct EagleConfig {
+    #[serde(default = "default_eagle_base_url")]
+    pub base_url: String,
+    #[serde(default)]
+    pub token: String,
+    #[serde(default)]
+    pub last_folder_id: String,
+}
+
+impl Default for EagleConfig {
+    fn default() -> Self {
+        Self {
+            base_url: default_eagle_base_url(),
+            token: String::new(),
+            last_folder_id: String::new(),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     #[serde(default)]
@@ -41,6 +65,8 @@ pub struct Config {
     pub dji: ModeConfig,
     #[serde(default)]
     pub favorites: Favorites,
+    #[serde(default)]
+    pub eagle: EagleConfig,
 }
 
 impl Default for Config {
@@ -49,6 +75,7 @@ impl Default for Config {
             sd: ModeConfig::default(),
             dji: ModeConfig::default(),
             favorites: Favorites::default(),
+            eagle: EagleConfig::default(),
         }
     }
 }

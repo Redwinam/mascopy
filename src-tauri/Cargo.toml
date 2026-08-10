@@ -21,7 +21,7 @@ tauri-build = { version = "2.5.1", features = [] }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
-tauri = { version = "2.9.2", features = ["macos-private-api"] }
+tauri = { version = "2.9.2", features = ["macos-private-api", "protocol-asset"] }
 tauri-plugin-log = "2"
 walkdir = "2.5.0"
 kamadak-exif = "0.6.1"
@@ -33,3 +33,8 @@ filetime = "0.2.26"
 tokio = { version = "1.48.0", features = ["full"] }
 tauri-plugin-dialog = "2.4.2"
 thiserror = "2.0.17"
+# Eagle 本地 API（纯 http，无需 TLS）
+ureq = { version = "2.12", default-features = false, features = ["json"] }
+# 内存中裁剪/编码 JPEG（RAW/HEIC 解码交给 macOS 自带 sips）
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+base64 = "0.22"
