@@ -369,7 +369,7 @@ async fn start_tether(
                     watch_dir: watch,
                     target_dir: target,
                     move_files: args.delete_source,
-                    process_existing: false,
+                    rescan: false,
                 },
                 stop.clone(),
                 window,
@@ -404,7 +404,7 @@ async fn start_tether(
                     watch_dir: inbox.clone(),
                     target_dir: target,
                     move_files: true,
-                    process_existing: true,
+                    rescan: true,
                 },
                 stop.clone(),
                 window,
@@ -467,9 +467,10 @@ fn stop_tether(state: State<AppState>) -> AppResult<()> {
     Ok(())
 }
 
+/// 相机可连的本机 IP 候选（过滤代理 TUN/Tailscale 等虚拟接口），优先级从高到低
 #[tauri::command]
-fn get_lan_ip() -> String {
-    tether::lan_ip().unwrap_or_else(|| "127.0.0.1".to_string())
+fn get_lan_ip() -> Vec<String> {
+    tether::lan_ip_candidates()
 }
 
 #[tauri::command]

@@ -42,11 +42,24 @@
         </div>
       </template>
 
-      <FileSelector title="备份目标目录" :path="cfg.target_dir" @update:path="(p) => setField('target_dir', p)" placeholder="接收的照片将按日期（YYYY-MM-DD）整理到这里">
+      <FileSelector title="备份目标目录" :path="cfg.target_dir" @update:path="(p) => setField('target_dir', p)" @addFavorite="addTargetFavorite" placeholder="接收的照片将按日期（YYYY-MM-DD）整理到这里">
         <template #icon>
           <div class="icon-circle tether-icon">💾</div>
         </template>
       </FileSelector>
+
+      <div v-if="targetFavorites.length > 0" class="fav-row">
+        <span class="fav-label">收藏夹</span>
+        <div class="fav-chips">
+          <button v-for="p in targetFavorites" :key="p" :class="['fav-chip', { active: cfg.target_dir === p }]" :title="p" @click="setField('target_dir', p)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="fav-chip-icon">
+              <path
+                d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />
+            </svg>
+            {{ shortPath(p) }}
+          </button>
+        </div>
+      </div>
 
       <div class="start-row">
         <span v-if="errorMsg" class="tether-error">{{ errorMsg }}</span>
@@ -80,6 +93,9 @@
         <code>{{ displayIp }}</code>，端口 <code>{{ cfg.ftp_port }}</code>；用户名 <code>{{ cfg.ftp_user }}</code>，密码 <code>{{ cfg.ftp_pass }}</code>；<b>被动模式：启用</b>；<b>自动传输：启用</b>（传输类型可选「仅
         JPEG」，RAW 留在卡里走 SD 备份）。相机与 Mac 需在同一局域网（建议 5GHz）。首次启动若 macOS 弹出防火墙提示，请选择「允许」。
       </div>
+      <div v-if="altIps.length > 0" class="hint-alt">
+        已自动过滤代理/虚拟网卡地址；若相机连不上，可尝试备选 IP：<code v-for="ip in altIps" :key="ip">{{ ip }}</code>
+      </div>
     </div>
 
     <!-- 会话文件流 -->
@@ -89,7 +105,14 @@
         <p>{{ tetherActive ? "等待相机拍摄…按下快门后照片会自动出现在这里" : "开始会话后，本次联机拍摄的照片会实时显示在这里" }}</p>
       </div>
       <div v-else class="session-grid">
-        <div v-for="item in displayFiles" :key="item.key" :class="['t-cell', `t-${item.status}`]" :ref="(el) => setCellRef(el, item)" :title="item.error || item.filename">
+        <div
+          v-for="item in displayFiles"
+          :key="item.key"
+          :class="['t-cell', `t-${item.status}`, { 't-clickable': isPickable(item) }]"
+          :ref="(el) => setCellRef(el, item)"
+          :title="item.error || (isPickable(item) ? `${item.filename}（点击放大 / 导入 Eagle）` : item.filename)"
+          @click="openInViewer(item)"
+        >
           <img v-if="item.thumb" :src="item.thumb" class="t-img" draggable="false" />
           <div v-else class="t-placeholder">
             <span v-if="item.status === 'receiving'" class="spinner-sm dark"></span>
@@ -97,7 +120,7 @@
             <span v-else class="ext-tag">{{ extOf(item.filename).toUpperCase() }}</span>
           </div>
           <div class="t-status">
-            <span v-if="item.status === 'receiving'" class="t-chip chip-receiving">接收中</span>
+            <span v-if="item.status === 'receiving'" class="t-chip chip-receiving">接收中{{ item.size > 0 ? " · " + formatBytes(item.size) : "" }}</span>
             <span v-else-if="item.status === 'done'" class="t-chip chip-done">已入库</span>
             <span v-else-if="item.status === 'skipped'" class="t-chip chip-skipped">已存在</span>
             <span v-else-if="item.status === 'error'" class="t-chip chip-error">失败</span>
@@ -136,9 +159,31 @@ const cfg = computed(() => {
 
 const starting = ref(false);
 const errorMsg = ref("");
-const lanIp = ref("");
+const lanIps = ref([]);
 
-const displayIp = computed(() => (tetherActive.value && tetherInfo.value.lan_ip ? tetherInfo.value.lan_ip : lanIp.value || "（本机局域网 IP）"));
+const displayIp = computed(() => (tetherActive.value && tetherInfo.value.lan_ip ? tetherInfo.value.lan_ip : lanIps.value[0] || "（本机局域网 IP）"));
+
+const altIps = computed(() => lanIps.value.filter((ip) => ip !== displayIp.value));
+
+// 复用 SD/DJI 模式已收藏的目标目录
+const targetFavorites = computed(() => {
+  const f = config.value.favorites || {};
+  return Array.from(new Set([...(f.sd_targets || []), ...(f.dji_targets || [])]));
+});
+
+function shortPath(p) {
+  const parts = String(p).split(/[\\/]/).filter(Boolean);
+  return parts.length > 1 ? `${parts[parts.length - 2]}/${parts[parts.length - 1]}` : parts[0] || p;
+}
+
+async function addTargetFavorite() {
+  const p = cfg.value.target_dir;
+  if (!p) return;
+  const arr = config.value.favorites.sd_targets || [];
+  if (!arr.includes(p)) arr.unshift(p);
+  config.value.favorites.sd_targets = arr.slice(0, 8);
+  await save();
+}
 
 const canStart = computed(() => {
   if (!cfg.value.target_dir) return false;
@@ -211,20 +256,41 @@ function clearList() {
   tetherFiles.value = [];
 }
 
+function isPickable(f) {
+  return (f.status === "done" || f.status === "skipped") && f.file_type === "photo" && !!f.target_path;
+}
+
+function pickableSource() {
+  return tetherFiles.value.filter(isPickable);
+}
+
 function pickableItems() {
-  return tetherFiles.value
-    .filter((f) => (f.status === "done" || f.status === "skipped") && f.file_type === "photo" && f.target_path)
-    .map((f) => ({
-      key: f.target_path,
-      path: f.target_path,
-      filename: f.filename,
-      size: f.size,
-    }));
+  return pickableSource().map((f) => ({
+    key: f.target_path,
+    path: f.target_path,
+    filename: f.filename,
+    size: f.size,
+  }));
+}
+
+function formatBytes(bytes) {
+  if (!bytes || bytes < 0) return "0 B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 }
 
 function pick() {
   const items = pickableItems();
-  if (items.length > 0) emit("pick", items);
+  if (items.length > 0) emit("pick", items, -1);
+}
+
+// 点击单元格：带着全部会话照片进入挑图面板，并直接打开这张的灯箱
+function openInViewer(item) {
+  if (!isPickable(item)) return;
+  const source = pickableSource();
+  const idx = source.findIndex((f) => f.key === item.key);
+  if (idx < 0) return;
+  emit("pick", pickableItems(), idx);
 }
 
 /* ---------- 缩略图懒加载 ---------- */
@@ -272,9 +338,10 @@ onMounted(async () => {
   io = new IntersectionObserver(onIntersect, { rootMargin: "250px" });
   cellEls.forEach((el) => io.observe(el));
   try {
-    lanIp.value = await invoke("get_lan_ip");
+    const ips = await invoke("get_lan_ip");
+    lanIps.value = Array.isArray(ips) ? ips : [ips].filter(Boolean);
   } catch (e) {
-    lanIp.value = "";
+    lanIps.value = [];
   }
 });
 
@@ -391,6 +458,80 @@ onBeforeUnmount(() => {
 .ftp-field input:focus {
   outline: 2px solid var(--primary-soft-strong);
   border-color: var(--primary-400);
+}
+
+.fav-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-top: calc(var(--space-2) * -1);
+}
+
+.fav-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-top: 0.35rem;
+  flex-shrink: 0;
+}
+
+.fav-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.fav-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--surface-300);
+  background: var(--surface-0);
+  color: var(--color-text-main);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fav-chip:hover {
+  border-color: var(--primary-300);
+  background: var(--surface-50);
+}
+
+.fav-chip.active {
+  border-color: var(--primary-400);
+  background: var(--primary-soft);
+  color: var(--primary-700);
+  font-weight: 600;
+}
+
+.fav-chip-icon {
+  width: 13px;
+  height: 13px;
+  color: var(--primary-400);
+  flex-shrink: 0;
+}
+
+.hint-alt {
+  margin-top: var(--space-1);
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+.hint-alt code {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  background: var(--surface-0);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-right: 4px;
 }
 
 .start-row {
@@ -520,6 +661,16 @@ onBeforeUnmount(() => {
   overflow: hidden;
   background: var(--surface-100);
   animation: cellIn 0.25s ease;
+}
+
+.t-clickable {
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.t-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 @keyframes cellIn {

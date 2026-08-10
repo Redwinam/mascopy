@@ -162,7 +162,14 @@
 
       <div class="viewer-bar" @mousedown.stop>
         <template v-if="!cropping">
-          <button :class="['btn', current.selected ? 'btn-secondary' : 'btn-primary']" @click="toggleSelect(current)">
+          <button class="btn btn-primary" @click="importCurrent" :disabled="eagleState.status !== 'ok' || singleImporting || current.imported" :title="eagleState.status !== 'ok' ? '未连接 Eagle' : '把这张原图直接导入 Eagle'">
+            <span v-if="singleImporting" class="mini-spinner"></span>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            {{ current.imported ? "已导入" : singleImporting ? "导入中…" : "导入此图到 Eagle" }}
+          </button>
+          <button class="btn btn-secondary" @click="toggleSelect(current)">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -210,6 +217,8 @@ import { useAppState } from "../composables/useAppState.js";
 
 const props = defineProps({
   items: { type: Array, default: () => [] },
+  // >=0 时挂载后直接打开对应索引的灯箱（联机面板点图进入）
+  initialIndex: { type: Number, default: -1 },
 });
 defineEmits(["back"]);
 
@@ -494,14 +503,14 @@ function applyDefaultRect() {
   const { w, h } = dispSize.value;
   const ratio = currentRatio.value;
   if (ratio === null) {
-    cropRect.value = { x: 0.1, y: 0.1, w: 0.8, h: 0.8 };
+    cropRect.value = { x: 0, y: 0, w: 1, h: 1 };
     return;
   }
-  // 以显示像素为准生成符合比例的默认框（居中，尽量大）
-  let pw = w * 0.85;
+  // 默认框拉满：较窄的那条边占满图像，仅在长边方向居中留移动余地
+  let pw = w;
   let ph = pw / ratio;
-  if (ph > h * 0.85) {
-    ph = h * 0.85;
+  if (ph > h) {
+    ph = h;
     pw = ph * ratio;
   }
   cropRect.value = {
@@ -658,6 +667,35 @@ function toast(text, type = "success") {
   toastTimer = setTimeout(() => (viewerToast.value = { text: "", type: "success" }), 2600);
 }
 
+const singleImporting = ref(false);
+
+// 灯箱内直接把当前原图推给 Eagle（不经选择/批量流程）
+async function importCurrent() {
+  const item = current.value;
+  if (!item || singleImporting.value || item.imported) return;
+  singleImporting.value = true;
+  try {
+    const res = await invoke("eagle_import", {
+      baseUrl: eagleCfg.value.base_url,
+      token: eagleCfg.value.token,
+      items: [{ path: item.path, name: stemOf(item.filename), tags: parseTags(tagsInput.value), annotation: null }],
+      folderId: folderId.value || null,
+    });
+    if (res.failed && res.failed.length > 0) {
+      toast(`导入失败: ${res.failed[0].error}`, "error");
+    } else {
+      item.imported = true;
+      item.selected = false;
+      toast(`已导入到 Eagle${folderLabel()}`);
+      await persistFolderChoice();
+    }
+  } catch (e) {
+    toast(`导入失败: ${e}`, "error");
+  } finally {
+    singleImporting.value = false;
+  }
+}
+
 async function confirmCrop() {
   const item = current.value;
   if (!item || cropBusy.value) return;
@@ -765,6 +803,9 @@ onMounted(() => {
   resizeObserver = new ResizeObserver(() => measureImg());
   window.addEventListener("keydown", onKey);
   connectEagle();
+  if (props.initialIndex >= 0 && props.initialIndex < list.value.length) {
+    openViewer(props.initialIndex);
+  }
 });
 
 onBeforeUnmount(() => {

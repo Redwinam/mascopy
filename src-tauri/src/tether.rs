@@ -9,7 +9,7 @@ use notify::{RecursiveMode, Watcher};
 use serde::Serialize;
 use tauri::{Emitter, Window};
 
-const POLL_INTERVAL: Duration = Duration::from_millis(350);
+const POLL_INTERVAL: Duration = Duration::from_millis(250);
 // 连续 N 个轮询周期大小不变，视为相机/联机软件已写完
 const SETTLE_CHECKS: u32 = 2;
 
@@ -81,8 +81,9 @@ pub struct TetherOptions {
     pub target_dir: PathBuf,
     /// 入库后删除源文件（FTP 收件箱恒为 true，避免磁盘留双份）
     pub move_files: bool,
-    /// 启动时把目录里已有的文件也纳入处理（FTP 收件箱扫尾用）
-    pub process_existing: bool,
+    /// 每个轮询周期主动重扫目录（FTP 收件箱用：目录小、扫描便宜，
+    /// 探测比 FSEvents 及时，还能顺带处理上次会话的残留文件）
+    pub rescan: bool,
 }
 
 struct PendingFile {
@@ -126,20 +127,21 @@ pub fn spawn_watcher(
         let _watcher = watcher;
         let mut pending: HashMap<PathBuf, PendingFile> = HashMap::new();
 
-        if opts.process_existing {
-            for entry in walkdir::WalkDir::new(&opts.watch_dir)
-                .into_iter()
-                .filter_map(|e| e.ok())
-            {
-                if entry.file_type().is_file() {
-                    consider(&mut pending, entry.path().to_path_buf(), &window);
-                }
-            }
-        }
-
         loop {
             if stop.load(Ordering::Relaxed) {
                 break;
+            }
+
+            // FTP 收件箱主动重扫：新文件最迟一个轮询周期内被发现
+            if opts.rescan {
+                for entry in walkdir::WalkDir::new(&opts.watch_dir)
+                    .into_iter()
+                    .filter_map(|e| e.ok())
+                {
+                    if entry.file_type().is_file() {
+                        consider(&mut pending, entry.path().to_path_buf(), &window);
+                    }
+                }
             }
 
             match rx.recv_timeout(POLL_INTERVAL) {
@@ -157,7 +159,7 @@ pub fn spawn_watcher(
                 break;
             }
 
-            // 轮询待写稳文件
+            // 轮询待写稳文件：大小仍在涨 → 上报接收进度；连续稳定 → 入库
             let mut ready: Vec<PathBuf> = Vec::new();
             let mut gone: Vec<PathBuf> = Vec::new();
             for (path, state) in pending.iter_mut() {
@@ -172,6 +174,9 @@ pub fn spawn_watcher(
                         } else {
                             state.last_size = size;
                             state.stable = 0;
+                            let mut p = TetherFilePayload::new(path, "receiving");
+                            p.size = size;
+                            emit_file(&window, p);
                         }
                     }
                     // 源文件消失（临时文件被改名等），从列表拿掉
@@ -205,7 +210,9 @@ fn consider(pending: &mut HashMap<PathBuf, PendingFile>, path: PathBuf, window: 
     if !meta.is_file() {
         return;
     }
-    emit_file(window, TetherFilePayload::new(&path, "receiving"));
+    let mut payload = TetherFilePayload::new(&path, "receiving");
+    payload.size = meta.len();
+    emit_file(window, payload);
     pending.insert(
         path,
         PendingFile {
@@ -395,16 +402,94 @@ pub fn spawn_ftp_server(
     })
 }
 
-/// 本机局域网 IP（连外仅用于选路，不实际发包）
+/// 判断是否为相机可达的真实局域网地址。
+/// 过滤代理 TUN（198.18.0.0/15 基准测试段）、Tailscale 等 CGNAT（100.64.0.0/10）、
+/// 链路本地（169.254/16）——这些是虚拟接口，相机连不上。
+fn is_camera_reachable(ip: &std::net::Ipv4Addr) -> bool {
+    let o = ip.octets();
+    if ip.is_loopback() || ip.is_unspecified() {
+        return false;
+    }
+    if o[0] == 169 && o[1] == 254 {
+        return false;
+    }
+    if o[0] == 198 && (o[1] == 18 || o[1] == 19) {
+        return false;
+    }
+    if o[0] == 100 && (64..=127).contains(&o[1]) {
+        return false;
+    }
+    true
+}
+
+fn is_virtual_ifname(name: &str) -> bool {
+    ["utun", "tun", "tap", "awdl", "llw", "bridge", "vmnet", "lo", "gif", "stf", "anpi"]
+        .iter()
+        .any(|p| name.starts_with(p))
+}
+
+fn rank_candidates(mut raw: Vec<(String, std::net::Ipv4Addr)>) -> Vec<(String, std::net::Ipv4Addr)> {
+    raw.retain(|(name, ip)| !is_virtual_ifname(name) && is_camera_reachable(ip));
+    // RFC1918 私网段优先，物理网卡（macOS 上 en*）优先，其余按接口名排序
+    raw.sort_by_key(|(name, ip)| {
+        let o = ip.octets();
+        let private = o[0] == 10
+            || (o[0] == 192 && o[1] == 168)
+            || (o[0] == 172 && (16..=31).contains(&o[1]));
+        (
+            std::cmp::Reverse(private),
+            std::cmp::Reverse(name.starts_with("en")),
+            name.clone(),
+        )
+    });
+    raw
+}
+
+/// 相机可连的本机局域网 IP 候选（优先级从高到低）
+pub fn lan_ip_candidates() -> Vec<String> {
+    let raw: Vec<(String, std::net::Ipv4Addr)> = if_addrs::get_if_addrs()
+        .map(|ifaces| {
+            ifaces
+                .into_iter()
+                .filter_map(|iface| match iface.ip() {
+                    std::net::IpAddr::V4(ip) => Some((iface.name, ip)),
+                    _ => None,
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let mut out: Vec<String> = rank_candidates(raw)
+        .into_iter()
+        .map(|(_, ip)| ip.to_string())
+        .collect();
+    out.dedup();
+    out
+}
+
 pub fn lan_ip() -> Option<String> {
-    let socket = std::net::UdpSocket::bind("0.0.0.0:0").ok()?;
-    socket.connect("8.8.8.8:80").ok()?;
-    socket.local_addr().ok().map(|a| a.ip().to_string())
+    lan_ip_candidates().into_iter().next()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// 用本机真实场景验证：代理 TUN（198.19.x）、Tailscale（100.x）、lo0 别名都被过滤，
+    /// 只留物理网卡 en0 的局域网地址
+    #[test]
+    fn lan_candidates_filter_virtual_interfaces() {
+        use std::net::Ipv4Addr;
+        let ranked = rank_candidates(vec![
+            ("lo0".to_string(), Ipv4Addr::new(172, 30, 226, 225)),
+            ("utun4".to_string(), Ipv4Addr::new(100, 112, 183, 48)),
+            ("utun5".to_string(), Ipv4Addr::new(198, 19, 0, 1)),
+            ("en0".to_string(), Ipv4Addr::new(192, 168, 31, 218)),
+            ("awdl0".to_string(), Ipv4Addr::new(169, 254, 3, 4)),
+        ]);
+        assert_eq!(ranked.len(), 1);
+        assert_eq!(ranked[0].0, "en0");
+        assert_eq!(ranked[0].1.to_string(), "192.168.31.218");
+    }
 
     /// 端到端验证内置 FTP：认证 + 上传落盘（curl 走真实 FTP 协议）。
     /// 必须多线程 runtime：测试体内有阻塞等待（curl 子进程），单线程会饿死服务任务。
