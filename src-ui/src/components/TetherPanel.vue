@@ -173,7 +173,7 @@ const targetFavorites = computed(() => {
 
 function shortPath(p) {
   const parts = String(p).split(/[\\/]/).filter(Boolean);
-  return parts.length > 1 ? `${parts[parts.length - 2]}/${parts[parts.length - 1]}` : parts[0] || p;
+  return parts.slice(-3).join("/") || p;
 }
 
 async function addTargetFavorite() {
@@ -495,7 +495,7 @@ onBeforeUnmount(() => {
   font-size: 0.78rem;
   cursor: pointer;
   transition: all var(--transition-fast);
-  max-width: 260px;
+  max-width: 340px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
