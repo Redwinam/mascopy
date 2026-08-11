@@ -364,12 +364,13 @@ async fn start_tether(
                     "目标目录不能位于监听目录内，否则会循环入库".into(),
                 ));
             }
-            tether::spawn_watcher(
+            let _watch_tx = tether::spawn_watcher(
                 tether::TetherOptions {
                     watch_dir: watch,
                     target_dir: target,
                     move_files: args.delete_source,
                     rescan: false,
+                    ftp_fed: false,
                 },
                 stop.clone(),
                 window,
@@ -399,19 +400,21 @@ async fn start_tether(
                 .filter(|s| !s.trim().is_empty())
                 .unwrap_or_else(|| "eos".to_string());
 
-            tether::spawn_watcher(
+            let watch_tx = tether::spawn_watcher(
                 tether::TetherOptions {
                     watch_dir: inbox.clone(),
                     target_dir: target,
                     move_files: true,
                     rescan: true,
+                    ftp_fed: true,
                 },
                 stop.clone(),
                 window,
             )
             .map_err(AppError::Tether)?;
 
-            let ftp_task = tether::spawn_ftp_server(inbox.clone(), port, user, pass);
+            // FTP 传完会直接通知监听线程，不必靠大小静默去猜
+            let ftp_task = tether::spawn_ftp_server(inbox.clone(), port, user, pass, watch_tx);
             return finish_start_tether(
                 state,
                 tether::TetherHandle {

@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{RecvTimeoutError, Sender};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use chrono::{DateTime, Local};
 use notify::{RecursiveMode, Watcher};
@@ -10,8 +11,13 @@ use serde::Serialize;
 use tauri::{Emitter, Window};
 
 const POLL_INTERVAL: Duration = Duration::from_millis(250);
-// 连续 N 个轮询周期大小不变，视为相机/联机软件已写完
-const SETTLE_CHECKS: u32 = 2;
+// 大小持续这么久没变，才视为相机/联机软件已写完（兜底判据，必须按真实时间算）
+const SETTLE_QUIET: Duration = Duration::from_millis(1200);
+// FTP 传完有明确信号，兜底期放到远大于任何正常的网络卡顿：
+// 相机 WiFi 一卡就按静默判定，等于又把没传完的文件当成传完了
+const SETTLE_QUIET_FTP: Duration = Duration::from_secs(30);
+// 「传完了」的通知只为覆盖文件被扫到之前的这点时差，过期即丢，免得错认到后来的同名文件
+const REPORT_GRACE: Duration = Duration::from_secs(3);
 
 const PHOTO_EXTS: &[&str] = &[
     "jpg", "jpeg", "png", "heic", "hif", "nef", "cr2", "cr3", "arw", "dng",
@@ -71,8 +77,12 @@ impl TetherFilePayload {
     }
 }
 
-fn emit_file(window: &Window, payload: TetherFilePayload) {
-    window.emit("tether-file", payload).unwrap_or_default();
+/// 监听线程的输入
+pub enum WatchMsg {
+    /// 文件系统事件：路径刚被创建/写入，可能还没写完
+    Touched(PathBuf),
+    /// 内置 FTP 上报 STOR 已完成（路径由客户端给出，可能是相对路径）
+    Uploaded(String),
 }
 
 pub struct TetherOptions {
@@ -84,11 +94,18 @@ pub struct TetherOptions {
     /// 每个轮询周期主动重扫目录（FTP 收件箱用：目录小、扫描便宜，
     /// 探测比 FSEvents 及时，还能顺带处理上次会话的残留文件）
     pub rescan: bool,
+    /// 目录由内置 FTP 供稿：传完有明确信号，静默判定只当兜底
+    pub ftp_fed: bool,
 }
 
 struct PendingFile {
     last_size: u64,
-    stable: u32,
+    /// 最近一次观察到大小变化的时刻
+    changed_at: Instant,
+    /// 大小静默多久算写完
+    quiet: Duration,
+    /// FTP 已确认整份传完，不必再等静默期
+    uploaded: bool,
 }
 
 pub struct TetherHandle {
@@ -98,20 +115,35 @@ pub struct TetherHandle {
 
 pub type TetherState = Mutex<Option<TetherHandle>>;
 
-/// 启动监听线程：新文件写稳后按日期整理进目标目录，并向前端推送进度事件
+/// 启动监听线程：新文件写稳后按日期整理进目标目录，并向前端推送进度事件。
+/// 返回的发送端用于把「FTP 已传完」告诉监听线程（见 [`WatchMsg`]）。
 pub fn spawn_watcher(
     opts: TetherOptions,
     stop: Arc<AtomicBool>,
     window: Window,
-) -> Result<(), String> {
-    let (tx, rx) = std::sync::mpsc::channel::<PathBuf>();
+) -> Result<Sender<WatchMsg>, String> {
+    spawn_watcher_with(opts, stop, move |payload| {
+        window.emit("tether-file", payload).unwrap_or_default();
+    })
+}
+
+/// 监听线程本体。事件出口做成闭包，测试里可以直接收事件，不需要真的起一个窗口。
+fn spawn_watcher_with<E>(
+    opts: TetherOptions,
+    stop: Arc<AtomicBool>,
+    emit: E,
+) -> Result<Sender<WatchMsg>, String>
+where
+    E: Fn(TetherFilePayload) + Send + 'static,
+{
+    let (tx, rx) = std::sync::mpsc::channel::<WatchMsg>();
 
     let mut watcher = notify::recommended_watcher({
         let tx = tx.clone();
         move |res: Result<notify::Event, notify::Error>| {
             if let Ok(event) = res {
                 for p in event.paths {
-                    let _ = tx.send(p);
+                    let _ = tx.send(WatchMsg::Touched(p));
                 }
             }
         }
@@ -125,58 +157,86 @@ pub fn spawn_watcher(
     std::thread::spawn(move || {
         // watcher 随线程存活，线程退出时自动释放
         let _watcher = watcher;
+        let emit: &dyn Fn(TetherFilePayload) = &emit;
         let mut pending: HashMap<PathBuf, PendingFile> = HashMap::new();
+        // 传得快的小图可能「先收到传完通知、后被扫到」，通知先记下来，等文件出现时认领
+        let mut reported: Vec<(PathBuf, Instant)> = Vec::new();
+        let live_quiet = if opts.ftp_fed {
+            SETTLE_QUIET_FTP
+        } else {
+            SETTLE_QUIET
+        };
+        // 首轮扫到的是上次会话的残留文件：此刻不可能有正在传的文件，按常规静默期入库即可
+        let mut first_scan = true;
 
-        loop {
+        'session: loop {
             if stop.load(Ordering::Relaxed) {
                 break;
             }
+            reported.retain(|(_, at)| at.elapsed() < REPORT_GRACE);
 
             // FTP 收件箱主动重扫：新文件最迟一个轮询周期内被发现
             if opts.rescan {
+                let quiet = if first_scan { SETTLE_QUIET } else { live_quiet };
                 for entry in walkdir::WalkDir::new(&opts.watch_dir)
                     .into_iter()
                     .filter_map(|e| e.ok())
                 {
                     if entry.file_type().is_file() {
-                        consider(&mut pending, entry.path().to_path_buf(), &window);
+                        consider(
+                            &mut pending,
+                            &mut reported,
+                            entry.path().to_path_buf(),
+                            quiet,
+                            emit,
+                        );
                     }
                 }
+                first_scan = false;
             }
 
-            match rx.recv_timeout(POLL_INTERVAL) {
-                Ok(path) => {
-                    consider(&mut pending, path, &window);
-                    while let Ok(p) = rx.try_recv() {
-                        consider(&mut pending, p, &window);
-                    }
+            // 收满一个完整轮询周期的消息再判定写完没有：节奏必须由时间决定。
+            // 传输中文件系统事件是雪崩式的，若来一个事件就判定一次，几毫秒内就能
+            // 凑够「大小没变」的次数，把还在传的文件当成传完 → 入库半张图。
+            let deadline = Instant::now() + POLL_INTERVAL;
+            loop {
+                let left = deadline.saturating_duration_since(Instant::now());
+                if left.is_zero() {
+                    break;
                 }
-                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
-                Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+                match rx.recv_timeout(left) {
+                    Ok(WatchMsg::Touched(p)) => {
+                        consider(&mut pending, &mut reported, p, live_quiet, emit)
+                    }
+                    Ok(WatchMsg::Uploaded(p)) => mark_uploaded(&mut pending, &mut reported, &p),
+                    Err(RecvTimeoutError::Timeout) => break,
+                    Err(RecvTimeoutError::Disconnected) => break 'session,
+                }
             }
 
             if stop.load(Ordering::Relaxed) {
                 break;
             }
 
-            // 轮询待写稳文件：大小仍在涨 → 上报接收进度；连续稳定 → 入库
+            // 大小还在涨 → 上报接收进度；FTP 报了传完、或大小静默够久 → 入库
             let mut ready: Vec<PathBuf> = Vec::new();
             let mut gone: Vec<PathBuf> = Vec::new();
             for (path, state) in pending.iter_mut() {
                 match std::fs::metadata(path) {
                     Ok(meta) => {
                         let size = meta.len();
-                        if size == state.last_size && size > 0 {
-                            state.stable += 1;
-                            if state.stable >= SETTLE_CHECKS {
-                                ready.push(path.clone());
-                            }
-                        } else {
+                        let grew = size != state.last_size;
+                        if grew {
                             state.last_size = size;
-                            state.stable = 0;
+                            state.changed_at = Instant::now();
+                        }
+                        if size > 0 && (state.uploaded || state.changed_at.elapsed() >= state.quiet)
+                        {
+                            ready.push(path.clone());
+                        } else if grew {
                             let mut p = TetherFilePayload::new(path, "receiving");
                             p.size = size;
-                            emit_file(&window, p);
+                            emit(p);
                         }
                     }
                     // 源文件消失（临时文件被改名等），从列表拿掉
@@ -185,19 +245,25 @@ pub fn spawn_watcher(
             }
             for path in gone {
                 pending.remove(&path);
-                emit_file(&window, TetherFilePayload::new(&path, "removed"));
+                emit(TetherFilePayload::new(&path, "removed"));
             }
             for path in ready {
                 pending.remove(&path);
-                process_file(&path, &opts, &window);
+                process_file(&path, &opts, emit);
             }
         }
     });
 
-    Ok(())
+    Ok(tx)
 }
 
-fn consider(pending: &mut HashMap<PathBuf, PendingFile>, path: PathBuf, window: &Window) {
+fn consider(
+    pending: &mut HashMap<PathBuf, PendingFile>,
+    reported: &mut Vec<(PathBuf, Instant)>,
+    path: PathBuf,
+    quiet: Duration,
+    emit: &dyn Fn(TetherFilePayload),
+) {
     if pending.contains_key(&path) {
         return;
     }
@@ -212,14 +278,49 @@ fn consider(pending: &mut HashMap<PathBuf, PendingFile>, path: PathBuf, window: 
     }
     let mut payload = TetherFilePayload::new(&path, "receiving");
     payload.size = meta.len();
-    emit_file(window, payload);
+    emit(payload);
+    let uploaded = match reported.iter().position(|(rel, _)| path.ends_with(rel)) {
+        Some(i) => {
+            reported.remove(i);
+            true
+        }
+        None => false,
+    };
     pending.insert(
         path,
         PendingFile {
             last_size: meta.len(),
-            stable: 0,
+            changed_at: Instant::now(),
+            quiet,
+            uploaded,
         },
     );
+}
+
+/// FTP 报的是客户端视角的路径（可能相对于会话工作目录），按路径后缀匹配收件箱里待入库的文件。
+/// 文件还没被扫到就先收到通知的话，把通知留着，等 [`consider`] 认领。
+fn mark_uploaded(
+    pending: &mut HashMap<PathBuf, PendingFile>,
+    reported: &mut Vec<(PathBuf, Instant)>,
+    path: &str,
+) {
+    let rel: PathBuf = path
+        .split('/')
+        .filter(|s| !s.is_empty() && *s != ".")
+        .collect();
+    if rel.as_os_str().is_empty() {
+        return;
+    }
+    let mut matched = false;
+    for (path, state) in pending.iter_mut() {
+        if path.ends_with(&rel) {
+            state.uploaded = true;
+            matched = true;
+        }
+    }
+    if !matched {
+        reported.push((rel, Instant::now()));
+    }
 }
 
 fn make_unique_name(original: &str, attempt: usize) -> String {
@@ -239,14 +340,14 @@ fn make_unique_name(original: &str, attempt: usize) -> String {
     }
 }
 
-fn process_file(src: &Path, opts: &TetherOptions, window: &Window) {
+fn process_file(src: &Path, opts: &TetherOptions, emit: &dyn Fn(TetherFilePayload)) {
     let mut payload = TetherFilePayload::new(src, "error");
 
     let meta = match std::fs::metadata(src) {
         Ok(m) => m,
         Err(e) => {
             payload.error = format!("读取文件失败: {e}");
-            emit_file(window, payload);
+            emit(payload);
             return;
         }
     };
@@ -263,7 +364,7 @@ fn process_file(src: &Path, opts: &TetherOptions, window: &Window) {
     let date_dir = opts.target_dir.join(date.format("%Y-%m-%d").to_string());
     if let Err(e) = std::fs::create_dir_all(&date_dir) {
         payload.error = format!("创建日期目录失败: {e}");
-        emit_file(window, payload);
+        emit(payload);
         return;
     }
 
@@ -290,7 +391,7 @@ fn process_file(src: &Path, opts: &TetherOptions, window: &Window) {
             }
             payload.status = "skipped".to_string();
             payload.target_path = dest.to_string_lossy().to_string();
-            emit_file(window, payload);
+            emit(payload);
             return;
         }
         attempt += 1;
@@ -309,11 +410,11 @@ fn process_file(src: &Path, opts: &TetherOptions, window: &Window) {
             let _ = filetime::set_file_times(&dest, ft, ft);
             payload.status = "done".to_string();
             payload.target_path = dest.to_string_lossy().to_string();
-            emit_file(window, payload);
+            emit(payload);
         }
         Err(e) => {
             payload.error = e;
-            emit_file(window, payload);
+            emit(payload);
         }
     }
 }
@@ -372,12 +473,35 @@ impl libunftp::auth::Authenticator for FixedAuth {
     }
 }
 
+/// 把「STOR 已完成」转达给监听线程。大小静默只是兜底判据，
+/// 有了这个信号才能确定相机整份传完，既不会入库半张图，也不用干等静默期。
+#[derive(Debug)]
+struct UploadNotifier {
+    tx: Mutex<Sender<WatchMsg>>,
+}
+
+#[async_trait::async_trait]
+impl libunftp::notification::DataListener for UploadNotifier {
+    async fn receive_data_event(
+        &self,
+        event: libunftp::notification::DataEvent,
+        _meta: libunftp::notification::EventMeta,
+    ) {
+        if let libunftp::notification::DataEvent::Put { path, .. } = event {
+            if let Ok(tx) = self.tx.lock() {
+                let _ = tx.send(WatchMsg::Uploaded(path));
+            }
+        }
+    }
+}
+
 /// 在指定端口起 FTP 服务，根目录为收件箱。返回任务句柄，结束会话时 abort。
 pub fn spawn_ftp_server(
     root: PathBuf,
     port: u16,
     user: String,
     pass: String,
+    watch_tx: Sender<WatchMsg>,
 ) -> tauri::async_runtime::JoinHandle<()> {
     tauri::async_runtime::spawn(async move {
         let server = libunftp::ServerBuilder::with_authenticator(
@@ -389,6 +513,9 @@ pub fn spawn_ftp_server(
         )
         .greeting("mascopy tether")
         .passive_ports(50021..=50040)
+        .notify_data(UploadNotifier {
+            tx: Mutex::new(watch_tx),
+        })
         .build();
 
         match server {
@@ -473,6 +600,157 @@ pub fn lan_ip() -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// 相机传输中文件系统事件是雪崩式的：写完与否必须按真实时间判断。
+    /// 按「事件轮数」计数会在几毫秒内判定完成，把还在写的文件入库 → 半张图。
+    #[test]
+    fn growing_file_is_not_imported_during_an_event_storm() {
+        let base = std::env::temp_dir().join(format!("mascopy-settle-test-{}", std::process::id()));
+        let watch = base.join("watch");
+        let target = base.join("target");
+        let _ = std::fs::remove_dir_all(&base);
+        std::fs::create_dir_all(&watch).unwrap();
+        std::fs::create_dir_all(&target).unwrap();
+
+        let (evt_tx, evt_rx) = std::sync::mpsc::channel::<TetherFilePayload>();
+        let stop = Arc::new(AtomicBool::new(false));
+        let tx = spawn_watcher_with(
+            TetherOptions {
+                watch_dir: watch.clone(),
+                target_dir: target.clone(),
+                move_files: false,
+                rescan: true,
+                ftp_fed: false,
+            },
+            stop.clone(),
+            move |p| {
+                let _ = evt_tx.send(p);
+            },
+        )
+        .unwrap();
+
+        // 分段写入：每段之间只有事件、没有新数据，模拟相机传输中的网络间隙
+        let file = watch.join("IMG_0001.JPG");
+        let chunk = vec![7u8; 64 * 1024];
+        let chunks = 6;
+        {
+            use std::io::Write;
+            let mut f = std::fs::File::create(&file).unwrap();
+            for _ in 0..chunks {
+                f.write_all(&chunk).unwrap();
+                f.flush().unwrap();
+                for _ in 0..60 {
+                    let _ = tx.send(WatchMsg::Touched(file.clone()));
+                    std::thread::sleep(Duration::from_millis(5));
+                }
+            }
+        }
+        let total = (chunks * chunk.len()) as u64;
+
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let mut done: Option<TetherFilePayload> = None;
+        while done.is_none() && Instant::now() < deadline {
+            if let Ok(p) = evt_rx.recv_timeout(Duration::from_millis(200)) {
+                if p.status == "done" {
+                    done = Some(p);
+                }
+            }
+        }
+        stop.store(true, Ordering::Relaxed);
+
+        let done = done.expect("文件写完后应当入库");
+        assert_eq!(done.size, total, "文件还在写就被判定为传完");
+        let dest = PathBuf::from(&done.target_path);
+        assert_eq!(
+            std::fs::metadata(&dest).map(|m| m.len()).unwrap_or(0),
+            total,
+            "入库的文件被截断了"
+        );
+
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    /// FTP 全链路：上传完成信号必须直达监听线程并立刻入库。
+    /// 断言在远小于 SETTLE_QUIET_FTP 的时间内完成，即入库是靠信号而不是靠静默兜底。
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn ftp_upload_lands_complete_via_put_signal() {
+        let base = std::env::temp_dir().join(format!("mascopy-ftp-e2e-{}", std::process::id()));
+        let inbox = base.join("inbox");
+        let target = base.join("target");
+        let _ = std::fs::remove_dir_all(&base);
+        std::fs::create_dir_all(&inbox).unwrap();
+        std::fs::create_dir_all(&target).unwrap();
+
+        let (evt_tx, evt_rx) = std::sync::mpsc::channel::<TetherFilePayload>();
+        let stop = Arc::new(AtomicBool::new(false));
+        let watch_tx = spawn_watcher_with(
+            TetherOptions {
+                watch_dir: inbox.clone(),
+                target_dir: target.clone(),
+                move_files: true,
+                rescan: true,
+                ftp_fed: true,
+            },
+            stop.clone(),
+            move |p| {
+                let _ = evt_tx.send(p);
+            },
+        )
+        .unwrap();
+        let task = spawn_ftp_server(
+            inbox.clone(),
+            21298,
+            "eos".to_string(),
+            "eos".to_string(),
+            watch_tx,
+        );
+        tokio::time::sleep(Duration::from_millis(500)).await;
+
+        let size = 2 * 1024 * 1024;
+        let payload = base.join("payload.bin");
+        std::fs::write(&payload, vec![9u8; size]).unwrap();
+        let ok = std::process::Command::new("curl")
+            .args([
+                "-sS",
+                "-m",
+                "10",
+                "-T",
+                payload.to_str().unwrap(),
+                "--user",
+                "eos:eos",
+                "ftp://127.0.0.1:21298/IMG_0002.JPG",
+            ])
+            .output()
+            .unwrap();
+        assert!(
+            ok.status.success(),
+            "curl 上传失败: {}",
+            String::from_utf8_lossy(&ok.stderr)
+        );
+
+        let deadline = Instant::now() + Duration::from_secs(3);
+        let mut done: Option<TetherFilePayload> = None;
+        while done.is_none() && Instant::now() < deadline {
+            if let Ok(p) = evt_rx.recv_timeout(Duration::from_millis(200)) {
+                if p.status == "done" {
+                    done = Some(p);
+                }
+            }
+        }
+        stop.store(true, Ordering::Relaxed);
+        task.abort();
+
+        let done = done.expect("上传完成后应当立刻入库（没收到完成信号？）");
+        assert_eq!(done.size as usize, size, "入库时文件还没传完");
+        let dest = PathBuf::from(&done.target_path);
+        assert_eq!(
+            std::fs::metadata(&dest).map(|m| m.len()).unwrap_or(0) as usize,
+            size,
+            "入库的文件被截断了"
+        );
+
+        let _ = std::fs::remove_dir_all(&base);
+    }
 
     /// 用本机真实场景验证：代理 TUN（198.19.x）、Tailscale（100.x）、lo0 别名都被过滤，
     /// 只留物理网卡 en0 的局域网地址
