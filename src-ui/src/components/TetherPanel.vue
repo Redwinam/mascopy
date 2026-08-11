@@ -264,10 +264,11 @@ function isPickable(f) {
   return (f.status === "done" || f.status === "skipped") && f.file_type === "photo" && !!f.target_path;
 }
 
-// 灯箱数据实时来自会话列表：拍摄中新入库的照片会即时计入张数与左右翻页
+// 灯箱数据实时来自会话列表：拍摄中新入库的照片会即时计入张数与左右翻页。
+// 顺序跟随网格展示顺序（displayFiles，最新在前），否则左右翻页与序号会和眼前的列表相反
 const lightboxKey = ref(null);
 const lightboxItems = computed(() =>
-  tetherFiles.value.filter(isPickable).map((f) => ({
+  displayFiles.value.filter(isPickable).map((f) => ({
     key: f.key,
     path: f.target_path,
     filename: f.filename,
