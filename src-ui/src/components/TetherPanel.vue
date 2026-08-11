@@ -80,7 +80,6 @@
       </div>
       <div class="session-actions">
         <button class="btn btn-secondary btn-sm" @click="clearList" :disabled="tetherFiles.length === 0">清空记录</button>
-        <button class="btn btn-primary btn-sm" @click="pick" :disabled="photoPickCount === 0">🖼️ 挑图导入 Eagle ({{ photoPickCount }})</button>
         <button class="btn btn-danger btn-sm" @click="stop">结束会话</button>
       </div>
     </div>
@@ -124,23 +123,29 @@
             <span v-else-if="item.status === 'done'" class="t-chip chip-done">已入库</span>
             <span v-else-if="item.status === 'skipped'" class="t-chip chip-skipped">已存在</span>
             <span v-else-if="item.status === 'error'" class="t-chip chip-error">失败</span>
+            <span v-if="markOf(item.target_path).cropCount > 0" class="t-chip chip-crop">✂ {{ markOf(item.target_path).cropCount }}</span>
+            <span v-if="markOf(item.target_path).imported" class="t-chip chip-eagle">✓ Eagle</span>
           </div>
           <div class="t-name">{{ item.filename }}</div>
         </div>
       </div>
     </div>
+
+    <!-- 灯箱：点击照片直接放大 / 裁剪 / 导入 Eagle，列表实时跟随会话 -->
+    <EagleLightbox :items="lightboxItems" v-model="lightboxKey" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import FileSelector from "./FileSelector.vue";
+import EagleLightbox from "./EagleLightbox.vue";
 import { useAppState } from "../composables/useAppState.js";
-
-const emit = defineEmits(["pick"]);
+import { useEagle } from "../composables/useEagle.js";
 
 const { config, tetherActive, tetherInfo, tetherFiles } = useAppState();
+const { markOf } = useEagle();
 
 const cfg = computed(() => {
   if (!config.value.tether) {
@@ -193,7 +198,6 @@ const canStart = computed(() => {
 
 const displayFiles = computed(() => [...tetherFiles.value].reverse());
 const doneCount = computed(() => tetherFiles.value.filter((f) => f.status === "done" || f.status === "skipped").length);
-const photoPickCount = computed(() => pickableItems().length);
 
 function extOf(name) {
   const idx = (name || "").lastIndexOf(".");
@@ -260,18 +264,16 @@ function isPickable(f) {
   return (f.status === "done" || f.status === "skipped") && f.file_type === "photo" && !!f.target_path;
 }
 
-function pickableSource() {
-  return tetherFiles.value.filter(isPickable);
-}
-
-function pickableItems() {
-  return pickableSource().map((f) => ({
-    key: f.target_path,
+// 灯箱数据实时来自会话列表：拍摄中新入库的照片会即时计入张数与左右翻页
+const lightboxKey = ref(null);
+const lightboxItems = computed(() =>
+  tetherFiles.value.filter(isPickable).map((f) => ({
+    key: f.key,
     path: f.target_path,
     filename: f.filename,
     size: f.size,
-  }));
-}
+  }))
+);
 
 function formatBytes(bytes) {
   if (!bytes || bytes < 0) return "0 B";
@@ -279,18 +281,10 @@ function formatBytes(bytes) {
   return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 }
 
-function pick() {
-  const items = pickableItems();
-  if (items.length > 0) emit("pick", items, -1);
-}
-
-// 点击单元格：带着全部会话照片进入挑图面板，并直接打开这张的灯箱
+// 点击单元格：直接打开灯箱放大这张，可裁剪/导入 Eagle
 function openInViewer(item) {
   if (!isPickable(item)) return;
-  const source = pickableSource();
-  const idx = source.findIndex((f) => f.key === item.key);
-  if (idx < 0) return;
-  emit("pick", pickableItems(), idx);
+  lightboxKey.value = item.key;
 }
 
 /* ---------- 缩略图懒加载 ---------- */
@@ -333,6 +327,26 @@ async function loadThumb(item) {
     item.thumbState = "error";
   }
 }
+
+// IntersectionObserver 只在可见性变化时回调：格子以 receiving 状态出现在视口内时
+// 不满足加载条件，之后翻成 done 也不会再有回调，缩略图就一直不出来。
+// 状态变化后对就绪项重新 observe，强制按当前可见性补发一次回调（视口外仍保持懒加载）。
+watch(
+  tetherFiles,
+  () => {
+    if (!io) return;
+    for (const f of tetherFiles.value) {
+      if ((f.status === "done" || f.status === "skipped") && f.target_path && !f.thumb && f.thumbState !== "loading" && f.thumbState !== "error") {
+        const el = cellEls.get(f.key);
+        if (el) {
+          io.unobserve(el);
+          io.observe(el);
+        }
+      }
+    }
+  },
+  { deep: true, flush: "post" }
+);
 
 onMounted(async () => {
   io = new IntersectionObserver(onIntersect, { rootMargin: "250px" });
@@ -726,6 +740,10 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 6px;
   right: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
 }
 
 .t-chip {
@@ -750,6 +768,14 @@ onBeforeUnmount(() => {
 
 .chip-error {
   background: var(--color-error);
+}
+
+.chip-crop {
+  background: var(--accent-500);
+}
+
+.chip-eagle {
+  background: rgba(15, 23, 42, 0.72);
 }
 
 .t-name {

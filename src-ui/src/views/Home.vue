@@ -2,7 +2,7 @@
   <div class="dashboard">
     <!-- Step 1: Configuration -->
     <div v-show="currentStep === 'config'" class="step-container config-step animate-fade-in">
-      <TetherPanel v-if="currentMode === 'tether'" @pick="openPickerFromTether" />
+      <TetherPanel v-if="currentMode === 'tether'" />
       <template v-else>
       <div class="transfer-flow">
         <!-- Source Column -->
@@ -307,7 +307,7 @@
 
     <!-- Step 3: Eagle 挑图导入 -->
     <div v-if="currentStep === 'picker'" class="step-container picker-step animate-fade-in">
-      <EaglePicker :items="pickerItems" :initial-index="pickerInitialIndex" @back="closePicker" />
+      <EaglePicker :items="pickerItems" @back="closePicker" />
     </div>
 
     <Modal v-if="showSuccessModal" @close="showSuccessModal = false">
@@ -409,7 +409,6 @@ const selectionMode = ref(false);
 const selectedKeys = ref([]);
 // Eagle 挑图：面板数据与返回位置；lastUploadList 记录最近一次上传的文件清单
 const pickerItems = ref([]);
-const pickerInitialIndex = ref(-1);
 const pickerReturnStep = ref("config");
 const lastUploadList = ref([]);
 
@@ -543,15 +542,7 @@ const resultsPickerCount = computed(() => (filesToDisplay.value || []).filter(is
 
 function openPickerFromUpload() {
   pickerItems.value = uploadPickerItems();
-  pickerInitialIndex.value = -1;
   showSuccessModal.value = false;
-  pickerReturnStep.value = "config";
-  currentStep.value = "picker";
-}
-
-function openPickerFromTether(items, initialIndex = -1) {
-  pickerItems.value = items;
-  pickerInitialIndex.value = initialIndex;
   pickerReturnStep.value = "config";
   currentStep.value = "picker";
 }
@@ -563,7 +554,6 @@ function openPickerFromResults() {
     const useTarget = f.status === "skip" || st === "done" || st === "skipped";
     return toPickerItem(f, useTarget);
   });
-  pickerInitialIndex.value = -1;
   pickerReturnStep.value = "results";
   currentStep.value = "picker";
 }
