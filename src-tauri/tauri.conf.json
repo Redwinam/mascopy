@@ -20,7 +20,11 @@
         "fullscreen": false,
         "decorations": true,
         "transparent": true,
-        "titleBarStyle": "Overlay"
+        "titleBarStyle": "Overlay",
+        "trafficLightPosition": {
+          "x": 20,
+          "y": 30
+        }
       }
     ],
     "security": {

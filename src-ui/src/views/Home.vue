@@ -1433,49 +1433,47 @@ function closeNotice() {
   color: var(--primary-800);
 }
 
-@media (prefers-color-scheme: dark) {
-  .date-filter-section,
-  .ext-filter-section {
-    background: var(--surface-100);
-    border-color: var(--surface-300);
-  }
+:root[data-theme='dark'] .date-filter-section,
+:root[data-theme='dark'] .ext-filter-section {
+  background: var(--surface-100);
+  border-color: var(--surface-300);
+}
 
-  .filter-action {
-    background: var(--surface-50);
-    border-color: var(--surface-300);
-    color: var(--primary-200);
-  }
+:root[data-theme='dark'] .filter-action {
+  background: var(--surface-50);
+  border-color: var(--surface-300);
+  color: var(--primary-200);
+}
 
-  .filter-action:hover {
-    background: var(--surface-100);
-    border-color: var(--primary-400);
-    color: var(--primary-100);
-  }
+:root[data-theme='dark'] .filter-action:hover {
+  background: var(--surface-100);
+  border-color: var(--primary-400);
+  color: var(--primary-100);
+}
 
-  .date-chip {
-    background: var(--surface-50);
-    border-color: var(--surface-300);
-  }
+:root[data-theme='dark'] .date-chip {
+  background: var(--surface-50);
+  border-color: var(--surface-300);
+}
 
-  .date-chip:hover {
-    background: var(--surface-100);
-    border-color: var(--primary-400);
-  }
+:root[data-theme='dark'] .date-chip:hover {
+  background: var(--surface-100);
+  border-color: var(--primary-400);
+}
 
-  .date-chip.active {
-    border-color: var(--primary-400);
-    color: var(--primary-200);
-  }
+:root[data-theme='dark'] .date-chip.active {
+  border-color: var(--primary-400);
+  color: var(--primary-200);
+}
 
-  .date-count {
-    background: var(--surface-300);
-    color: var(--surface-600);
-  }
+:root[data-theme='dark'] .date-count {
+  background: var(--surface-300);
+  color: var(--surface-600);
+}
 
-  .date-chip.active .date-count {
-    background: var(--surface-200);
-    color: var(--primary-200);
-  }
+:root[data-theme='dark'] .date-chip.active .date-count {
+  background: var(--surface-200);
+  color: var(--primary-200);
 }
 
 .success-content {

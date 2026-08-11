@@ -21,6 +21,7 @@
       </div>
 
       <div class="header-actions" id="header-right-slot">
+        <ThemeToggle />
       </div>
     </header>
 
@@ -33,6 +34,7 @@
 <script setup>
 import Home from './views/Home.vue';
 import TabView from './components/TabView.vue';
+import ThemeToggle from './components/ThemeToggle.vue';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useAppState } from './composables/useAppState.js';
 import './styles/main.css';
@@ -117,6 +119,14 @@ async function onHeaderPointerDown(event) {
   position: relative;
   z-index: 10;
   justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* 各视图 teleport 进来的按钮排在前面，主题开关始终贴右边缘，切步骤时位置不跳 */
+.header-actions :deep(.theme-toggle) {
+  order: 1;
 }
 
 .app-content {

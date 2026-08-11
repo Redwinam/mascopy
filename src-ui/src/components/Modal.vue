@@ -115,22 +115,20 @@ defineEmits(['close']);
   border-bottom-right-radius: var(--radius-2xl);
 }
 
-@media (prefers-color-scheme: dark) {
-  .modal-backdrop {
-    background: rgba(2, 6, 23, 0.7);
-  }
+:root[data-theme='dark'] .modal-backdrop {
+  background: rgba(2, 6, 23, 0.7);
+}
 
-  .modal-container {
-    border-color: var(--surface-300);
-  }
+:root[data-theme='dark'] .modal-container {
+  border-color: var(--surface-300);
+}
 
-  .close-btn:hover {
-    background: var(--surface-300);
-  }
+:root[data-theme='dark'] .close-btn:hover {
+  background: var(--surface-300);
+}
 
-  .modal-footer {
-    background: var(--surface-100);
-    border-top-color: var(--surface-300);
-  }
+:root[data-theme='dark'] .modal-footer {
+  background: var(--surface-100);
+  border-top-color: var(--surface-300);
 }
 </style>
