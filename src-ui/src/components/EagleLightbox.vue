@@ -6,25 +6,21 @@
       <div class="viewer-info">
         <span class="viewer-filename">{{ current.filename }}</span>
         <span class="viewer-index">{{ idx + 1 }} / {{ items.length }}</span>
-        <span v-if="mark.imported" class="mini-badge badge-done">已导入</span>
-        <span v-if="mark.cropCount > 0" class="mini-badge badge-crop">✂ {{ mark.cropCount }}</span>
+        <span v-if="mark.imported" class="mini-badge badge-done"><Check :size="12" :stroke-width="3" />已导入</span>
+        <span v-if="mark.cropCount > 0" class="mini-badge badge-crop"><Scissors :size="12" :stroke-width="2.5" />{{ mark.cropCount }}</span>
       </div>
-      <button class="viewer-close" @click="close" title="关闭 (Esc)">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+      <button class="icon-btn viewer-close" @click="close" title="关闭 (Esc)"><X :size="18" /></button>
     </div>
 
     <div class="viewer-stage">
-      <button v-if="!cropping" class="nav-btn nav-prev" @click.stop="nav(-1)" :disabled="idx <= 0">‹</button>
+      <button v-if="!cropping" class="icon-btn nav-btn" @click.stop="nav(-1)" :disabled="idx <= 0" title="上一张 (←)"><ChevronLeft :size="22" /></button>
 
       <div class="stage-center" @mousedown="onStageDown">
         <div v-if="previewLoading" class="preview-loading">
-          <span class="mini-spinner"></span>
+          <LoaderCircle class="ico-spin" :size="16" />
           <span>加载预览…</span>
         </div>
-        <div v-else-if="previewError" class="preview-loading preview-failed">⚠️ {{ previewError }}</div>
+        <div v-else-if="previewError" class="preview-loading preview-failed"><TriangleAlert :size="16" />{{ previewError }}</div>
 
         <div v-show="!previewLoading && !previewError" class="img-holder" ref="holderEl">
           <img ref="imgEl" :src="previewSrc" class="viewer-img" draggable="false" @load="onPreviewLoad" @error="onPreviewError" />
@@ -41,54 +37,89 @@
         <div v-if="viewerToast.text" :class="['viewer-toast', `toast-${viewerToast.type}`]">{{ viewerToast.text }}</div>
       </div>
 
-      <button v-if="!cropping" class="nav-btn nav-next" @click.stop="nav(1)" :disabled="idx >= items.length - 1">›</button>
+      <button v-if="!cropping" class="icon-btn nav-btn" @click.stop="nav(1)" :disabled="idx >= items.length - 1" title="下一张 (→)"><ChevronRight :size="22" /></button>
     </div>
 
     <div v-if="showSettings && !cropping" class="viewer-settings" @mousedown.stop>
-      <input v-model="eagleCfg.base_url" class="dark-input addr-input" placeholder="http://localhost:41595" @change="saveEagleConfig" />
-      <input v-model="eagleCfg.token" class="dark-input token-input" placeholder="API Token（Eagle → 偏好设置 → 开发者）" @change="saveEagleConfig" />
-      <button class="btn btn-secondary btn-sm" @click="connectEagle" :disabled="eagleState.status === 'checking'">
-        {{ eagleState.status === "checking" ? "连接中…" : "重新连接" }}
-      </button>
+      <div class="dock">
+        <label class="dock-field field-url" title="Eagle API 地址">
+          <Link2 class="field-icon" :size="15" />
+          <input v-model="eagleCfg.base_url" class="dock-input mono" placeholder="http://localhost:41595" @change="saveEagleConfig" />
+        </label>
+        <label class="dock-field field-token" title="Eagle → 偏好设置 → 开发者">
+          <KeyRound class="field-icon" :size="15" />
+          <input v-model="eagleCfg.token" class="dock-input mono" placeholder="API Token" @change="saveEagleConfig" />
+        </label>
+        <button class="dock-btn" @click="connectEagle" :disabled="eagleState.status === 'checking'">
+          <LoaderCircle v-if="eagleState.status === 'checking'" class="ico-spin" :size="15" />
+          <RotateCw v-else :size="15" />
+          {{ eagleState.status === "checking" ? "连接中…" : "重新连接" }}
+        </button>
+      </div>
       <span v-if="eagleState.status === 'fail'" class="settings-error" :title="eagleState.error">{{ eagleState.error }}</span>
     </div>
 
     <div class="viewer-bar" @mousedown.stop>
-      <template v-if="!cropping">
-        <div :class="['eagle-chip', `eagle-${eagleState.status}`]" @click="showSettings = !showSettings" :title="eagleState.error || 'Eagle 连接设置'">
+      <div v-if="!cropping" class="dock">
+        <button :class="['dock-btn', 'status-btn', `eagle-${eagleState.status}`]" @click="showSettings = !showSettings" :title="eagleState.error || 'Eagle 连接设置'">
           <span class="chip-dot"></span>
           <span v-if="eagleState.status === 'ok'">Eagle {{ eagleState.version }}</span>
           <span v-else-if="eagleState.status === 'checking'">连接中…</span>
           <span v-else>未连接 Eagle</span>
+          <Settings2 class="status-gear" :size="14" />
+        </button>
+
+        <span class="dock-sep"></span>
+
+        <label class="dock-field field-folder" :class="{ 'is-disabled': eagleState.status !== 'ok' }" title="导入到 Eagle 的哪个文件夹">
+          <FolderOpen class="field-icon" :size="15" />
+          <select v-model="folderId" class="dock-select" :disabled="eagleState.status !== 'ok'">
+            <option value="">不指定文件夹</option>
+            <option v-for="f in folders" :key="f.id" :value="f.id">{{ f.label }}</option>
+          </select>
+          <ChevronDown class="field-caret" :size="14" />
+        </label>
+
+        <label class="dock-field field-tags" title="导入时附加的标签，逗号分隔">
+          <Tag class="field-icon" :size="15" />
+          <input v-model="tagsInput" class="dock-input" placeholder="标签，逗号分隔" />
+        </label>
+
+        <span class="dock-sep"></span>
+
+        <button class="dock-btn" @click="startCrop" :disabled="previewLoading || !!previewError" title="框选后导入 Eagle (Enter)">
+          <Crop :size="15" />
+          裁剪
+        </button>
+        <button class="dock-btn dock-primary" @click="importCurrent" :disabled="eagleState.status !== 'ok' || singleImporting || mark.imported" :title="eagleState.status !== 'ok' ? '未连接 Eagle' : '把这张原图直接导入 Eagle'">
+          <LoaderCircle v-if="singleImporting" class="ico-spin" :size="15" />
+          <Check v-else-if="mark.imported" :size="15" />
+          <Upload v-else :size="15" />
+          {{ mark.imported ? "已导入" : singleImporting ? "导入中…" : "导入 Eagle" }}
+        </button>
+      </div>
+
+      <div v-else class="dock">
+        <div class="seg">
+          <button v-for="a in aspectOptions" :key="a.key" :class="['seg-btn', { active: aspect === a.key }]" @click="setAspect(a.key)">{{ a.label }}</button>
         </div>
 
-        <select v-model="folderId" class="dark-select" :disabled="eagleState.status !== 'ok'" title="导入到 Eagle 文件夹">
-          <option value="">📁 不指定文件夹</option>
-          <option v-for="f in folders" :key="f.id" :value="f.id">{{ f.label }}</option>
-        </select>
+        <span class="dock-sep"></span>
 
-        <input v-model="tagsInput" class="dark-input tags-input" placeholder="标签（逗号分隔，可选）" />
+        <label class="dock-field field-name" title="导入到 Eagle 的名称">
+          <Type class="field-icon" :size="15" />
+          <input v-model="cropName" class="dock-input" placeholder="导入名称" />
+        </label>
 
-        <button class="btn btn-primary" @click="importCurrent" :disabled="eagleState.status !== 'ok' || singleImporting || mark.imported" :title="eagleState.status !== 'ok' ? '未连接 Eagle' : '把这张原图直接导入 Eagle'">
-          <span v-if="singleImporting" class="mini-spinner"></span>
-          <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-          {{ mark.imported ? "已导入" : singleImporting ? "导入中…" : "导入此图到 Eagle" }}
+        <span class="dock-sep"></span>
+
+        <button class="dock-btn" @click="cancelCrop" title="取消裁剪 (Esc)">取消</button>
+        <button class="dock-btn dock-primary" @click="confirmCrop" :disabled="cropBusy || eagleState.status !== 'ok'" :title="eagleState.status !== 'ok' ? '未连接 Eagle' : '内存裁剪后直接推送 Eagle，不写入磁盘'">
+          <LoaderCircle v-if="cropBusy" class="ico-spin" :size="15" />
+          <Crop v-else :size="15" />
+          {{ cropBusy ? "导入中…" : "裁剪并导入" }}
         </button>
-        <button class="btn btn-secondary" @click="startCrop" :disabled="previewLoading || !!previewError">✂️ 裁剪</button>
-      </template>
-      <template v-else>
-        <div class="aspect-group">
-          <button v-for="a in aspectOptions" :key="a.key" :class="['aspect-chip', { active: aspect === a.key }]" @click="setAspect(a.key)">{{ a.label }}</button>
-        </div>
-        <input v-model="cropName" class="crop-name-input" placeholder="导入名称" title="导入到 Eagle 的名称" />
-        <button class="btn btn-secondary" @click="cancelCrop">取消</button>
-        <button class="btn btn-primary" @click="confirmCrop" :disabled="cropBusy || eagleState.status !== 'ok'" :title="eagleState.status !== 'ok' ? '未连接 Eagle' : '内存裁剪后直接推送 Eagle，不写入磁盘'">
-          <span v-if="cropBusy" class="mini-spinner"></span>
-          {{ cropBusy ? "导入中…" : "✂️ 裁剪并导入 Eagle" }}
-        </button>
-      </template>
+      </div>
     </div>
   </div>
   </Teleport>
@@ -97,6 +128,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Crop, FolderOpen, KeyRound, Link2, LoaderCircle, RotateCw, Scissors, Settings2, Tag, TriangleAlert, Type, Upload, X } from "lucide-vue-next";
 import { useEagle } from "../composables/useEagle.js";
 
 const props = defineProps({
@@ -259,12 +291,13 @@ const cropName = ref("");
 const cropBusy = ref(false);
 const layerEl = ref(null);
 
+// 标签保持等长，分段控件才不会宽窄参差
 const aspectOptions = [
-  { key: "1:1", label: "1:1 方形", ratio: 1 },
+  { key: "free", label: "自由", ratio: null },
+  { key: "1:1", label: "1:1", ratio: 1 },
   { key: "4:3", label: "4:3", ratio: 4 / 3 },
   { key: "3:2", label: "3:2", ratio: 3 / 2 },
   { key: "16:9", label: "16:9", ratio: 16 / 9 },
-  { key: "free", label: "自由", ratio: null },
 ];
 
 const currentRatio = computed(() => aspectOptions.find((a) => a.key === aspect.value)?.ratio ?? null);
@@ -579,6 +612,10 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .viewer-overlay {
+  /* 灯箱内所有控件共用一套尺寸令牌：一行里的按钮/输入框/下拉高度必须完全一致 */
+  --ctl-h: 34px;
+  --ctl-r: 9px;
+  --ctl-font: 0.82rem;
   position: fixed;
   inset: 0;
   z-index: 300;
@@ -625,22 +662,27 @@ onBeforeUnmount(() => {
   font-family: monospace;
 }
 
-.viewer-close {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: #e2e8f0;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
+/* 圆形图标按钮：关闭 + 左右翻页共用 */
+.icon-btn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  cursor: pointer;
+  flex-shrink: 0;
   transition: background var(--transition-fast);
 }
 
-.viewer-close:hover {
+.icon-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.22);
+}
+
+.viewer-close {
+  width: 32px;
+  height: 32px;
 }
 
 .viewer-stage {
@@ -685,6 +727,8 @@ onBeforeUnmount(() => {
   gap: var(--space-2);
   color: #cbd5e1;
   font-size: 0.9rem;
+  max-width: 70%;
+  text-align: center;
 }
 
 .preview-failed {
@@ -694,27 +738,10 @@ onBeforeUnmount(() => {
 .nav-btn {
   width: 44px;
   height: 44px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: #e2e8f0;
-  font-size: 1.6rem;
-  line-height: 1;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background var(--transition-fast);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-bottom: 4px;
-}
-
-.nav-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.25);
 }
 
 .nav-btn:disabled {
-  opacity: 0.25;
+  opacity: 0.2;
   cursor: default;
 }
 
@@ -722,7 +749,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   padding: var(--space-2) var(--space-6) 0;
   flex-wrap: wrap;
 }
@@ -740,9 +767,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
   padding: var(--space-4) var(--space-6);
-  flex-wrap: wrap;
 }
 
 .viewer-toast {
@@ -769,21 +794,211 @@ onBeforeUnmount(() => {
   text-align: center;
 }
 
-/* ---------- Eagle 控件（深色置于灯箱内） ---------- */
-.eagle-chip {
+/* ---------- 控件坞：一条底栏里的所有控件同高、同圆角、同字号 ---------- */
+.dock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px;
+  border-radius: calc(var(--ctl-r) + 5px);
+  background: rgba(15, 20, 32, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.34);
+  max-width: 100%;
+}
+
+.dock-sep {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.14);
+  flex-shrink: 0;
+}
+
+.dock-btn,
+.dock-field,
+.seg {
+  height: var(--ctl-h);
+  box-sizing: border-box;
+  border-radius: var(--ctl-r);
+  flex-shrink: 0;
+}
+
+.dock-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 0.3rem 0.7rem;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  padding: 0 0.72rem;
+  border: 1px solid transparent;
   background: rgba(255, 255, 255, 0.08);
-  color: #cbd5e1;
-  user-select: none;
+  color: #e2e8f0;
+  font-family: inherit;
+  font-size: var(--ctl-font);
+  font-weight: 600;
+  line-height: 1;
   white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--transition-fast), filter var(--transition-fast), opacity var(--transition-fast);
+}
+
+.dock-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.17);
+}
+
+.dock-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dock-primary {
+  background: linear-gradient(135deg, var(--primary-600), var(--accent-500));
+  color: #fff;
+  padding: 0 0.95rem;
+}
+
+.dock-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--primary-600), var(--accent-500));
+  filter: brightness(1.1);
+}
+
+/* 输入/下拉：图标在左，外壳负责高度与边框，内部控件裸装 */
+.dock-field {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 0.6rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background var(--transition-fast), border-color var(--transition-fast), opacity var(--transition-fast);
+}
+
+.dock-field:focus-within {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--primary-400);
+}
+
+.dock-field.is-disabled {
+  opacity: 0.4;
+}
+
+.field-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.dock-input,
+.dock-select {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: #f1f5f9;
+  font-family: inherit;
+  font-size: var(--ctl-font);
+  outline: none;
+}
+
+.dock-input::placeholder {
+  color: rgba(226, 232, 240, 0.36);
+}
+
+.dock-input.mono {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: 0.78rem;
+}
+
+.dock-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 14px;
+  cursor: pointer;
+}
+
+.dock-select:disabled {
+  cursor: default;
+}
+
+.dock-select option {
+  color: var(--color-text-main);
+  background: var(--surface-0);
+}
+
+.field-caret {
+  position: absolute;
+  right: 7px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.field-folder {
+  width: 190px;
+}
+
+.field-tags {
+  width: 170px;
+}
+
+.field-name {
+  width: 200px;
+}
+
+.field-url {
+  width: 232px;
+}
+
+.field-token {
+  width: 250px;
+}
+
+/* 分段控件：裁剪比例 */
+.seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.seg-btn {
+  height: 100%;
+  min-width: 44px;
+  padding: 0 0.5rem;
+  border: none;
+  border-radius: calc(var(--ctl-r) - 4px);
+  background: transparent;
+  color: #cbd5e1;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.seg-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.seg-btn.active {
+  background: var(--primary-500);
+  color: #fff;
+}
+
+/* Eagle 连接状态：兼作设置开关 */
+.status-btn {
+  padding-right: 0.5rem;
+}
+
+.status-gear {
+  color: #94a3b8;
+  flex-shrink: 0;
 }
 
 .chip-dot {
@@ -814,59 +1029,15 @@ onBeforeUnmount(() => {
   }
 }
 
-.dark-select,
-.dark-input {
-  padding: 0.42rem 0.7rem;
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  font-size: 0.85rem;
-}
-
-.dark-select {
-  max-width: 220px;
-}
-
-.dark-select option {
-  color: var(--color-text-main);
-  background: var(--surface-0);
-}
-
-.dark-select:disabled {
-  opacity: 0.45;
-}
-
-.dark-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.tags-input {
-  width: 180px;
-}
-
-.addr-input {
-  width: 200px;
-  font-family: "SF Mono", ui-monospace, Menlo, monospace;
-}
-
-.token-input {
-  width: 260px;
-  font-family: "SF Mono", ui-monospace, Menlo, monospace;
-}
-
-.dark-select:focus,
-.dark-input:focus,
-.crop-name-input:focus {
-  outline: 2px solid var(--primary-soft-strong);
-  border-color: var(--primary-400);
-}
-
 /* ---------- 徽标 ---------- */
 .mini-badge {
-  font-size: 0.66rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.68rem;
   font-weight: 700;
-  padding: 2px 7px;
+  line-height: 1;
+  padding: 4px 8px;
   border-radius: 999px;
   color: #fff;
   white-space: nowrap;
@@ -1005,59 +1176,9 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
-.aspect-group {
-  display: flex;
-  gap: 4px;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 4px;
-  border-radius: var(--radius-lg);
-}
-
-.aspect-chip {
-  border: none;
-  background: transparent;
-  color: #cbd5e1;
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.32rem 0.7rem;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  white-space: nowrap;
-}
-
-.aspect-chip:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.aspect-chip.active {
-  background: var(--primary-500);
-  color: #fff;
-}
-
-.crop-name-input {
-  width: 220px;
-  padding: 0.42rem 0.7rem;
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  font-size: 0.85rem;
-}
-
-.crop-name-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
-}
-
 /* ---------- 通用 ---------- */
-.mini-spinner {
-  width: 0.9rem;
-  height: 0.9rem;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  display: inline-block;
+.ico-spin {
+  animation: spin 0.9s linear infinite;
   flex-shrink: 0;
 }
 
