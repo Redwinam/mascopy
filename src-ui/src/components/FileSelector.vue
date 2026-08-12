@@ -29,7 +29,7 @@
 <script setup>
 import { open } from '@tauri-apps/plugin-dialog';
 
-const props = defineProps({
+defineProps({
   title: String,
   path: String,
   placeholder: {

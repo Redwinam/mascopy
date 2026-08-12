@@ -6,8 +6,8 @@
       data-tauri-drag-region
       @pointerdown="onHeaderPointerDown"
     >
-      <div class="brand" id="header-left-slot" data-tauri-drag-region>
-      </div>
+      <!-- 左栏留空：占住 1fr 让中间页签保持居中，同时给红绿灯让位 -->
+      <div data-tauri-drag-region></div>
       
       <div class="header-center" id="header-center-slot">
         <TabView
@@ -77,34 +77,6 @@ async function onHeaderPointerDown(event) {
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   user-select: none;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  position: relative;
-  z-index: 10;
-  justify-self: start;
-  padding-left: 4rem;
-  height: 100%;
-}
-
-.logo-box {
-  width: 2.5rem;
-  height: 2.5rem;
-  background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-md);
-  color: white;
-}
-
-.logo-icon {
-  width: 1.25rem;
-  height: 1.25rem;
 }
 
 .header-center {
