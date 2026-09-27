@@ -20,8 +20,8 @@ const CHANNELS = ['stable', 'beta']
 // 「大师拷贝 · 更新签名」是本应用自己的 minisign 私钥与口令，公钥在 tauri.conf.json 的 plugins.updater.pubkey。
 export const OP_REFS = {
   DL_RELEASE_TOKEN: 'op://flkiwmwx6umyyyv76dnxahwpji/tftd6ckzvvkfb5bhroh6exma5a/credential',
-  TAURI_SIGNING_PRIVATE_KEY: 'op://flkiwmwx6umyyyv76dnxahwpji/SIGNING_ITEM_ID/private key',
-  TAURI_SIGNING_PRIVATE_KEY_PASSWORD: 'op://flkiwmwx6umyyyv76dnxahwpji/SIGNING_ITEM_ID/password',
+  TAURI_SIGNING_PRIVATE_KEY: 'op://flkiwmwx6umyyyv76dnxahwpji/6gfshjcaa444apl4c6zaypn72q/private key',
+  TAURI_SIGNING_PRIVATE_KEY_PASSWORD: 'op://flkiwmwx6umyyyv76dnxahwpji/6gfshjcaa444apl4c6zaypn72q/password',
 }
 // 与下载服务的校验一致：文件名首字符为文字或数字，其余只含文字、数字与 . _ -，最长 128；单文件 ≤ 95 MiB
 const FILE_RE = /^[\p{L}\p{Nd}][\p{L}\p{Nd}._-]{0,127}$/u
