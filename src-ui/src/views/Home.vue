@@ -375,12 +375,11 @@ import { useAppState } from "../composables/useAppState.js";
 
 import { normalizePath, basename, mediaDayKey, extensionInfo as getFileExtensionInfo, mergeTetherFile } from "../utils/media.js";
 
-const { currentMode, config, currentStep, tetherFiles, configLocked } = useAppState();
+const { currentMode, config, currentStep, tetherFiles, configLocked, uploading: isUploading } = useAppState();
 const fastMode = ref(true);
 const ignoreThumbnails = ref(true);
 
 const isScanning = ref(false);
-const isUploading = ref(false);
 const isPaused = ref(false);
 const isCancelling = ref(false);
 const controlBusy = ref(false);

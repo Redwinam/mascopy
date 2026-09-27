@@ -1,4 +1,4 @@
-# 大师拷贝 4.0.1
+# 大师拷贝 4.1.0
 
 基于 Tauri 2 + Vue 3 的 macOS 照片与视频整理工具，可将 SD / DJI 素材按日期备份到本地磁盘或已挂载的 NAS，也支持联机拍摄与 Eagle 导入。
 
@@ -12,6 +12,7 @@
 - 来源、目标路径收藏与配置保存
 - 文件夹监听、相机 FTP 接收和按日期归档
 - Eagle 本地 API 导入与图片预览、裁剪
+- 应用内自动更新：标题栏右侧「关于与更新」，启动后与每 6 小时自动检查（4.1.0 起）
 
 ## 环境与开发
 
@@ -85,18 +86,30 @@ FTP 先写入 `.mascopy-inbox/.mascopy-staging/`，完整上传成功后才原�
 
 默认产物位于 `target/release/bundle/dmg/`；若配置了 Cargo 目标目录，则以 `cargo metadata` 返回的目录为准。当前使用本地 ad-hoc 签名，公开分发所需的 Developer ID 签名与公证需另行配置。
 
-### 发布到下载服务 dl.if9.cool（官网下载按钮用这个）
+### 发布到下载服务 dl.if9.cool（官网下载与应用内更新都用这个）
 
 ```bash
-# 构建 → 上传 DMG → 写版本清单 → 晋升 stable 渠道
+# 带签名私钥构建 DMG 与自动更新包 → 按应用内公钥验签 → 上传 → 写版本清单 → 晋升 stable 渠道
 node scripts/publish_dl.mjs --notes "这一版的更新说明"
 
 # 先发到 beta，或只上传不晋升；中途失败时加 --skip-build 重跑，已上传的同内容文件会被确认跳过
 node scripts/publish_dl.mjs --channel beta
 node scripts/publish_dl.mjs --no-promote
+
+# 只构建并核对产物（不需要发布令牌），之后再 --skip-build 发布
+node scripts/publish_dl.mjs --skip-upload
 ```
 
-发布令牌优先取环境变量 `DL_RELEASE_TOKEN`，没有时用 `op` 从 1Password「开发启动器 · 发布令牌」读一次（dl.if9.cool 各应用共用）。三处版本号（`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml`、`src-ui/package.json`）必须一致，工作区要干净。同一版本号的文件写入后不可覆盖，改了代码要先升版本。下载地址：`https://dl.if9.cool/v1/app/mascopy/stable/download/darwin-aarch64`。
+- 需要三样密钥，环境变量优先，缺的在一次 `op` 调用里从 1Password「开发」保险库读齐（只弹一次解锁）：`DL_RELEASE_TOKEN`（「开发启动器 · 发布令牌」，dl.if9.cool 各应用共用）、`TAURI_SIGNING_PRIVATE_KEY` 与 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`（「大师拷贝 · 更新签名」）。条目 ID 写在脚本的 `OP_REFS` 里。
+- 三处版本号（`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml`、`src-ui/package.json`）必须一致，工作区要干净。同一版本号的文件写入后不可覆盖，改了代码要先升版本。
+- 下载地址 `https://dl.if9.cool/v1/app/mascopy/stable/download/darwin-aarch64`；应用内更新读 `https://dl.if9.cool/v1/app/mascopy/stable/latest.json`，只接受用 `tauri.conf.json` 里 `plugins.updater.pubkey` 对应私钥签名的更新包。
+
+### 自动更新
+
+- 入口在标题栏右侧（ⓘ 按钮）。有新版时变成「新版本」，下载中显示百分比，装好后显示「重启更新」。拷贝或联机会话进行中不能重启，按钮会等它们结束。开发构建（`tauri dev` 或 debug）不检查。
+- `tauri.conf.json` 默认 `bundle.createUpdaterArtifacts: false`，所以不带私钥的本机构建和 `release_dmg.sh` 照常成功；发布脚本构建时用 `--config` 打开它。
+- 签名私钥丢了，已安装的客户端就再也收不到自动更新，只能手动重装；确需换钥时，先用旧私钥签发一个内置新公钥的版本，等客户端都升上去再改用新私钥。
+- 4.0.1 及更早的版本没有更新功能，要手动装一次 4.1.0。
 
 ### 发布到 GitHub Releases
 

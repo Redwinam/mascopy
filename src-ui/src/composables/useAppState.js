@@ -3,6 +3,8 @@ import { ref } from 'vue';
 const currentMode = ref('sd');
 const currentStep = ref('config');
 const configLocked = ref(false);
+// 正在拷贝：自动更新装好后要等它结束才能重启
+const uploading = ref(false);
 const config = ref({
     sd: {
         source_dir: '',
@@ -46,6 +48,7 @@ export function useAppState() {
         currentMode,
         currentStep,
         configLocked,
+        uploading,
         config,
         tetherActive,
         tetherInfo,

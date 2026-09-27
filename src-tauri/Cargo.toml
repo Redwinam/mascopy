@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "4.0.1"
+version = "4.1.0"
 description = "A Tauri App"
 authors = ["you"]
 license = ""
@@ -31,6 +31,9 @@ directories = "6.0.0"
 filetime = "0.2.26"
 tokio = { version = "1.48.0", features = ["full"] }
 tauri-plugin-dialog = "2.4.2"
+# 应用内自动更新。Tauri CLI 构建时核对 crate 与 npm 包（@tauri-apps/plugin-updater）的 major.minor；
+# 2.10 起要求 tauri 2.10，这里的 tauri 还是 2.9，所以两边都锁在 2.9，升级 tauri 时一起放开。
+tauri-plugin-updater = "~2.9"
 thiserror = "2.0.17"
 # Eagle 本地 API（纯 http，无需 TLS）
 ureq = { version = "2.12", default-features = false, features = ["json"] }

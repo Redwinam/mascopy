@@ -22,6 +22,7 @@
       </div>
 
       <div class="header-actions" id="header-right-slot">
+        <AppUpdate />
         <ThemeToggle />
       </div>
     </header>
@@ -36,6 +37,7 @@
 import Home from './views/Home.vue';
 import TabView from './components/TabView.vue';
 import ThemeToggle from './components/ThemeToggle.vue';
+import AppUpdate from './components/AppUpdate.vue';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useAppState } from './composables/useAppState.js';
 import './styles/main.css';
@@ -97,9 +99,13 @@ async function onHeaderPointerDown(event) {
   gap: var(--space-3);
 }
 
-/* 各视图 teleport 进来的按钮排在前面，主题开关始终贴右边缘，切步骤时位置不跳 */
-.header-actions :deep(.theme-toggle) {
+/* 各视图 teleport 进来的按钮排在前面，「关于与更新」和主题开关始终贴右边缘，切步骤时位置不跳 */
+.header-actions :deep(.update-entry) {
   order: 1;
+}
+
+.header-actions :deep(.theme-toggle) {
+  order: 2;
 }
 
 .app-content {

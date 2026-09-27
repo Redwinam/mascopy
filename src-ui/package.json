@@ -1,7 +1,7 @@
 {
   "name": "mascopy-ui",
   "private": true,
-  "version": "4.0.1",
+  "version": "4.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,6 +13,7 @@
   "dependencies": {
     "@tauri-apps/api": "^2.9.0",
     "@tauri-apps/plugin-dialog": "^2.4.2",
+    "@tauri-apps/plugin-updater": "~2.9.0",
     "lucide-vue-next": "^1.0.0",
     "vue": "^3.5.24"
   },

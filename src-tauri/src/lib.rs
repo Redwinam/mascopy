@@ -1,4 +1,5 @@
 mod analyzer;
+mod app_update;
 mod config;
 mod eagle;
 mod error;
@@ -512,6 +513,8 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        // 自动更新：端点与验签公钥在 tauri.conf.json 的 plugins.updater；检查与安装由前端发起
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(
             tauri_plugin_log::Builder::default()
                 .level(log::LevelFilter::Info)
@@ -542,7 +545,9 @@ pub fn run() {
             eagle_import_crop,
             start_tether,
             stop_tether,
-            get_lan_ip
+            get_lan_ip,
+            app_update::app_update_supported,
+            app_update::relaunch_after_update
         ])
         .run(tauri::generate_context!("tauri.conf.json"))
         .expect("error while running tauri application");
