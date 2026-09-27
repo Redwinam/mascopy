@@ -1,12 +1,12 @@
 [package]
 name = "app"
-version = "4.0.0"
+version = "4.0.1"
 description = "A Tauri App"
 authors = ["you"]
 license = ""
 repository = ""
 edition = "2021"
-rust-version = "1.77.2"
+rust-version = "1.88"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -25,7 +25,6 @@ tauri = { version = "2.9.2", features = ["macos-private-api", "protocol-asset"] 
 tauri-plugin-log = "2"
 walkdir = "2.5.0"
 kamadak-exif = "0.6.1"
-lofty = "0.22.2"
 chrono = "0.4.42"
 anyhow = "1.0.100"
 directories = "6.0.0"

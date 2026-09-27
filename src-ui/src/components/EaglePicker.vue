@@ -27,8 +27,8 @@
         <p>没有可挑选的照片</p>
       </div>
       <div v-else class="pick-grid">
-        <div v-for="item in list" :key="item.key" class="cell" :ref="(el) => setCellRef(el, item)" :title="`${item.filename}（点击放大 / 导入 Eagle）`" @click="lightboxKey = item.key">
-          <img v-if="item.thumb" :src="item.thumb" class="cell-img" draggable="false" />
+        <button type="button" v-for="item in list" :key="item.key" class="cell" :aria-label="`查看 ${item.filename}`" :ref="(el) => setCellRef(el, item)" :title="`${item.filename}（点击放大 / 导入 Eagle）`" @click="lightboxKey = item.key">
+          <img v-if="item.thumb" :src="item.thumb" :alt="item.filename" class="cell-img" draggable="false" />
           <div v-else class="cell-placeholder">
             <span v-if="item.thumbState === 'loading'" class="mini-spinner dark"></span>
             <span v-else-if="item.thumbState === 'error'" class="thumb-error">⚠️</span>
@@ -41,7 +41,7 @@
           </div>
 
           <div class="cell-name" :title="item.filename">{{ item.filename }}</div>
-        </div>
+        </button>
       </div>
     </div>
 
@@ -53,6 +53,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { invoke } from "@tauri-apps/api/core";
+import { extensionOf as extOf } from "../utils/media.js";
 import EagleLightbox from "./EagleLightbox.vue";
 import { useEagle } from "../composables/useEagle.js";
 
@@ -73,10 +74,6 @@ const list = ref(
 
 const lightboxKey = ref(null);
 
-function extOf(name) {
-  const idx = (name || "").lastIndexOf(".");
-  return idx > 0 ? name.slice(idx + 1).toLowerCase() : "";
-}
 
 /* ---------------- 缩略图懒加载 ---------------- */
 
@@ -184,6 +181,7 @@ onBeforeUnmount(() => {
 }
 
 .cell {
+  border: 0; padding: 0; width: 100%; text-align: left;
   position: relative;
   aspect-ratio: 1 / 1;
   border-radius: var(--radius-lg);

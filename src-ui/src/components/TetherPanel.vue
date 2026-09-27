@@ -1,43 +1,40 @@
 <template>
   <div class="tether-root">
     <!-- 未开始：配置区 -->
-    <div v-if="!tetherActive" class="tether-config glass-panel animate-fade-in">
+    <fieldset v-if="!tetherActive" :disabled="starting" class="tether-config glass-panel animate-fade-in">
       <div class="mode-row">
-        <div :class="['src-chip', { active: cfg.mode === 'ftp' }]" @click="setMode('ftp')">
+        <button type="button" :aria-pressed="cfg.mode === 'ftp'" :class="['src-chip', { active: cfg.mode === 'ftp' }]" @click="setMode('ftp')">
           <div class="chip-title">📶 相机 WiFi 直传</div>
           <div class="chip-sub">R5 Mark II 机身 FTP 直连本软件，无需其他软件</div>
-        </div>
-        <div :class="['src-chip', { active: cfg.mode === 'watch' }]" @click="setMode('watch')">
+        </button>
+        <button type="button" :aria-pressed="cfg.mode === 'watch'" :class="['src-chip', { active: cfg.mode === 'watch' }]" @click="setMode('watch')">
           <div class="chip-title">🔌 监听文件夹</div>
           <div class="chip-sub">配合 EOS Utility 联机拍摄（USB 或 WiFi 均可）</div>
-        </div>
+        </button>
       </div>
 
       <template v-if="cfg.mode === 'watch'">
-        <FileSelector title="监听目录" :path="cfg.watch_dir" @update:path="(p) => setField('watch_dir', p)" placeholder="选择 EOS Utility 的「保存目标文件夹」">
+        <FileSelector title="监听目录" :path="cfg.watch_dir" :favoritable="false" @update:path="(p) => setField('watch_dir', p)" placeholder="选择 EOS Utility 的「保存目标文件夹」">
           <template #icon>
             <div class="icon-circle tether-icon">👀</div>
           </template>
         </FileSelector>
-        <label class="del-toggle">
-          <input type="checkbox" :checked="cfg.delete_source" @change="setField('delete_source', $event.target.checked)" />
-          入库后删除监听目录中的原文件（避免磁盘留双份）
-        </label>
+        <p class="del-toggle">监听模式保留来源文件，请确认上游保存结束后再清理</p>
       </template>
 
       <template v-else>
         <div class="ftp-fields">
           <div class="ftp-field">
-            <label>端口</label>
-            <input type="number" :value="cfg.ftp_port" @change="setField('ftp_port', Number($event.target.value) || 2121)" />
+            <label for="tether-ftp-port">端口</label>
+            <input id="tether-ftp-port" min="1" max="65535" step="1" type="number" :value="cfg.ftp_port" @change="setField('ftp_port', Number($event.target.value) || 2121)" />
           </div>
           <div class="ftp-field">
-            <label>用户名</label>
-            <input :value="cfg.ftp_user" @change="setField('ftp_user', $event.target.value)" />
+            <label for="tether-ftp-user">用户名</label>
+            <input id="tether-ftp-user" :value="cfg.ftp_user" @change="setField('ftp_user', $event.target.value)" />
           </div>
           <div class="ftp-field">
-            <label>密码</label>
-            <input :value="cfg.ftp_pass" @change="setField('ftp_pass', $event.target.value)" />
+            <label for="tether-ftp-pass">密码</label>
+            <input id="tether-ftp-pass" type="password" :value="cfg.ftp_pass" @change="setField('ftp_pass', $event.target.value)" />
           </div>
         </div>
       </template>
@@ -68,7 +65,7 @@
           {{ starting ? "启动中…" : "开始联机会话" }}
         </button>
       </div>
-    </div>
+    </fieldset>
 
     <!-- 会话中：状态条 -->
     <div v-else class="session-bar glass-panel animate-fade-in">
@@ -83,6 +80,8 @@
         <button class="btn btn-danger btn-sm" @click="stop">结束会话</button>
       </div>
     </div>
+
+    <p v-if="tetherActive && errorMsg" class="tether-error" role="alert">{{ errorMsg }}</p>
 
     <!-- FTP 相机端设置提示 -->
     <div v-if="cfg.mode === 'ftp'" class="ftp-hint glass-panel">
@@ -104,7 +103,8 @@
         <p>{{ tetherActive ? "等待相机拍摄…按下快门后照片会自动出现在这里" : "开始会话后，本次联机拍摄的照片会实时显示在这里" }}</p>
       </div>
       <div v-else class="session-grid">
-        <div
+        <button type="button"
+          :disabled="!isPickable(item)" :aria-label="`查看 ${item.filename}`"
           v-for="item in displayFiles"
           :key="item.key"
           :class="['t-cell', `t-${item.status}`, { 't-clickable': isPickable(item) }]"
@@ -112,7 +112,7 @@
           :title="item.error || (isPickable(item) ? `${item.filename}（点击放大 / 导入 Eagle）` : item.filename)"
           @click="openInViewer(item)"
         >
-          <img v-if="item.thumb" :src="item.thumb" class="t-img" draggable="false" />
+          <img v-if="item.thumb" :src="item.thumb" :alt="item.filename" class="t-img" draggable="false" />
           <div v-else class="t-placeholder">
             <span v-if="item.status === 'receiving'" class="spinner-sm dark"></span>
             <span v-else-if="item.status === 'error'" class="t-error-icon">⚠️</span>
@@ -127,7 +127,7 @@
             <span v-if="markOf(item.target_path).imported" class="t-chip chip-eagle">✓ Eagle</span>
           </div>
           <div class="t-name">{{ item.filename }}</div>
-        </div>
+        </button>
       </div>
     </div>
 
@@ -139,6 +139,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { invoke } from "@tauri-apps/api/core";
+import { extensionOf as extOf } from "../utils/media.js";
 import FileSelector from "./FileSelector.vue";
 import EagleLightbox from "./EagleLightbox.vue";
 import { useAppState } from "../composables/useAppState.js";
@@ -193,16 +194,13 @@ async function addTargetFavorite() {
 const canStart = computed(() => {
   if (!cfg.value.target_dir) return false;
   if (cfg.value.mode === "watch" && !cfg.value.watch_dir) return false;
+  if (cfg.value.mode === "ftp" && (!Number.isInteger(cfg.value.ftp_port) || cfg.value.ftp_port < 1 || cfg.value.ftp_port > 65535)) return false;
   return true;
 });
 
 const displayFiles = computed(() => [...tetherFiles.value].reverse());
 const doneCount = computed(() => tetherFiles.value.filter((f) => f.status === "done" || f.status === "skipped").length);
 
-function extOf(name) {
-  const idx = (name || "").lastIndexOf(".");
-  return idx > 0 ? name.slice(idx + 1).toLowerCase() : "";
-}
 
 function setMode(m) {
   cfg.value.mode = m;
@@ -218,7 +216,7 @@ async function save() {
   try {
     await invoke("save_config", { config: config.value });
   } catch (e) {
-    /* 配置保存失败不阻断会话 */
+    errorMsg.value = `保存配置失败：${e}`;
   }
 }
 
@@ -235,7 +233,7 @@ async function start() {
         ftpPort: cfg.value.ftp_port,
         ftpUser: cfg.value.ftp_user,
         ftpPass: cfg.value.ftp_pass,
-        deleteSource: cfg.value.delete_source,
+        deleteSource: false,
       },
     });
     tetherInfo.value = info;
@@ -251,7 +249,8 @@ async function stop() {
   try {
     await invoke("stop_tether");
   } catch (e) {
-    /* 即使后端报错也回到未激活状态 */
+    errorMsg.value = `结束会话失败：${e}`;
+    return;
   }
   tetherActive.value = false;
 }
@@ -320,12 +319,16 @@ function onIntersect(entries) {
 }
 
 async function loadThumb(item) {
+  const { key, target_path: path, thumbVersion } = item;
   item.thumbState = "loading";
+  const currentItem = () => tetherFiles.value.find(f => f.key === key && f.target_path === path && f.thumbVersion === thumbVersion);
   try {
-    item.thumb = await invoke("get_thumbnail", { path: item.target_path, size: 384 });
-    item.thumbState = "ok";
+    const thumbnail = await invoke("get_thumbnail", { path, size: 384 });
+    const current = currentItem();
+    if (current) { current.thumb = thumbnail; current.thumbState = "ok"; }
   } catch (e) {
-    item.thumbState = "error";
+    const current = currentItem();
+    if (current) current.thumbState = "error";
   }
 }
 
@@ -376,6 +379,7 @@ onBeforeUnmount(() => {
 
 /* ---------- 配置区 ---------- */
 .tether-config {
+  margin: 0; min-width: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -391,6 +395,7 @@ onBeforeUnmount(() => {
 }
 
 .src-chip {
+  color: inherit; text-align: left;
   border: 2px solid var(--surface-200);
   border-radius: var(--radius-lg);
   padding: var(--space-3) var(--space-4);
@@ -670,6 +675,7 @@ onBeforeUnmount(() => {
 }
 
 .t-cell {
+  border: 0; padding: 0; width: 100%; color: inherit; text-align: left;
   position: relative;
   aspect-ratio: 1 / 1;
   border-radius: var(--radius-lg);

@@ -1,8 +1,8 @@
-use serde::{Serialize, Deserialize};
+use crate::{media, metadata::MetadataExtractor};
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-use walkdir::WalkDir;
 use std::time::SystemTime;
-use crate::metadata::MetadataExtractor;
+use walkdir::WalkDir;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MediaFile {
@@ -10,116 +10,146 @@ pub struct MediaFile {
     pub filename: String,
     pub size: u64,
     pub date: SystemTime,
+    #[serde(default)]
+    pub modified: Option<SystemTime>,
     pub file_type: String,
-    pub status: String, // "pending", "upload", "overwrite", "skip"
+    pub status: String,
     pub target_path: PathBuf,
 }
 
 pub struct Scanner {
-    supported_extensions: Vec<String>,
+    mode: String,
 }
-
 impl Scanner {
     pub fn with_mode(mode: &str) -> Self {
-        let (photo_exts, video_exts) = match mode {
-            "dji" => (
-                vec!["jpg".to_string(), "jpeg".to_string(), "lrf".to_string()],
-                vec!["osv".to_string(), "mp4".to_string(), "mov".to_string()],
-            ),
-            _ => (
-                vec![
-                    "jpg".to_string(), "jpeg".to_string(), "png".to_string(), 
-                    "heic".to_string(), "nef".to_string(), "cr2".to_string(), 
-                    "arw".to_string(), "dng".to_string(), "cr3".to_string()
-                ],
-                vec![
-                    "mp4".to_string(), "mov".to_string(), "avi".to_string(), 
-                    "m4v".to_string(), "3gp".to_string(), "mkv".to_string()
-                ],
-            ),
-        };
-
-        let mut supported = photo_exts.clone();
-        supported.extend(video_exts.clone());
-
         Self {
-            supported_extensions: supported,
+            mode: mode.to_string(),
         }
     }
-
-    pub fn scan(&self, source_dir: &str, fast_mode: bool, ignore_thumbnails: bool) -> Vec<MediaFile> {
+    pub fn scan(
+        &self,
+        source_dir: &str,
+        fast_mode: bool,
+        ignore_thumbnails: bool,
+    ) -> Result<Vec<MediaFile>, String> {
+        let root = Path::new(source_dir);
         let mut files = Vec::new();
-
-        for entry in WalkDir::new(source_dir).into_iter().filter_map(|e| e.ok()) {
-            if entry.file_type().is_file() {
-                let path = entry.path();
-                if is_hidden_file(path) {
-                    continue;
-                }
-                if ignore_thumbnails && has_thumbnail_parent(path) {
-                    continue;
-                }
-                if let Some(ext) = path.extension() {
-                    if let Some(ext_str) = ext.to_str() {
-                        if self.supported_extensions.contains(&ext_str.to_lowercase()) {
-                            let metadata = std::fs::metadata(path).ok();
-                            let size = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
-                            let date = if fast_mode {
-                                metadata.and_then(|m| m.modified().ok()).unwrap_or_else(SystemTime::now)
-                            } else {
-                                MetadataExtractor::get_date(path)
-                            };
-                            
-                            let file_type = if ["jpg", "jpeg", "png", "heic", "nef", "cr2", "arw", "dng", "cr3"]
-                                .contains(&ext_str.to_lowercase().as_str()) {
-                                "photo".to_string()
-                            } else {
-                                "video".to_string()
-                            };
-
-                            files.push(MediaFile {
-                                path: path.to_path_buf(),
-                                filename: path.file_name().unwrap().to_string_lossy().to_string(),
-                                size,
-                                date,
-                                file_type,
-                                status: "pending".to_string(),
-                                target_path: PathBuf::new(),
-                            });
-                        }
-                    }
-                }
+        let entries = WalkDir::new(root).into_iter().filter_entry(|entry| {
+            if entry.path() == root {
+                return true;
             }
+            let name = entry.file_name().to_string_lossy();
+            !(name.starts_with('.')
+                || ignore_thumbnails && entry.file_type().is_dir() && is_thumbnail_dir_name(&name))
+        });
+        for entry in entries {
+            let entry = entry.map_err(|e| format!("无法完整扫描目录: {e}"))?;
+            if !entry.file_type().is_file() {
+                continue;
+            }
+            let path = entry.path();
+            let Some(kind) = media::classify(path, &self.mode) else {
+                continue;
+            };
+            let meta = std::fs::metadata(path)
+                .map_err(|e| format!("读取文件信息失败 {}: {e}", path.display()))?;
+            let modified = meta
+                .modified()
+                .map_err(|e| format!("读取文件时间失败 {}: {e}", path.display()))?;
+            files.push(MediaFile {
+                path: path.to_path_buf(),
+                filename: entry.file_name().to_string_lossy().into_owned(),
+                size: meta.len(),
+                date: if fast_mode {
+                    modified
+                } else {
+                    MetadataExtractor::get_date(path)
+                },
+                modified: Some(modified),
+                file_type: kind.into(),
+                status: "pending".into(),
+                target_path: PathBuf::new(),
+            });
         }
-        files
+        Ok(files)
     }
 }
-
-fn has_thumbnail_parent(path: &Path) -> bool {
-    let Some(parent) = path.parent() else {
-        return false;
-    };
-
-    parent
-        .components()
-        .filter_map(|component| match component {
-            std::path::Component::Normal(name) => name.to_str(),
-            _ => None,
-        })
-        .any(is_thumbnail_dir_name)
-}
-
-fn is_hidden_file(path: &Path) -> bool {
-    path.file_name()
-        .and_then(|name| name.to_str())
-        .map(|name| name.starts_with("._") || name.starts_with('.'))
-        .unwrap_or(false)
-}
-
 fn is_thumbnail_dir_name(name: &str) -> bool {
     let upper = name.to_ascii_uppercase();
-    if upper == "THMBNL" || upper == "THM" {
-        return true;
+    upper == "THM" || upper.contains("THUMB") || upper.contains("THMBNL")
+}
+pub fn validate_roots(source: &Path, target: &Path) -> Result<(PathBuf, PathBuf), String> {
+    if !source.is_dir() {
+        return Err("源路径不存在或不是目录".into());
     }
-    upper.contains("THUMB") || upper.contains("THMBNL")
+    if !target.is_dir() {
+        return Err("目标路径不存在或不是目录".into());
+    }
+    let source = source
+        .canonicalize()
+        .map_err(|e| format!("源路径无法读取: {e}"))?;
+    let target = target
+        .canonicalize()
+        .map_err(|e| format!("目标路径无法读取: {e}"))?;
+    if source.starts_with(&target) || target.starts_with(&source) {
+        return Err("源目录与目标目录必须分离，不能相同或互相包含".into());
+    }
+    Ok((source, target))
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::storage::tests::TestDir;
+    #[test]
+    fn source_ancestor_name_does_not_filter_all_photos() {
+        let dir = TestDir::new();
+        let root = dir.0.join("my-thumbnails-source");
+        std::fs::create_dir_all(root.join("DCIM/THMBNL")).unwrap();
+        std::fs::create_dir_all(root.join(".hidden")).unwrap();
+        for file in [
+            "a.JPG",
+            "DCIM/THMBNL/small.JPG",
+            ".hidden/private.JPG",
+            "._a.JPG",
+        ] {
+            std::fs::write(root.join(file), b"a").unwrap();
+        }
+        let scanner = Scanner::with_mode("sd");
+        assert_eq!(
+            scanner
+                .scan(root.to_str().unwrap(), true, true)
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            scanner
+                .scan(root.to_str().unwrap(), true, false)
+                .unwrap()
+                .len(),
+            2
+        );
+    }
+    #[test]
+    fn traversal_failure_is_not_an_empty_success() {
+        let dir = TestDir::new();
+        assert!(Scanner::with_mode("sd")
+            .scan(dir.0.join("missing").to_str().unwrap(), true, true)
+            .is_err());
+    }
+    #[test]
+    fn nested_and_symlink_aliased_roots_are_rejected() {
+        let dir = TestDir::new();
+        let source = dir.0.join("source");
+        let target = source.join("backup");
+        std::fs::create_dir_all(&target).unwrap();
+        assert!(validate_roots(&source, &target).is_err());
+        assert!(validate_roots(&source, &source).is_err());
+        #[cfg(unix)]
+        {
+            let alias = dir.0.join("alias");
+            std::os::unix::fs::symlink(&target, &alias).unwrap();
+            assert!(validate_roots(&source, &alias).is_err());
+        }
+    }
 }

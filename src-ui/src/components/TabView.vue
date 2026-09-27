@@ -9,6 +9,7 @@
           v-for="tab in tabs" 
           :key="tab.id"
           :class="['tab-btn', { active: activeTab === tab.id }]"
+          type="button" :disabled="disabled" :aria-pressed="activeTab === tab.id"
           @click="$emit('update:activeTab', tab.id)"
         >
           {{ tab.label }}
@@ -28,6 +29,7 @@
 <script setup>
 defineProps({
   tabs: Array,
+  disabled: Boolean,
   activeTab: String,
   showContent: {
     type: Boolean,

@@ -195,8 +195,7 @@ pub fn crop_in_memory(
     h: f64,
 ) -> Result<CropOutput, String> {
     let orientation = read_orientation(source_bytes);
-    let img =
-        image::load_from_memory(source_bytes).map_err(|e| format!("解码图片失败: {e}"))?;
+    let img = image::load_from_memory(source_bytes).map_err(|e| format!("解码图片失败: {e}"))?;
     let img = apply_orientation(img, orientation);
 
     let iw = img.width();

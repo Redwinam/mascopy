@@ -1,11 +1,12 @@
 <template>
-  <div class="modal-backdrop" @click.self="$emit('close')">
+  <Teleport to="body">
+  <div ref="dialogEl" role="dialog" aria-modal="true" :aria-labelledby="titleId" tabindex="-1" class="modal-backdrop" @click.self="$emit('close')">
     <div class="modal-container glass-panel animate-scale-in">
       <div class="modal-header">
-        <h3 class="modal-title">
+        <h3 :id="titleId" class="modal-title">
           <slot name="title">提示</slot>
         </h3>
-        <button class="close-btn" @click="$emit('close')">
+        <button type="button" aria-label="关闭弹窗" class="close-btn" @click="$emit('close')">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -21,10 +22,16 @@
       </div>
     </div>
   </div>
+  </Teleport>
 </template>
 
 <script setup>
-defineEmits(['close']);
+import { ref, useId } from 'vue';
+import { useModalDialog } from '../composables/useModalDialog.js';
+const emit = defineEmits(['close']);
+const dialogEl = ref(null);
+const titleId = useId();
+useModalDialog(dialogEl, () => true, () => emit('close'));
 </script>
 
 <style scoped>
@@ -36,7 +43,7 @@ defineEmits(['close']);
   height: 100%;
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(4px);
-  z-index: 100;
+  z-index: 400;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -45,7 +52,9 @@ defineEmits(['close']);
 
 .modal-container {
   width: 100%;
-  max-width: 480px;
+  max-width: 540px;
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
   background: var(--surface-0);
   border: 1px solid var(--surface-200);
   display: flex;

@@ -1,8 +1,11 @@
+use crate::storage::StagedFile;
+use anyhow::Result;
+use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::io::Write;
 use std::path::PathBuf;
-use directories::ProjectDirs;
-use anyhow::Result;
+use std::sync::Mutex;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct ModeConfig {
@@ -101,7 +104,7 @@ impl Default for TetherConfig {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Config {
     #[serde(default)]
     pub sd: ModeConfig,
@@ -115,20 +118,9 @@ pub struct Config {
     pub tether: TetherConfig,
 }
 
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            sd: ModeConfig::default(),
-            dji: ModeConfig::default(),
-            favorites: Favorites::default(),
-            eagle: EagleConfig::default(),
-            tether: TetherConfig::default(),
-        }
-    }
-}
-
 pub struct ConfigManager {
     config_path: PathBuf,
+    io_lock: Mutex<()>,
 }
 
 impl ConfigManager {
@@ -139,10 +131,17 @@ impl ConfigManager {
             PathBuf::from(".mascopy-config.json")
         };
 
-        Self { config_path }
+        Self {
+            config_path,
+            io_lock: Mutex::new(()),
+        }
     }
 
     pub fn load(&self) -> Result<Config> {
+        let _guard = self
+            .io_lock
+            .lock()
+            .map_err(|_| anyhow::anyhow!("配置锁不可用"))?;
         let legacy_path = if let Some(user_dirs) = directories::UserDirs::new() {
             user_dirs.home_dir().join(".mascopy-config.json")
         } else {
@@ -150,6 +149,7 @@ impl ConfigManager {
         };
 
         if self.config_path.exists() {
+            self.restrict_permissions()?;
             let content = fs::read_to_string(&self.config_path)?;
             let config: Config = serde_json::from_str(&content)?;
             return Ok(config);
@@ -158,9 +158,7 @@ impl ConfigManager {
         if legacy_path.exists() {
             let content = fs::read_to_string(&legacy_path)?;
             let config: Config = serde_json::from_str(&content)?;
-            if let Some(parent) = self.config_path.parent() { fs::create_dir_all(parent)?; }
-            let new_content = serde_json::to_string_pretty(&config)?;
-            fs::write(&self.config_path, new_content)?;
+            self.persist(&config)?;
             return Ok(config);
         }
 
@@ -168,11 +166,118 @@ impl ConfigManager {
     }
 
     pub fn save(&self, config: &Config) -> Result<()> {
-        if let Some(parent) = self.config_path.parent() {
+        let _guard = self
+            .io_lock
+            .lock()
+            .map_err(|_| anyhow::anyhow!("配置锁不可用"))?;
+        self.persist(config)
+    }
+
+    fn restrict_permissions(&self) -> Result<()> {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if let Some(parent) = self
+                .config_path
+                .parent()
+                .filter(|p| !p.as_os_str().is_empty())
+            {
+                fs::set_permissions(parent, fs::Permissions::from_mode(0o700))?;
+            }
+            if self.config_path.exists() {
+                fs::set_permissions(&self.config_path, fs::Permissions::from_mode(0o600))?;
+            }
+        }
+        Ok(())
+    }
+
+    fn persist(&self, config: &Config) -> Result<()> {
+        let content = serde_json::to_vec_pretty(config)?;
+        if let Some(parent) = self
+            .config_path
+            .parent()
+            .filter(|p| !p.as_os_str().is_empty())
+        {
             fs::create_dir_all(parent)?;
         }
-        let content = serde_json::to_string_pretty(config)?;
-        fs::write(&self.config_path, content)?;
+        self.restrict_permissions()?;
+        let mut staged = StagedFile::new(&self.config_path)?;
+        staged.file.write_all(&content)?;
+        staged.commit(&self.config_path, true)?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::storage::tests::TestDir;
+    use std::sync::Arc;
+    #[test]
+    fn concurrent_saves_are_complete_and_private() {
+        let dir = TestDir::new();
+        let manager = Arc::new(ConfigManager {
+            config_path: dir.0.join("config/config.json"),
+            io_lock: Mutex::new(()),
+        });
+        let threads: Vec<_> = (0..12)
+            .map(|i| {
+                let manager = manager.clone();
+                std::thread::spawn(move || {
+                    let mut c = Config::default();
+                    c.sd.source_dir = format!("source-{i}");
+                    manager.save(&c).unwrap();
+                })
+            })
+            .collect();
+        for thread in threads {
+            thread.join().unwrap();
+        }
+        assert!(manager.load().unwrap().sd.source_dir.starts_with("source-"));
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            assert_eq!(
+                fs::metadata(&manager.config_path)
+                    .unwrap()
+                    .permissions()
+                    .mode()
+                    & 0o777,
+                0o600
+            );
+            assert_eq!(
+                fs::metadata(manager.config_path.parent().unwrap())
+                    .unwrap()
+                    .permissions()
+                    .mode()
+                    & 0o777,
+                0o700
+            );
+        }
+        assert_eq!(
+            fs::read_dir(manager.config_path.parent().unwrap())
+                .unwrap()
+                .count(),
+            1
+        );
+    }
+    #[test]
+    fn older_configuration_defaults_survive_atomic_rewrite() {
+        let dir = TestDir::new();
+        let path = dir.0.join("config.json");
+        fs::write(
+            &path,
+            r#"{"sd":{"source_dir":"old","overwrite_duplicates":true}}"#,
+        )
+        .unwrap();
+        let manager = ConfigManager {
+            config_path: path,
+            io_lock: Mutex::new(()),
+        };
+        let c = manager.load().unwrap();
+        assert!(c.sd.overwrite_duplicates);
+        assert_eq!(c.tether.ftp_port, 2121);
+        manager.save(&c).unwrap();
+        assert_eq!(manager.load().unwrap().sd.source_dir, "old");
     }
 }

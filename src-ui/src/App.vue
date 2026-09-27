@@ -13,6 +13,7 @@
         <TabView
           v-if="currentStep === 'config'"
           :tabs="modeTabs"
+          :disabled="configLocked"
           v-model:activeTab="currentMode"
           class="header-tabs"
           data-no-drag
@@ -46,7 +47,7 @@ const isTauri =
     window.__TAURI_INTERNALS__?.invoke !== undefined);
 const appWindow = isTauri ? getCurrentWindow() : null;
 
-const { currentMode, currentStep } = useAppState();
+const { currentMode, currentStep, configLocked } = useAppState();
 
 const modeTabs = [
   { id: 'sd', label: 'SD卡模式' },

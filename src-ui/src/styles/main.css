@@ -317,8 +317,23 @@ svg.btn-icon {
 }
 
 .toggle-option input {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
 }
+.toggle-option:has(input:focus-visible) .toggle-box {
+  outline: 2px solid var(--primary-500);
+  outline-offset: 3px;
+}
+button, input, select { font-family: inherit; }
+button:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--primary-500);
+  outline-offset: 3px;
+}
+.w-12, .h-12 { width: 3rem; height: 3rem; }
+.w-14, .h-14 { width: 3.5rem; height: 3.5rem; }
+.w-16, .h-16 { width: 4rem; height: 4rem; }
 
 .toggle-box {
   width: 22px;

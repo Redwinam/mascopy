@@ -1,15 +1,15 @@
 <template>
   <!-- Teleport 到 body：祖先容器的入场动画残留 transform 会把 fixed 定位圈进容器内，挂到 body 才是真全屏 -->
   <Teleport to="body">
-  <div v-if="current" class="viewer-overlay" @mousedown.self="close">
+  <div v-if="current" ref="dialogEl" role="dialog" aria-modal="true" :aria-labelledby="titleId" tabindex="-1" class="viewer-overlay" @mousedown.self="close">
     <div class="viewer-top">
       <div class="viewer-info">
-        <span class="viewer-filename">{{ current.filename }}</span>
+        <span :id="titleId" class="viewer-filename">{{ current.filename }}</span>
         <span class="viewer-index">{{ idx + 1 }} / {{ items.length }}</span>
         <span v-if="mark.imported" class="mini-badge badge-done"><Check :size="12" :stroke-width="3" />已导入</span>
         <span v-if="mark.cropCount > 0" class="mini-badge badge-crop"><Scissors :size="12" :stroke-width="2.5" />{{ mark.cropCount }}</span>
       </div>
-      <button class="icon-btn viewer-close" @click="close" title="关闭 (Esc)"><X :size="18" /></button>
+      <button class="icon-btn viewer-close" @click="close" aria-label="关闭照片预览" title="关闭 (Esc)"><X :size="18" /></button>
     </div>
 
     <div class="viewer-stage">
@@ -23,9 +23,9 @@
         <div v-else-if="previewError" class="preview-loading preview-failed"><TriangleAlert :size="16" />{{ previewError }}</div>
 
         <div v-show="!previewLoading && !previewError" class="img-holder" ref="holderEl">
-          <img ref="imgEl" :src="previewSrc" class="viewer-img" draggable="false" @load="onPreviewLoad" @error="onPreviewError" />
+          <img ref="imgEl" :key="previewSrc" :src="previewSrc" :alt="current.filename" class="viewer-img" draggable="false" @load="onPreviewLoad" @error="onPreviewError" />
           <div v-if="cropping" class="crop-layer" ref="layerEl" @pointerdown.prevent="onLayerDown">
-            <div class="crop-rect" :style="rectStyle" @pointerdown.prevent.stop="onRectDown">
+            <div class="crop-rect" :style="rectStyle" tabindex="0" role="group" aria-label="裁剪区域：方向键移动，按住 Shift 加方向键调整大小" @keydown="onCropKey" @pointerdown.prevent.stop="onRectDown">
               <div class="crop-grid-v"></div>
               <div class="crop-grid-h"></div>
               <div v-for="c in ['nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w']" :key="c" :class="['crop-handle', `handle-${c}`]" @pointerdown.prevent.stop="onHandleDown($event, c)"></div>
@@ -44,11 +44,11 @@
       <div class="dock">
         <label class="dock-field field-url" title="Eagle API 地址">
           <Link2 class="field-icon" :size="15" />
-          <input v-model="eagleCfg.base_url" class="dock-input mono" placeholder="http://localhost:41595" @change="saveEagleConfig" />
+          <input v-model="eagleCfg.base_url" class="dock-input mono" aria-label="Eagle API 地址" placeholder="http://localhost:41595" @change="saveEagleConfig" />
         </label>
         <label class="dock-field field-token" title="Eagle → 偏好设置 → 开发者">
           <KeyRound class="field-icon" :size="15" />
-          <input v-model="eagleCfg.token" class="dock-input mono" placeholder="API Token" @change="saveEagleConfig" />
+          <input v-model="eagleCfg.token" class="dock-input mono" type="password" aria-label="Eagle API Token" placeholder="API Token" @change="saveEagleConfig" />
         </label>
         <button class="dock-btn" @click="connectEagle" :disabled="eagleState.status === 'checking'">
           <LoaderCircle v-if="eagleState.status === 'checking'" class="ico-spin" :size="15" />
@@ -73,7 +73,7 @@
 
         <label class="dock-field field-folder" :class="{ 'is-disabled': eagleState.status !== 'ok' }" title="导入到 Eagle 的哪个文件夹">
           <FolderOpen class="field-icon" :size="15" />
-          <select v-model="folderId" class="dock-select" :disabled="eagleState.status !== 'ok'">
+          <select v-model="folderId" aria-label="Eagle 目标文件夹" class="dock-select" :disabled="eagleState.status !== 'ok'">
             <option value="">不指定文件夹</option>
             <option v-for="f in folders" :key="f.id" :value="f.id">{{ f.label }}</option>
           </select>
@@ -82,14 +82,14 @@
 
         <label class="dock-field field-tags" title="导入时附加的标签，逗号分隔">
           <Tag class="field-icon" :size="15" />
-          <input v-model="tagsInput" class="dock-input" placeholder="标签，逗号分隔" />
+          <input v-model="tagsInput" aria-label="导入标签，逗号分隔" class="dock-input" placeholder="标签，逗号分隔" />
         </label>
 
         <span class="dock-sep"></span>
 
-        <button class="dock-btn" @click="startCrop" :disabled="previewLoading || !!previewError" title="框选后导入 Eagle (Enter)">
+        <button class="dock-btn" @click="startCrop" :disabled="previewLoading || !!previewError || cropBusy" title="框选后导入 Eagle (Enter)">
           <Crop :size="15" />
-          裁剪
+          {{ cropBusy ? "裁剪导入中…" : "裁剪" }}
         </button>
         <button class="dock-btn dock-primary" @click="importCurrent" :disabled="eagleState.status !== 'ok' || singleImporting || mark.imported" :title="eagleState.status !== 'ok' ? '未连接 Eagle' : '把这张原图直接导入 Eagle'">
           <LoaderCircle v-if="singleImporting" class="ico-spin" :size="15" />
@@ -101,14 +101,14 @@
 
       <div v-else class="dock">
         <div class="seg">
-          <button v-for="a in aspectOptions" :key="a.key" :class="['seg-btn', { active: aspect === a.key }]" @click="setAspect(a.key)">{{ a.label }}</button>
+          <button v-for="a in aspectOptions" :key="a.key" :disabled="cropBusy" :aria-pressed="aspect === a.key" :class="['seg-btn', { active: aspect === a.key }]" @click="setAspect(a.key)">{{ a.label }}</button>
         </div>
 
         <span class="dock-sep"></span>
 
         <label class="dock-field field-name" title="导入到 Eagle 的名称">
           <Type class="field-icon" :size="15" />
-          <input v-model="cropName" class="dock-input" placeholder="导入名称" />
+          <input v-model="cropName" :disabled="cropBusy" aria-label="裁剪导入名称" class="dock-input" placeholder="导入名称" />
         </label>
 
         <span class="dock-sep"></span>
@@ -126,9 +126,11 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount, useId } from "vue";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { Check, ChevronDown, ChevronLeft, ChevronRight, Crop, FolderOpen, KeyRound, Link2, LoaderCircle, RotateCw, Scissors, Settings2, Tag, TriangleAlert, Type, Upload, X } from "lucide-vue-next";
+import { extensionOf as extOf, stemOf, createLruCache } from "../utils/media.js";
+import { useModalDialog } from "../composables/useModalDialog.js";
 import { useEagle } from "../composables/useEagle.js";
 
 const props = defineProps({
@@ -139,7 +141,7 @@ const props = defineProps({
 });
 const emit = defineEmits(["update:modelValue"]);
 
-const { eagleCfg, eagleState, folders, folderId, tagsInput, markOf, markImported, addCropMark, connectEagle, saveEagleConfig, persistFolderChoice } = useEagle();
+const { eagleCfg, eagleState, folders, folderId, tagsInput, markOf, markImported, addCropMark, connectEagle, saveEagleConfig, persistFolderChoice, connectionKey, isImporting, beginImport } = useEagle();
 
 const NATIVE_EXTS = ["jpg", "jpeg", "png"];
 
@@ -147,16 +149,13 @@ const idx = computed(() => (props.modelValue == null ? -1 : props.items.findInde
 const current = computed(() => (idx.value >= 0 ? props.items[idx.value] : null));
 const mark = computed(() => (current.value ? markOf(current.value.path) : {}));
 const showSettings = ref(false);
+const dialogEl = ref(null);
+const titleId = useId();
+let disposed = false;
+let previewRequest = 0;
+let cropSession = 0;
 
-function extOf(name) {
-  const i = (name || "").lastIndexOf(".");
-  return i > 0 ? name.slice(i + 1).toLowerCase() : "";
-}
 
-function stemOf(name) {
-  const i = (name || "").lastIndexOf(".");
-  return i > 0 ? name.slice(0, i) : name || "";
-}
 
 function parseTags(input) {
   return Array.from(
@@ -181,7 +180,7 @@ function nav(delta) {
 
 /* ---------------- 预览 ---------------- */
 
-const previewCache = new Map(); // path → src；RAW 转出的 data URL 只存内存
+const previewCache = createLruCache(12); // 仅保留最近 12 张转换预览，限制常驻内存
 const previewSrc = ref("");
 const previewLoading = ref(false);
 const previewError = ref("");
@@ -198,6 +197,7 @@ async function loadPreview() {
   previewLoading.value = true;
   previewSrc.value = "";
   const path = item.path;
+  const request = ++previewRequest;
   try {
     let src = previewCache.get(path);
     if (!src) {
@@ -207,12 +207,12 @@ async function loadPreview() {
         // RAW/HEIC：后端 sips 转成内存 data URL，不产生磁盘缓存
         src = await invoke("get_preview", { path, maxDim: 2560 });
       }
-      previewCache.set(path, src);
+      if (!disposed && request === previewRequest && !NATIVE_EXTS.includes(extOf(item.filename))) previewCache.set(path, src);
     }
     // 慢速转换期间用户可能已翻页，只有仍停留在这张时才上屏
-    if (current.value && current.value.path === path) previewSrc.value = src;
+    if (!disposed && request === previewRequest && current.value?.path === path) previewSrc.value = src;
   } catch (e) {
-    if (current.value && current.value.path === path) {
+    if (!disposed && request === previewRequest && current.value?.path === path) {
       previewLoading.value = false;
       previewError.value = String(e);
     }
@@ -225,6 +225,7 @@ watch(
     if (p) {
       loadPreview();
     } else {
+      previewRequest++;
       previewSrc.value = "";
       previewError.value = "";
       previewLoading.value = false;
@@ -262,12 +263,13 @@ function measureImg() {
   }
 }
 
-function onPreviewLoad() {
+function onPreviewLoad(event) {
+  if (event?.target && event.target !== imgEl.value) return;
   previewLoading.value = false;
   nextTick(() => {
     measureImg();
     // 灯箱是 v-if 挂载的，图片元素每次打开都会重建，需要重新观察
-    if (resizeObserver && imgEl.value) resizeObserver.observe(imgEl.value);
+    if (resizeObserver && imgEl.value) { resizeObserver.disconnect(); resizeObserver.observe(imgEl.value); }
   });
 }
 
@@ -288,7 +290,7 @@ const cropping = ref(false);
 const cropRect = ref({ x: 0.1, y: 0.1, w: 0.8, h: 0.8 }); // 归一化(0..1)，相对显示图像
 const aspect = ref("free");
 const cropName = ref("");
-const cropBusy = ref(false);
+const cropBusy = computed(() => !!current.value && isImporting(current.value.path, "crop"));
 const layerEl = ref(null);
 
 // 标签保持等长，分段控件才不会宽窄参差
@@ -323,6 +325,8 @@ const cropSizeLabel = computed(() => {
 });
 
 function startCrop() {
+  if (!current.value || previewLoading.value || previewError.value || cropBusy.value) return;
+  cropSession++;
   measureImg();
   const { w, h } = dispSize.value;
   if (!w || !h) return;
@@ -356,14 +360,16 @@ function applyDefaultRect() {
 }
 
 function setAspect(key) {
+  if (cropBusy.value) return;
   aspect.value = key;
   // 切换比例后按原图拉满新比例（自由 = 整图）
   cropRect.value = maxRectFor(currentRatio.value);
 }
 
 function cancelCrop() {
+  cropSession++;
   cropping.value = false;
-  cropBusy.value = false;
+  endDrag();
 }
 
 let drag = null; // { mode, startX, startY, orig, anchor }
@@ -389,6 +395,7 @@ function storeRect(px) {
 }
 
 function beginDrag(state) {
+  if (cropBusy.value) return;
   drag = state;
   window.addEventListener("pointermove", onDragMove);
   window.addEventListener("pointerup", endDrag);
@@ -414,6 +421,7 @@ function onHandleDown(e, handle) {
 }
 
 function onLayerDown(e) {
+  if (cropBusy.value) return;
   const p = layerPoint(e);
   beginDrag({ mode: "resize", anchor: p });
   storeRect({ x: p.x, y: p.y, w: 0, h: 0 });
@@ -508,7 +516,7 @@ function endDrag() {
 
 /* ---------------- 导入 ---------------- */
 
-const singleImporting = ref(false);
+const singleImporting = computed(() => !!current.value && isImporting(current.value.path, "original"));
 const viewerToast = ref({ text: "", type: "success" });
 let toastTimer = null;
 
@@ -520,81 +528,99 @@ function toast(text, type = "success") {
 
 async function importCurrent() {
   const item = current.value;
-  if (!item || singleImporting.value || mark.value.imported) return;
-  singleImporting.value = true;
+  if (!item || eagleState.value.status !== "ok" || singleImporting.value || mark.value.imported) return;
+  const identity = connectionKey.value;
+  const finish = beginImport(item.path, "original", identity);
+  if (!finish) return;
+  const chosenFolder = folderId.value;
+  const label = folders.value.find(f => f.id === chosenFolder)?.label.trim();
+  const stillCurrent = () => !disposed && current.value?.path === item.path && connectionKey.value === identity;
   try {
     const res = await invoke("eagle_import", {
-      baseUrl: eagleCfg.value.base_url,
-      token: eagleCfg.value.token,
+      baseUrl: eagleCfg.value.base_url, token: eagleCfg.value.token,
       items: [{ path: item.path, name: stemOf(item.filename), tags: parseTags(tagsInput.value), annotation: null }],
-      folderId: folderId.value || null,
+      folderId: chosenFolder || null,
     });
-    if (res.failed && res.failed.length > 0) {
-      toast(`导入失败: ${res.failed[0].error}`, "error");
+    if (res.failed?.length) {
+      if (stillCurrent()) toast(`导入失败: ${res.failed[0].error}`, "error");
     } else {
-      markImported(item.path);
-      toast(`已导入到 Eagle${folderLabel()}`);
-      await persistFolderChoice();
+      markImported(item.path, identity);
+      if (stillCurrent()) toast(`已导入到 Eagle${label ? `「${label}」` : ""}`);
+      await persistFolderChoice(chosenFolder, identity);
     }
-  } catch (e) {
-    toast(`导入失败: ${e}`, "error");
-  } finally {
-    singleImporting.value = false;
-  }
+  } catch (error) {
+    if (stillCurrent()) toast(`导入失败: ${error}`, "error");
+  } finally { finish(); }
 }
 
 async function confirmCrop() {
   const item = current.value;
-  if (!item || cropBusy.value) return;
-  cropBusy.value = true;
+  if (!item || !cropping.value || eagleState.value.status !== "ok" || cropBusy.value || previewLoading.value || previewError.value) return;
+  const rect = { ...cropRect.value };
+  if (![rect.x, rect.y, rect.w, rect.h].every(Number.isFinite) || rect.w <= 0 || rect.h <= 0) return;
+  const identity = connectionKey.value;
+  const finish = beginImport(item.path, "crop", identity);
+  if (!finish) return;
+  const session = cropSession;
+  const chosenFolder = folderId.value;
+  const stillCurrent = () => !disposed && cropSession === session && current.value?.path === item.path && connectionKey.value === identity;
   try {
     const res = await invoke("eagle_import_crop", {
-      path: item.path,
-      rect: { ...cropRect.value },
-      name: cropName.value.trim() || stemOf(item.filename),
-      tags: parseTags(tagsInput.value),
-      folderId: folderId.value || null,
-      baseUrl: eagleCfg.value.base_url,
-      token: eagleCfg.value.token,
+      path: item.path, rect, name: cropName.value.trim() || stemOf(item.filename), tags: parseTags(tagsInput.value),
+      folderId: chosenFolder || null, baseUrl: eagleCfg.value.base_url, token: eagleCfg.value.token,
     });
-    addCropMark(item.path);
-    cropping.value = false;
-    toast(`已导入裁剪图 ${res.width}×${res.height}`);
-    await persistFolderChoice();
-  } catch (e) {
-    toast(`导入失败: ${e}`, "error");
-  } finally {
-    cropBusy.value = false;
-  }
+    addCropMark(item.path, identity);
+    if (stillCurrent()) { cropping.value = false; toast(`已导入裁剪图 ${res.width}×${res.height}`); }
+    await persistFolderChoice(chosenFolder, identity);
+  } catch (error) {
+    if (stillCurrent()) toast(`导入失败: ${error}`, "error");
+  } finally { finish(); }
 }
 
-function folderLabel() {
-  const f = folders.value.find((x) => x.id === folderId.value);
-  return f ? `「${f.label.trim()}」` : "";
+function onCropKey(event) {
+  if (!event.key.startsWith("Arrow") || cropBusy.value) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const r = { ...cropRect.value };
+  const step = event.altKey ? 0.05 : 0.01;
+  const direction = ["ArrowLeft", "ArrowUp"].includes(event.key) ? -step : step;
+  if (event.shiftKey) {
+    const horizontal = ["ArrowLeft", "ArrowRight"].includes(event.key);
+    if (horizontal) r.w = Math.max(0.02, Math.min(1 - r.x, r.w + direction));
+    else r.h = Math.max(0.02, Math.min(1 - r.y, r.h + direction));
+    // 键盘调整大小与自由选区相同；固定比例模式按当前比例收缩到边界内。
+    if (currentRatio.value && dispSize.value.w && dispSize.value.h) {
+      const ratio = currentRatio.value * dispSize.value.h / dispSize.value.w;
+      if (horizontal) r.h = r.w / ratio; else r.w = r.h * ratio;
+      const fit = Math.min(1, (1 - r.x) / r.w, (1 - r.y) / r.h);
+      r.w *= fit; r.h *= fit;
+    }
+  } else if (["ArrowLeft", "ArrowRight"].includes(event.key)) r.x = Math.max(0, Math.min(1 - r.w, r.x + direction));
+  else r.y = Math.max(0, Math.min(1 - r.h, r.y + direction));
+  cropRect.value = r;
 }
 
 /* ---------------- 键盘 ---------------- */
 
 function onKey(e) {
   if (!current.value) return;
-  const tag = (e.target && e.target.tagName) || "";
-  const typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
-  if (e.key === "Escape") {
-    if (cropping.value) cancelCrop();
-    else close();
-    return;
-  }
-  if (typing) return;
+  if (e.defaultPrevented || e.target?.closest?.("input, textarea, select, [contenteditable]")) return;
+  // 焦点在按钮 / 链接上时回车留给它自己；方向键对按钮没有原生含义，照常翻图
+  const onControl = !!e.target?.closest?.("button, a");
   if (cropping.value) {
-    if (e.key === "Enter") confirmCrop();
+    if (e.key === "Enter" && !onControl) { e.preventDefault(); confirmCrop(); }
     return;
   }
-  if (e.key === "ArrowLeft") nav(-1);
-  else if (e.key === "ArrowRight") nav(1);
-  else if (e.key === "Enter") startCrop();
+  if (e.key === "ArrowLeft") { e.preventDefault(); nav(-1); }
+  else if (e.key === "ArrowRight") { e.preventDefault(); nav(1); }
+  else if (e.key === "Enter" && !onControl) { e.preventDefault(); startCrop(); }
 }
 
 /* ---------------- 生命周期 ---------------- */
+
+useModalDialog(dialogEl, () => !!current.value, () => {
+  if (cropping.value) cancelCrop(); else close();
+}, { focusContainer: true });
 
 onMounted(() => {
   resizeObserver = new ResizeObserver(() => measureImg());
@@ -602,6 +628,9 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  disposed = true;
+  previewRequest++;
+  previewCache.clear();
   if (resizeObserver) resizeObserver.disconnect();
   window.removeEventListener("keydown", onKey);
   window.removeEventListener("pointermove", onDragMove);
@@ -625,6 +654,10 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   animation: fadeIn 0.16s ease;
+}
+
+.viewer-overlay:focus {
+  outline: none;
 }
 
 @keyframes fadeIn {

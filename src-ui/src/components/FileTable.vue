@@ -2,15 +2,16 @@
   <div class="file-table-container">
     <div class="table-header-row" v-if="stats">
       <div class="filter-strip">
-        <div 
+        <button type="button"
           v-for="(stat, key) in stats" 
           :key="key"
           :class="['filter-item', { active: filter === key }]"
           @click="$emit('update:filter', key)"
+          :aria-pressed="filter === key"
         >
           <span class="filter-label">{{ getLabel(key) }}</span>
           <span class="filter-count" :class="`count-${key}`">{{ stat }}</span>
-        </div>
+        </button>
       </div>
       <div class="table-actions">
         <slot name="actions"></slot>
@@ -28,7 +29,7 @@
                 :checked="allVisibleSelected"
                 :indeterminate="someVisibleSelected"
                 :disabled="selectableVisible.length === 0"
-                title="全选 / 全不选"
+                aria-label="全选或取消当前可选文件" title="全选 / 全不选"
                 @change="toggleAll"
               />
             </th>
@@ -42,7 +43,7 @@
         <tbody>
           <tr
             v-for="(file, index) in filteredFiles"
-            :key="index"
+            :key="fileKey(file)"
             :class="{ 'row-selectable': selectable && isSelectable(file), 'row-selected': selectable && isSelected(file) }"
             @contextmenu="openContextMenu(file, $event)"
             @click="onRowClick(file)"
@@ -52,6 +53,7 @@
                 type="checkbox"
                 class="row-checkbox"
                 :checked="isSelected(file)"
+                :aria-label="`选择 ${file.filename}`"
                 :disabled="!isSelectable(file)"
                 @change="toggleFile(file)"
               />
@@ -121,6 +123,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
+import { normalizePath, parseMediaDate } from '../utils/media.js';
 import Modal from './Modal.vue';
 
 const props = defineProps({
@@ -173,7 +176,7 @@ function fileKey(file) {
 
 // 仅「将上传 / 将覆盖」的文件可勾选，跳过的文件不会被拷贝
 function isSelectable(file) {
-  return !!file && (file.status === 'upload' || file.status === 'overwrite');
+  return !!file && (file.status === 'upload' || file.status === 'overwrite') && !['done', 'skipped'].includes(getProgress(file)?.status);
 }
 
 function isSelected(file) {
@@ -356,12 +359,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('scroll', onWindowScroll, true);
 });
 
-function normalizePath(value) {
-  if (!value) return '';
-  if (typeof value === 'string') return value;
-  if (typeof value === 'object' && typeof value.path === 'string') return value.path;
-  return String(value);
-}
 
 function getTargetDir(path) {
   if (!path) return '';
@@ -400,13 +397,7 @@ function formatSize(bytes) {
 
 function formatDate(dateObj) {
   if (!dateObj) return '-';
-  // Tauri returns SystemTime which gets serialized as { secs_since_epoch, nanos_since_epoch }
-  let date;
-  if (dateObj.secs_since_epoch !== undefined) {
-    date = new Date(dateObj.secs_since_epoch * 1000);
-  } else {
-    date = new Date(dateObj);
-  }
+  const date = parseMediaDate(dateObj);
   return date.toLocaleString('zh-CN');
 }
 
@@ -453,6 +444,7 @@ function resultLabel(status) {
   const map = {
     done: '已完成',
     skipped: '已跳过',
+    cancelled: '已取消',
     error: '失败'
   };
   return map[status] || status;
@@ -529,6 +521,7 @@ function closeNotice() {
 }
 
 .filter-item {
+  border: 0; background: transparent;
   display: flex;
   align-items: top;
   gap: var(--space-2);

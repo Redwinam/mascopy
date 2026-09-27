@@ -2,6 +2,7 @@ import { ref } from 'vue';
 
 const currentMode = ref('sd');
 const currentStep = ref('config');
+const configLocked = ref(false);
 const config = ref({
     sd: {
         source_dir: '',
@@ -44,6 +45,7 @@ export function useAppState() {
     return {
         currentMode,
         currentStep,
+        configLocked,
         config,
         tetherActive,
         tetherInfo,

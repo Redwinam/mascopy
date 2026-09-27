@@ -1,24 +1,25 @@
-
-mod config;
-mod scanner;
-mod metadata;
 mod analyzer;
-mod uploader;
+mod config;
+mod eagle;
 mod error;
 mod imaging;
-mod eagle;
+mod media;
+mod metadata;
+mod scanner;
+mod storage;
 mod tether;
+mod uploader;
 
-use std::sync::Arc;
-use std::path::{Path, PathBuf};
-use tauri::{State, Window};
-use tokio::sync::Semaphore;
-use config::{Config, ConfigManager};
-use scanner::{Scanner, MediaFile};
 use analyzer::Analyzer;
-use uploader::Uploader;
+use config::{Config, ConfigManager};
 use error::{AppError, AppResult};
+use scanner::{MediaFile, Scanner};
 use serde::Deserialize;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use tauri::{Emitter, State, Window};
+use tokio::sync::Semaphore;
+use uploader::Uploader;
 
 struct AppState {
     config_manager: ConfigManager,
@@ -33,12 +34,18 @@ struct AppState {
 
 #[tauri::command]
 fn get_config(state: State<AppState>) -> AppResult<Config> {
-    state.config_manager.load().map_err(|e| AppError::Config(e.to_string()))
+    state
+        .config_manager
+        .load()
+        .map_err(|e| AppError::Config(e.to_string()))
 }
 
 #[tauri::command]
 fn save_config(state: State<AppState>, config: Config) -> AppResult<()> {
-    state.config_manager.save(&config).map_err(|e| AppError::Config(e.to_string()))
+    state
+        .config_manager
+        .save(&config)
+        .map_err(|e| AppError::Config(e.to_string()))
 }
 
 #[derive(Deserialize)]
@@ -59,30 +66,31 @@ struct ScanArgs {
 
 #[tauri::command]
 async fn scan_files(args: ScanArgs) -> AppResult<Vec<MediaFile>> {
-    let source_path = Path::new(&args.source_dir);
-    if !source_path.exists() {
-        return Err(AppError::Scan("源路径不存在".to_string()));
-    }
-    if !source_path.is_dir() {
-        return Err(AppError::Scan("源路径不是目录".to_string()));
-    }
-    let target_path = Path::new(&args.target_dir);
-    if !target_path.exists() {
-        return Err(AppError::Scan("目标路径不存在".to_string()));
-    }
-    if !target_path.is_dir() {
-        return Err(AppError::Scan("目标路径不是目录".to_string()));
-    }
-    let scanner = Scanner::with_mode(&args.mode.clone().unwrap_or_else(|| "sd".to_string()));
-    let mut files = scanner.scan(
-        &args.source_dir,
-        args.fast_mode.unwrap_or(false),
-        args.ignore_thumbnails.unwrap_or(true),
-    );
-    // 假设 Analyzer::analyze 可能失败，如果它是 void 返回，我们保持现状。
-    // 如果它返回 Result，这里应该 map_err
-    Analyzer::analyze(&mut files, &args.target_dir, args.overwrite_duplicates);
-    Ok(files)
+    tauri::async_runtime::spawn_blocking(move || {
+        let (source, target) =
+            scanner::validate_roots(Path::new(&args.source_dir), Path::new(&args.target_dir))
+                .map_err(AppError::Scan)?;
+        let mode = args.mode.as_deref().unwrap_or("sd");
+        if !matches!(mode, "sd" | "dji") {
+            return Err(AppError::Scan("未知扫描模式".into()));
+        }
+        let mut files = Scanner::with_mode(mode)
+            .scan(
+                &source.to_string_lossy(),
+                args.fast_mode.unwrap_or(false),
+                args.ignore_thumbnails.unwrap_or(true),
+            )
+            .map_err(AppError::Scan)?;
+        Analyzer::analyze(
+            &mut files,
+            &target.to_string_lossy(),
+            args.overwrite_duplicates,
+        )
+        .map_err(AppError::Analyze)?;
+        Ok(files)
+    })
+    .await
+    .map_err(|e| AppError::Scan(e.to_string()))?
 }
 
 #[tauri::command]
@@ -90,17 +98,19 @@ async fn upload_files(
     files: Vec<MediaFile>,
     target_dir: String,
     window: Window,
-    state: State<'_, AppState>
-) -> AppResult<()> {
-    let target_path = Path::new(&target_dir);
-    if !target_path.exists() {
-        return Err(AppError::Upload("目标路径不存在".to_string()));
-    }
-    if !target_path.is_dir() {
-        return Err(AppError::Upload("目标路径不是目录".to_string()));
-    }
-    state.uploader.reset();
-    state.uploader.upload_files(files, window).await.map_err(|e| AppError::Upload(e.to_string()))
+    state: State<'_, AppState>,
+) -> AppResult<uploader::UploadOutcome> {
+    // Acquire before queueing blocking IO so an immediate cancellation belongs to this task.
+    let session = state.uploader.start().map_err(AppError::Upload)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        session
+            .run(files, PathBuf::from(target_dir), |payload| {
+                let _ = window.emit("upload-progress", payload);
+            })
+            .map_err(AppError::Upload)
+    })
+    .await
+    .map_err(|e| AppError::Upload(e.to_string()))?
 }
 
 #[tauri::command]
@@ -122,13 +132,13 @@ fn cancel_upload(state: State<AppState>) {
 fn eject_volume(path: String) -> AppResult<()> {
     #[cfg(target_os = "macos")]
     {
-        use std::process::Command;
         use std::path::Path;
-        
+        use std::process::Command;
+
         // Naive implementation: assume /Volumes/NAME
         let path_obj = Path::new(&path);
         if !path_obj.starts_with("/Volumes") {
-             return Err(AppError::Unknown("Not a /Volumes path".to_string()));
+            return Err(AppError::Unknown("Not a /Volumes path".to_string()));
         }
 
         let mut components = path_obj.components();
@@ -137,34 +147,38 @@ fn eject_volume(path: String) -> AppResult<()> {
         // Check "Volumes"
         if let Some(std::path::Component::Normal(c)) = components.next() {
             if c != "Volumes" {
-                 return Err(AppError::Unknown("Not in /Volumes".to_string()));
+                return Err(AppError::Unknown("Not in /Volumes".to_string()));
             }
         }
-        
+
         // Get the volume name
         if let Some(std::path::Component::Normal(vol_name)) = components.next() {
-             let volume_path = format!("/Volumes/{}", vol_name.to_string_lossy());
-             
-             let output = Command::new("diskutil")
-                 .arg("eject")
-                 .arg(&volume_path)
-                 .output()
-                 .map_err(AppError::Io)?;
-                 
-             if !output.status.success() {
-                 let stderr = String::from_utf8_lossy(&output.stderr);
-                 return Err(AppError::Unknown(format!("Eject failed: {}", stderr)));
-             }
-             
-             return Ok(());
+            let volume_path = format!("/Volumes/{}", vol_name.to_string_lossy());
+
+            let output = Command::new("diskutil")
+                .arg("eject")
+                .arg(&volume_path)
+                .output()
+                .map_err(AppError::Io)?;
+
+            if !output.status.success() {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                return Err(AppError::Unknown(format!("Eject failed: {}", stderr)));
+            }
+
+            return Ok(());
         }
-        
-        Err(AppError::Unknown("Could not determine volume name".to_string()))
+
+        Err(AppError::Unknown(
+            "Could not determine volume name".to_string(),
+        ))
     }
-    
+
     #[cfg(not(target_os = "macos"))]
     {
-        Err(AppError::Unknown("Eject not supported on this OS yet".to_string()))
+        Err(AppError::Unknown(
+            "Eject not supported on this OS yet".to_string(),
+        ))
     }
 }
 
@@ -256,6 +270,8 @@ struct CropImportResult {
 
 /// 内存中裁剪并直接推送 Eagle：不写 SD 卡，也不在磁盘留下任何裁剪文件
 #[tauri::command]
+// Keep the existing named IPC arguments stable for the frontend.
+#[allow(clippy::too_many_arguments)]
 async fn eagle_import_crop(
     path: String,
     rect: CropRect,
@@ -328,144 +344,132 @@ async fn start_tether(
     window: Window,
     state: State<'_, AppState>,
 ) -> AppResult<TetherStartInfo> {
-    {
-        let guard = state
-            .tether
-            .lock()
-            .map_err(|e| AppError::Unknown(e.to_string()))?;
-        if guard.is_some() {
-            return Err(AppError::Tether("联机会话已在运行，请先结束当前会话".into()));
-        }
+    // 保留锁直到资源已真正启动或已回滚；stop 与后续 start 均等待完整生命周期。
+    let mut guard = state.tether.lock().await;
+    if guard.is_some() {
+        return Err(AppError::Tether(
+            "联机会话已在运行，请先结束当前会话".into(),
+        ));
     }
-
-    let target = PathBuf::from(&args.target_dir);
+    let target = PathBuf::from(&args.target_dir)
+        .canonicalize()
+        .map_err(|_| AppError::Tether("目标目录不存在".into()))?;
     if !target.is_dir() {
-        return Err(AppError::Tether("目标目录不存在".into()));
+        return Err(AppError::Tether("目标路径不是目录".into()));
     }
-
-    let stop = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let control = tether::SessionControl::new();
     let lan_ip = tether::lan_ip().unwrap_or_else(|| "127.0.0.1".to_string());
-
-    let handle = match args.mode.as_str() {
+    let (handle, info) = match args.mode.as_str() {
         "watch" => {
+            if args.delete_source {
+                return Err(AppError::Tether(
+                    "监听模式无法确认上游写入已结束，必须保留来源文件".into(),
+                ));
+            }
             let watch = PathBuf::from(
                 args.watch_dir
                     .as_deref()
                     .filter(|s| !s.trim().is_empty())
                     .ok_or_else(|| AppError::Tether("请先选择监听目录".into()))?,
-            );
+            )
+            .canonicalize()
+            .map_err(|_| AppError::Tether("监听目录不存在".into()))?;
             if !watch.is_dir() {
-                return Err(AppError::Tether("监听目录不存在".into()));
+                return Err(AppError::Tether("监听路径不是目录".into()));
             }
-            let wc = watch.canonicalize().unwrap_or_else(|_| watch.clone());
-            let tc = target.canonicalize().unwrap_or_else(|_| target.clone());
-            if tc.starts_with(&wc) {
-                return Err(AppError::Tether(
-                    "目标目录不能位于监听目录内，否则会循环入库".into(),
-                ));
-            }
-            let _watch_tx = tether::spawn_watcher(
+            tether::validate_watch_target(&watch, &target).map_err(AppError::Tether)?;
+            let watcher = tether::spawn_watcher(
                 tether::TetherOptions {
                     watch_dir: watch,
                     target_dir: target,
-                    move_files: args.delete_source,
+                    move_files: false,
                     rescan: false,
                     ftp_fed: false,
                 },
-                stop.clone(),
+                control.clone(),
                 window,
             )
             .map_err(AppError::Tether)?;
-            tether::TetherHandle {
-                stop,
-                ftp_task: None,
-            }
+            (
+                tether::TetherHandle {
+                    control,
+                    watcher: Some(watcher),
+                    ftp: None,
+                },
+                TetherStartInfo {
+                    lan_ip,
+                    ftp_port: None,
+                    inbox: None,
+                },
+            )
         }
         "ftp" => {
-            let port = args.ftp_port.unwrap_or(2121);
-            // 预检端口占用，避免异步启动后静默失败
-            std::net::TcpListener::bind(("0.0.0.0", port))
-                .map_err(|e| AppError::Tether(format!("端口 {port} 无法使用: {e}")))?;
-
             let inbox = target.join(".mascopy-inbox");
-            std::fs::create_dir_all(&inbox)
-                .map_err(|e| AppError::Tether(format!("创建收件箱失败: {e}")))?;
-
-            let user = args
-                .ftp_user
-                .filter(|s| !s.trim().is_empty())
-                .unwrap_or_else(|| "eos".to_string());
-            let pass = args
-                .ftp_pass
-                .filter(|s| !s.trim().is_empty())
-                .unwrap_or_else(|| "eos".to_string());
-
-            let watch_tx = tether::spawn_watcher(
+            let completed = tether::prepare_inbox(&inbox).map_err(AppError::Tether)?;
+            let watcher = tether::spawn_watcher(
                 tether::TetherOptions {
-                    watch_dir: inbox.clone(),
+                    watch_dir: completed,
                     target_dir: target,
                     move_files: true,
                     rescan: true,
                     ftp_fed: true,
                 },
-                stop.clone(),
+                control.clone(),
                 window,
             )
             .map_err(AppError::Tether)?;
-
-            // FTP 传完会直接通知监听线程，不必靠大小静默去猜
-            let ftp_task = tether::spawn_ftp_server(inbox.clone(), port, user, pass, watch_tx);
-            return finish_start_tether(
-                state,
-                tether::TetherHandle {
-                    stop,
-                    ftp_task: Some(ftp_task),
-                },
+            let mut handle = tether::TetherHandle {
+                control: control.clone(),
+                watcher: Some(watcher),
+                ftp: None,
+            };
+            let ftp = tether::spawn_ftp_server(
+                inbox.clone(),
+                std::net::SocketAddr::from(([0, 0, 0, 0], args.ftp_port.unwrap_or(2121))),
+                args.ftp_user
+                    .filter(|s| !s.trim().is_empty())
+                    .unwrap_or_else(|| "eos".into()),
+                args.ftp_pass
+                    .filter(|s| !s.trim().is_empty())
+                    .unwrap_or_else(|| "eos".into()),
+                handle
+                    .watcher
+                    .as_ref()
+                    .expect("watcher initialized")
+                    .tx
+                    .clone(),
+                control,
+            )
+            .await;
+            let ftp = match ftp {
+                Ok(ftp) => ftp,
+                Err(error) => {
+                    let _ = handle.shutdown().await;
+                    return Err(AppError::Tether(error));
+                }
+            };
+            let port = ftp.local_addr.port();
+            handle.ftp = Some(ftp);
+            (
+                handle,
                 TetherStartInfo {
                     lan_ip,
                     ftp_port: Some(port),
                     inbox: Some(inbox.to_string_lossy().to_string()),
                 },
-            );
+            )
         }
         _ => return Err(AppError::Tether("未知联机模式".into())),
     };
-
-    finish_start_tether(
-        state,
-        handle,
-        TetherStartInfo {
-            lan_ip,
-            ftp_port: None,
-            inbox: None,
-        },
-    )
-}
-
-fn finish_start_tether(
-    state: State<'_, AppState>,
-    handle: tether::TetherHandle,
-    info: TetherStartInfo,
-) -> AppResult<TetherStartInfo> {
-    let mut guard = state
-        .tether
-        .lock()
-        .map_err(|e| AppError::Unknown(e.to_string()))?;
     *guard = Some(handle);
     Ok(info)
 }
 
 #[tauri::command]
-fn stop_tether(state: State<AppState>) -> AppResult<()> {
-    let mut guard = state
-        .tether
-        .lock()
-        .map_err(|e| AppError::Unknown(e.to_string()))?;
+async fn stop_tether(state: State<'_, AppState>) -> AppResult<()> {
+    let mut guard = state.tether.lock().await;
     if let Some(handle) = guard.take() {
-        handle.stop.store(true, std::sync::atomic::Ordering::Relaxed);
-        if let Some(task) = handle.ftp_task {
-            task.abort();
-        }
+        handle.shutdown().await.map_err(AppError::Tether)?;
     }
     Ok(())
 }
@@ -495,7 +499,9 @@ fn reveal_in_finder(path: String) -> AppResult<()> {
 
     #[cfg(not(target_os = "macos"))]
     {
-        Err(AppError::Unknown("Reveal not supported on this OS yet".to_string()))
+        Err(AppError::Unknown(
+            "Reveal not supported on this OS yet".to_string(),
+        ))
     }
 }
 

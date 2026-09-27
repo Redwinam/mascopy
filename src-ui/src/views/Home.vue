@@ -3,7 +3,7 @@
     <!-- Step 1: Configuration -->
     <div v-show="currentStep === 'config'" class="step-container config-step animate-fade-in">
       <TetherPanel v-if="currentMode === 'tether'" />
-      <template v-else>
+      <fieldset v-else class="config-form" :disabled="isScanning || isUploading">
       <div class="transfer-flow">
         <!-- Source Column -->
         <div class="config-card glass-panel source-card">
@@ -35,15 +35,15 @@
             <div v-if="sourceFavorites.length > 0" class="favorites-area">
               <div class="fav-label">收藏夹</div>
               <div class="fav-list">
-                <div v-for="p in sourceFavorites" :key="p" class="fav-item" @click="selectSource(p)" :title="p">
+                <div v-for="p in sourceFavorites" :key="p" class="fav-item">
                   <div class="fav-icon-box">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="fav-folder-icon">
                       <path
                         d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />
                     </svg>
                   </div>
-                  <span class="fav-path">{{ p }}</span>
-                  <button class="fav-remove" @click.stop="removeSourceFavorite(p)">
+                  <button type="button" class="fav-path fav-select" @click="selectSource(p)" :title="p">{{ p }}</button>
+                  <button class="fav-remove" :aria-label="`移除收藏 ${p}`" @click.stop="removeSourceFavorite(p)">
                     <svg xmlns="http://www.w3.org/2000/svg" style="width: 14px; height: 14px" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -90,15 +90,15 @@
             <div v-if="targetFavorites.length > 0" class="favorites-area">
               <div class="fav-label">收藏夹</div>
               <div class="fav-list">
-                <div v-for="p in targetFavorites" :key="p" class="fav-item" @click="selectTarget(p)" :title="p">
+                <div v-for="p in targetFavorites" :key="p" class="fav-item">
                   <div class="fav-icon-box">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="fav-folder-icon">
                       <path
                         d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />
                     </svg>
                   </div>
-                  <span class="fav-path">{{ p }}</span>
-                  <button class="fav-remove" @click.stop="removeTargetFavorite(p)">
+                  <button type="button" class="fav-path fav-select" @click="selectTarget(p)" :title="p">{{ p }}</button>
+                  <button class="fav-remove" :aria-label="`移除收藏 ${p}`" @click.stop="removeTargetFavorite(p)">
                     <svg xmlns="http://www.w3.org/2000/svg" style="width: 14px; height: 14px" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -114,13 +114,13 @@
       <div class="action-footer glass-panel">
         <div class="options-group">
           <label class="toggle-option" :class="{ active: config[currentMode].overwrite_duplicates }">
-            <input type="checkbox" v-model="config[currentMode].overwrite_duplicates" />
+            <input type="checkbox" v-model="config[currentMode].overwrite_duplicates" @change="saveConfig" />
             <div class="toggle-box">
               <span class="check-mark" v-if="config[currentMode].overwrite_duplicates">✓</span>
             </div>
             <div class="option-text">
               <span class="option-title">覆盖重复文件</span>
-              <span class="option-desc">相同文件名将被覆盖</span>
+              <span class="option-desc">{{ config[currentMode].overwrite_duplicates ? "同名不同内容时覆盖旧文件" : "同名不同内容时另存为 _1" }}</span>
             </div>
           </label>
 
@@ -161,7 +161,7 @@
           </div>
         </button>
       </div>
-      </template>
+      </fieldset>
     </div>
 
     <!-- Step 2: Results & Upload -->
@@ -179,6 +179,45 @@
       </Teleport>
 
       <div class="results-content">
+        <div v-if="isUploading" class="upload-status-bar animate-fade-in">
+          <div class="inline-progress">
+            <div class="progress-text">
+              <span class="progress-filename" :title="progress.filename">{{ progress.filename || "准备中..." }}</span>
+              <span class="progress-percent">{{ progressPercentage.toFixed(1) }}%</span>
+            </div>
+            <div class="progress-track-mini">
+              <div class="progress-fill-mini" :style="{ width: progressPercentage + '%' }"></div>
+            </div>
+            <div class="progress-meta">
+              <span>{{ formatBytes(progress.overall_done) }} / {{ formatBytes(progress.overall_total) }}</span>
+              <span class="progress-dot">·</span>
+              <span>{{ progress.current }}/{{ progress.total }}文件</span>
+              <span class="progress-dot">·</span>
+              <span>{{ formatSpeed(progress.speed) }}</span>
+              <template v-if="etaText">
+                <span class="progress-dot">·</span>
+                <span>{{ etaText }}</span>
+              </template>
+            </div>
+          </div>
+          <div class="inline-controls">
+            <button @click="togglePause" class="btn-icon-only" :disabled="controlBusy || isCancelling" :aria-label="isPaused ? '继续上传' : '暂停上传'" :title="isPaused ? '继续' : '暂停'">
+              <svg v-if="isPaused" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+            <button @click="cancel" class="btn-icon-only text-danger" :disabled="controlBusy || isCancelling" :aria-label="isCancelling ? '正在取消' : '取消上传'" title="取消">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
         <div v-show="activeView === 'results'" class="tab-pane">
           <div class="filter-row" v-if="availableDates.length > 0 || availableExtensions.length > 0">
             <div class="date-filter-section" v-if="availableDates.length > 0">
@@ -190,10 +229,10 @@
                 </div>
               </div>
               <div class="date-list">
-                <div v-for="item in availableDates" :key="item.date" :class="['date-chip', { active: selectedDates.includes(item.date) }]" @click="toggleDate(item.date)">
+                <button type="button" v-for="item in availableDates" :key="item.date" :class="['date-chip', { active: selectedDates.includes(item.date) }]" @click="toggleDate(item.date)" :aria-pressed="selectedDates.includes(item.date)">
                   <span class="date-text">{{ item.date }}</span>
                   <span class="date-count">{{ item.count }}</span>
-                </div>
+                </button>
               </div>
             </div>
 
@@ -206,55 +245,17 @@
                 </div>
               </div>
               <div class="date-list">
-                <div v-for="item in availableExtensions" :key="item.key" :class="['date-chip', { active: selectedExtensions.includes(item.key) }]" @click="toggleExtension(item.key)">
+                <button type="button" v-for="item in availableExtensions" :key="item.key" :class="['date-chip', { active: selectedExtensions.includes(item.key) }]" @click="toggleExtension(item.key)" :aria-pressed="selectedExtensions.includes(item.key)">
                   <span class="date-text">{{ item.label }}</span>
                   <span class="date-count">{{ item.count }}</span>
-                </div>
+                </button>
               </div>
             </div>
           </div>
 
           <FileTable v-if="filesToDisplay && filesToDisplay.length > 0" :files="filesToDisplay" :progress-map="fileProgress" v-model:filter="fileFilter" :selectable="selectionMode" v-model:selectedKeys="selectedKeys">
             <template #actions>
-              <div v-if="isUploading" class="upload-status-bar animate-fade-in">
-                <div class="inline-progress">
-                  <div class="progress-text">
-                    <span class="progress-filename" :title="progress.filename">{{ progress.filename || "准备中..." }}</span>
-                    <span class="progress-percent">{{ progressPercentage.toFixed(1) }}%</span>
-                  </div>
-                  <div class="progress-track-mini">
-                    <div class="progress-fill-mini" :style="{ width: progressPercentage + '%' }"></div>
-                  </div>
-                  <div class="progress-meta">
-                    <span>{{ formatBytes(progress.overall_done) }} / {{ formatBytes(progress.overall_total) }}</span>
-                    <span class="progress-dot">·</span>
-                    <span>{{ progress.current }}/{{ progress.total }}文件</span>
-                    <span class="progress-dot">·</span>
-                    <span>{{ formatSpeed(progress.speed) }}</span>
-                    <template v-if="etaText">
-                      <span class="progress-dot">·</span>
-                      <span>{{ etaText }}</span>
-                    </template>
-                  </div>
-                </div>
-                <div class="inline-controls">
-                  <button @click="togglePause" class="btn-icon-only" :title="isPaused ? '继续' : '暂停'">
-                    <svg v-if="isPaused" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </button>
-                  <button @click="cancel" class="btn-icon-only text-danger" title="取消">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              <div v-else class="action-buttons">
+              <div v-if="!isUploading" class="action-buttons">
                 <template v-if="selectionMode">
                   <button @click="exitSelectionMode" class="btn btn-secondary">退出选择</button>
                   <button @click="startUpload(selectedUploadFiles)" class="btn btn-primary btn-action-upload" :disabled="selectedCount === 0">
@@ -360,11 +361,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import FileSelector from "../components/FileSelector.vue";
-import ProgressBar from "../components/ProgressBar.vue";
 import TabView from "../components/TabView.vue";
 import FileTable from "../components/FileTable.vue";
 import LogViewer from "../components/LogViewer.vue";
@@ -373,13 +373,22 @@ import EaglePicker from "../components/EaglePicker.vue";
 import TetherPanel from "../components/TetherPanel.vue";
 import { useAppState } from "../composables/useAppState.js";
 
-const { currentMode, config, currentStep, tetherFiles } = useAppState();
+import { normalizePath, basename, mediaDayKey, extensionInfo as getFileExtensionInfo, mergeTetherFile } from "../utils/media.js";
+
+const { currentMode, config, currentStep, tetherFiles, configLocked } = useAppState();
 const fastMode = ref(true);
 const ignoreThumbnails = ref(true);
 
 const isScanning = ref(false);
 const isUploading = ref(false);
 const isPaused = ref(false);
+const isCancelling = ref(false);
+const controlBusy = ref(false);
+const scanSnapshot = ref(null);
+const completedSnapshot = ref(null);
+const unlisteners = [];
+let disposed = false;
+let activeUploadPaths = new Set();
 const showSuccessModal = ref(false);
 const noticeModal = ref({
   visible: false,
@@ -449,13 +458,7 @@ const availableDates = computed(() => {
   if (!scanResult.value) return [];
   const dates = {};
   scanResult.value.forEach((file) => {
-    let date;
-    if (file.date.secs_since_epoch !== undefined) {
-      date = new Date(file.date.secs_since_epoch * 1000);
-    } else {
-      date = new Date(file.date);
-    }
-    const dateStr = date.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-");
+    const dateStr = mediaDayKey(file.date);
     if (!dates[dateStr]) {
       dates[dateStr] = { date: dateStr, count: 0 };
     }
@@ -486,30 +489,18 @@ const filesToDisplay = computed(() => {
   if (selectedExtensions.value.length === 0) return [];
 
   return scanResult.value.filter((file) => {
-    let date;
-    if (file.date.secs_since_epoch !== undefined) {
-      date = new Date(file.date.secs_since_epoch * 1000);
-    } else {
-      date = new Date(file.date);
-    }
-    const dateStr = date.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-");
+    const dateStr = mediaDayKey(file.date);
     const info = getFileExtensionInfo(file.filename);
     return selectedDates.value.includes(dateStr) && selectedExtensions.value.includes(info.key);
   });
 });
 
-function normalizePath(value) {
-  if (!value) return "";
-  if (typeof value === "string") return value;
-  if (typeof value === "object" && typeof value.path === "string") return value.path;
-  return String(value);
-}
 
 // 选择模式下实际会上传的文件：当前显示、可上传(将上传/将覆盖)且被勾选
 const selectedUploadFiles = computed(() => {
   if (!selectionMode.value) return [];
   const set = new Set(selectedKeys.value);
-  return filesToDisplay.value.filter((f) => (f.status === "upload" || f.status === "overwrite") && set.has(normalizePath(f.path)));
+  return filesToDisplay.value.filter((f) => (f.status === "upload" || f.status === "overwrite") && !isCompleted(f) && set.has(normalizePath(f.path)));
 });
 
 const selectedCount = computed(() => selectedUploadFiles.value.length);
@@ -604,14 +595,6 @@ function deselectAllExtensions() {
   selectedExtensions.value = [];
 }
 
-function getFileExtensionInfo(filename) {
-  if (!filename) return { key: "noext", label: "无后缀" };
-  const text = String(filename);
-  const lastDot = text.lastIndexOf(".");
-  if (lastDot <= 0 || lastDot === text.length - 1) return { key: "noext", label: "无后缀" };
-  const label = text.slice(lastDot + 1);
-  return { key: label.toLowerCase(), label: label.toUpperCase() };
-}
 
 const sourceFavorites = computed(() => {
   if (currentMode.value === "sd") return config.value.favorites.sd_sources || [];
@@ -659,8 +642,9 @@ onMounted(async () => {
   if (!isTauri) return;
 
   try {
-    await listen("upload-progress", (event) => {
+    const unlisten = await listen("upload-progress", (event) => {
       const p = event.payload;
+      if (!isUploading.value || !activeUploadPaths.has(p.path)) return;
       progress.value = p;
       if (p.path) {
         fileProgress.value = {
@@ -673,13 +657,14 @@ onMounted(async () => {
         };
       }
     });
+    if (disposed) unlisten(); else unlisteners.push(unlisten);
   } catch (e) {
     addLog("warning", "无法监听上传进度事件: " + e);
   }
 
   try {
     // 联机会话文件事件：按 key 就地更新，列表在 useAppState 中跨页签共享
-    await listen("tether-file", (event) => {
+    const unlisten = await listen("tether-file", (event) => {
       const p = event.payload;
       const arr = tetherFiles.value;
       const idx = arr.findIndex((f) => f.key === p.key);
@@ -688,9 +673,9 @@ onMounted(async () => {
         return;
       }
       if (idx >= 0) {
-        arr[idx] = { ...arr[idx], ...p };
+        arr[idx] = mergeTetherFile(arr[idx], p);
       } else {
-        arr.push({ ...p });
+        arr.push(mergeTetherFile(null, p));
       }
       if (p.status === "done") {
         addLog("success", `联机入库: ${p.filename}`);
@@ -698,17 +683,25 @@ onMounted(async () => {
         addLog("error", `联机入库失败: ${p.filename} - ${p.error}`);
       }
     });
+    if (disposed) unlisten(); else unlisteners.push(unlisten);
   } catch (e) {
     addLog("warning", "无法监听联机事件: " + e);
   }
 });
 
+onBeforeUnmount(() => {
+  disposed = true;
+  unlisteners.forEach(unlisten => unlisten());
+});
+
 async function updateSource(path) {
+  if (configLocked.value) return;
   config.value[currentMode.value].source_dir = path;
   await saveConfig();
 }
 
 async function updateTarget(path) {
+  if (configLocked.value) return;
   config.value[currentMode.value].target_dir = path;
   await saveConfig();
 }
@@ -718,14 +711,10 @@ async function saveConfig() {
     await invoke("save_config", { config: config.value });
   } catch (e) {
     addLog("error", "保存配置失败: " + e);
+    openNotice({ title: "保存配置失败", message: String(e), type: "error" });
   }
 }
 
-function basename(p) {
-  if (!p) return "";
-  const parts = p.split(/[\\/]/).filter(Boolean);
-  return parts[parts.length - 1] || p;
-}
 
 async function addSourceFavorite() {
   const p = config.value[currentMode.value].source_dir;
@@ -790,7 +779,12 @@ async function selectTarget(p) {
 }
 
 async function startScan() {
+  if (isScanning.value || isUploading.value || !canStart.value) return;
+  const snapshot = { mode: currentMode.value, ...config.value[currentMode.value] };
   isScanning.value = true;
+  configLocked.value = true;
+  scanSnapshot.value = null;
+  lastUploadList.value = [];
   scanResult.value = null;
   selectedDates.value = [];
   selectedExtensions.value = [];
@@ -803,31 +797,26 @@ async function startScan() {
   addLog("info", "开始扫描...");
 
   try {
-    const modeConfig = config.value[currentMode.value];
+    const modeConfig = snapshot;
     const files = await invoke("scan_files", {
       args: {
         sourceDir: modeConfig.source_dir,
         targetDir: modeConfig.target_dir,
         overwriteDuplicates: modeConfig.overwrite_duplicates,
-        mode: currentMode.value,
+        mode: snapshot.mode,
         fastMode: fastMode.value,
         ignoreThumbnails: ignoreThumbnails.value,
       },
     });
 
+    scanSnapshot.value = snapshot;
     scanResult.value = files;
 
     // Initialize selectedDates with all found dates
     const dates = new Set();
     const extensions = new Set();
     files.forEach((file) => {
-      let date;
-      if (file.date.secs_since_epoch !== undefined) {
-        date = new Date(file.date.secs_since_epoch * 1000);
-      } else {
-        date = new Date(file.date);
-      }
-      const dateStr = date.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-");
+      const dateStr = mediaDayKey(file.date);
       dates.add(dateStr);
       extensions.add(getFileExtensionInfo(file.filename).key);
     });
@@ -861,6 +850,7 @@ async function startScan() {
     }
   } finally {
     isScanning.value = false;
+    configLocked.value = false;
     progress.value = { current: 0, total: 0, filename: "" };
   }
 }
@@ -869,56 +859,67 @@ function goBack() {
   currentStep.value = "config";
 }
 
-async function startUpload(files) {
-  const uploadList = Array.isArray(files) ? files : filesToDisplay.value;
-  if (!uploadList || uploadList.length === 0) return;
-  isUploading.value = true;
-  isPaused.value = false;
-  fileProgress.value = {};
-  const totalBytes = uploadList.filter((f) => f.status === "upload" || f.status === "overwrite").reduce((sum, f) => sum + (f.size || 0), 0);
-  progress.value = {
-    current: 0,
-    total: uploadList.length,
-    filename: "准备中...",
-    overall_done: 0,
-    overall_total: totalBytes,
-    speed: 0,
-  };
-  addLog("info", `开始上传 (${uploadList.length} 个文件)...`);
+function isCompleted(file) {
+  return ["done", "skipped"].includes(fileProgress.value[normalizePath(file.path)]?.status);
+}
 
+async function startUpload(files) {
+  if (isUploading.value || !scanSnapshot.value) return;
+  const uploadList = (Array.isArray(files) ? files : filesToDisplay.value).filter(f => !isCompleted(f));
+  if (!uploadList.length) return;
+  const snapshot = { ...scanSnapshot.value };
+  isUploading.value = true;
+  activeUploadPaths = new Set(uploadList.map(file => normalizePath(file.path)));
+  isPaused.value = false;
+  isCancelling.value = false;
+  for (const file of uploadList) delete fileProgress.value[normalizePath(file.path)];
+  progress.value = {
+    current: 0, total: uploadList.length, filename: "准备中...", overall_done: 0,
+    overall_total: uploadList.filter(f => f.status === "upload" || f.status === "overwrite").reduce((sum, f) => sum + (f.size || 0), 0), speed: 0,
+  };
+  const allAttempted = new Map(lastUploadList.value.map(f => [normalizePath(f.path), f]));
+  uploadList.forEach(f => allAttempted.set(normalizePath(f.path), f));
+  lastUploadList.value = [...allAttempted.values()];
+  addLog("info", `开始上传 (${uploadList.length} 个文件)...`);
   try {
-    await invoke("upload_files", { files: uploadList, targetDir: config.value[currentMode.value].target_dir });
+    const outcome = await invoke("upload_files", { files: uploadList, targetDir: snapshot.target_dir });
+    const failed = outcome.failed || [];
+    const failures = new Map(failed.map(f => [normalizePath(f.path), f]));
+    const completedPaths = new Set(outcome.completed_paths || []);
+    const skippedPaths = new Set(outcome.skipped_paths || []);
+    for (const file of uploadList) {
+      const path = normalizePath(file.path);
+      if (failures.has(path)) fileProgress.value[path] = { status: "error", done: 0, total: file.size };
+      else if (completedPaths.has(path)) fileProgress.value[path] = { status: "done", done: file.size, total: file.size };
+      else if (skippedPaths.has(path)) fileProgress.value[path] = { status: "skipped", done: file.size, total: file.size };
+      else if (!outcome.cancelled) fileProgress.value[path] = { status: file.status === "skip" ? "skipped" : "done", done: file.size, total: file.size };
+    }
+    for (const failure of failed) addLog("error", `${failure.filename}: ${failure.error}`);
+    if (outcome.cancelled || failed.length) {
+      addLog("warning", `本次已完成 ${outcome.completed} 个，跳过 ${outcome.skipped} 个，失败 ${failed.length} 个${outcome.cancelled ? "；已取消" : ""}`);
+      if (failed.length) openNotice({ title: "部分文件未备份", message: `有 ${failed.length} 个文件失败。已完成的文件将保留，重试只处理未完成的文件。`, submessage: failed[0].error, type: "warning" });
+      return;
+    }
     addLog("success", "上传完成!");
-    // 记录本次上传清单，供“挑图导入 Eagle”使用（目标路径为准）
-    lastUploadList.value = uploadList;
+    completedSnapshot.value = snapshot;
     showSuccessModal.value = true;
-    scanResult.value = null;
     selectionMode.value = false;
     selectedKeys.value = [];
-    currentStep.value = "config"; // Return to config after success
-  } catch (e) {
-    const errorText = String(e);
-    addLog("error", "上传失败: " + errorText);
-    if (errorText.includes("目标路径不存在")) {
-      openNotice({
-        title: "目标路径不可用",
-        message: "目标磁盘可能未挂载或目录已被移动，请确认后重新选择备份位置。",
-        type: "warning",
-      });
-    } else {
-      openNotice({
-        title: "上传失败",
-        message: errorText,
-        type: "error",
-      });
-    }
+    scanResult.value = null;
+    currentStep.value = "config";
+  } catch (error) {
+    addLog("error", "上传失败: " + error);
+    openNotice({ title: "上传失败", message: String(error), type: "error" });
   } finally {
     isUploading.value = false;
+    activeUploadPaths = new Set();
+    isPaused.value = false;
+    isCancelling.value = false;
   }
 }
 
 async function ejectVolume() {
-  const modeConfig = config.value[currentMode.value];
+  const modeConfig = completedSnapshot.value;
   if (!modeConfig || !modeConfig.source_dir) return;
 
   try {
@@ -943,22 +944,28 @@ async function ejectVolume() {
 }
 
 async function togglePause() {
-  if (isPaused.value) {
-    await invoke("resume_upload");
-    isPaused.value = false;
-    addLog("info", "继续上传");
-  } else {
-    await invoke("pause_upload");
-    isPaused.value = true;
-    addLog("warning", "上传已暂停");
-  }
+  if (!isUploading.value || isCancelling.value || controlBusy.value) return;
+  controlBusy.value = true;
+  try {
+    const next = !isPaused.value;
+    await invoke(next ? "pause_upload" : "resume_upload");
+    if (isUploading.value) isPaused.value = next;
+    addLog("info", next ? "上传已暂停" : "继续上传");
+  } catch (error) {
+    openNotice({ title: "无法更新上传状态", message: String(error), type: "error" });
+  } finally { controlBusy.value = false; }
 }
 
 async function cancel() {
-  await invoke("cancel_upload");
-  isUploading.value = false;
-  isPaused.value = false;
-  addLog("warning", "上传已取消");
+  if (!isUploading.value || isCancelling.value || controlBusy.value) return;
+  isCancelling.value = true;
+  try {
+    await invoke("cancel_upload");
+    addLog("warning", "正在取消上传，等待文件处理结束…");
+  } catch (error) {
+    isCancelling.value = false;
+    openNotice({ title: "取消失败", message: String(error), type: "error" });
+  }
 }
 
 function addLog(type, message) {
@@ -995,6 +1002,11 @@ function closeNotice() {
 </script>
 
 <style scoped>
+.config-form {
+  display: flex; flex-direction: column; flex: 1; min-height: 0; border: 0; margin: 0; padding: 0;
+}
+.fav-select { border: 0; background: transparent; cursor: pointer; text-align: left; }
+.fav-item:focus-within .fav-remove { opacity: 1; }
 .dashboard {
   display: flex;
   flex-direction: column;
@@ -1419,7 +1431,7 @@ function closeNotice() {
   padding: 0.4rem 0.85rem;
   border-radius: var(--radius-lg);
   border: 1px solid var(--surface-200);
-  flex: 1;
+  flex: 0 0 auto;
   min-width: 0;
 }
 

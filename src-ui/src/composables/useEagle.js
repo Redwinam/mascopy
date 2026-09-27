@@ -1,87 +1,105 @@
-import { ref, computed } from "vue";
-import { invoke } from "@tauri-apps/api/core";
-import { useAppState } from "./useAppState.js";
+import { ref, computed, watch } from 'vue';
+import { invoke } from '@tauri-apps/api/core';
+import { useAppState } from './useAppState.js';
 
-// Eagle 连接与导入偏好放在模块级：联机灯箱/挑图页共享同一份连接，
-// 已导入/裁剪次数标记（按文件路径）也跨视图保持，避免重复导入
-const eagleState = ref({ status: "idle", version: "", error: "" }); // idle | checking | ok | fail
+const { config } = useAppState();
+const eagleCfg = computed(() => config.value.eagle);
+// 身份仅驻留内存；不会写入日志、路径或额外配置。
+const connectionKey = computed(() => JSON.stringify([eagleCfg.value.base_url.trim().replace(/\/+$/, ''), eagleCfg.value.token]));
+const eagleState = ref({ status: 'idle', version: '', error: '' });
 const folders = ref([]);
-const folderId = ref("");
-const tagsInput = ref("");
-const marks = ref({}); // { [path]: { imported: bool, cropCount: n } }
+const folderId = ref('');
+const tagsInput = ref('');
+const marks = ref({});
+const pending = ref(new Set());
+let connectionRequest = 0;
+
+watch(connectionKey, () => {
+  connectionRequest++;
+  eagleState.value = { status: 'idle', version: '', error: '' };
+  folders.value = [];
+  folderId.value = '';
+}, { flush: 'sync' });
 
 function flattenFolders(nodes, depth = 0, out = []) {
-    (nodes || []).forEach((n) => {
-        out.push({ id: n.id, label: `${"　".repeat(depth)}${n.name}` });
-        flattenFolders(n.children, depth + 1, out);
-    });
-    return out;
+  (Array.isArray(nodes) ? nodes : []).forEach(n => {
+    out.push({ id: n.id, label: `${'　'.repeat(depth)}${n.name}` });
+    flattenFolders(n.children, depth + 1, out);
+  });
+  return out;
+}
+
+function operationKey(path, kind, identity) {
+  return JSON.stringify([identity, path, kind]);
 }
 
 export function useEagle() {
-    const { config } = useAppState();
-
-    const eagleCfg = computed(() => {
-        if (!config.value.eagle) {
-            config.value.eagle = { base_url: "http://localhost:41595", token: "", last_folder_id: "" };
-        }
-        return config.value.eagle;
-    });
-
-    async function connectEagle() {
-        eagleState.value = { status: "checking", version: "", error: "" };
-        try {
-            const auth = { baseUrl: eagleCfg.value.base_url, token: eagleCfg.value.token };
-            const version = await invoke("eagle_ping", auth);
-            const tree = await invoke("eagle_folders", auth);
-            folders.value = flattenFolders(tree);
-            const saved = eagleCfg.value.last_folder_id;
-            if (saved && folders.value.some((f) => f.id === saved)) {
-                folderId.value = saved;
-            }
-            eagleState.value = { status: "ok", version, error: "" };
-        } catch (e) {
-            eagleState.value = { status: "fail", version: "", error: String(e) };
-        }
+  async function connectEagle() {
+    const request = ++connectionRequest;
+    const identity = connectionKey.value;
+    const auth = { baseUrl: eagleCfg.value.base_url, token: eagleCfg.value.token };
+    eagleState.value = { status: 'checking', version: '', error: '' };
+    try {
+      const version = await invoke('eagle_ping', auth);
+      const tree = await invoke('eagle_folders', auth);
+      if (request !== connectionRequest || identity !== connectionKey.value) return;
+      folders.value = flattenFolders(tree);
+      const saved = folderId.value || eagleCfg.value.last_folder_id;
+      folderId.value = folders.value.some(f => f.id === saved) ? saved : '';
+      eagleState.value = { status: 'ok', version, error: '' };
+    } catch (error) {
+      if (request !== connectionRequest || identity !== connectionKey.value) return;
+      folders.value = [];
+      folderId.value = '';
+      eagleState.value = { status: 'fail', version: '', error: String(error) };
     }
+  }
 
-    async function saveEagleConfig() {
-        try {
-            await invoke("save_config", { config: config.value });
-        } catch (e) {
-            /* 配置保存失败不阻断导入流程 */
-        }
+  async function saveEagleConfig() {
+    try {
+      await invoke('save_config', { config: config.value });
+    } catch (error) {
+      eagleState.value = { ...eagleState.value, error: `保存设置失败：${error}` };
     }
+  }
 
-    async function persistFolderChoice() {
-        eagleCfg.value.last_folder_id = folderId.value;
-        await saveEagleConfig();
-    }
+  async function persistFolderChoice(choice = folderId.value, identity = connectionKey.value) {
+    if (identity !== connectionKey.value) return;
+    eagleCfg.value.last_folder_id = choice;
+    await saveEagleConfig();
+  }
 
-    function markOf(path) {
-        return marks.value[path] || {};
-    }
+  function markOf(path, identity = connectionKey.value) {
+    return marks.value[identity]?.[path] || {};
+  }
 
-    function markImported(path) {
-        marks.value[path] = { ...markOf(path), imported: true };
-    }
+  function updateMark(path, update, identity) {
+    marks.value[identity] = { ...marks.value[identity], [path]: { ...markOf(path, identity), ...update } };
+  }
 
-    function addCropMark(path) {
-        const m = markOf(path);
-        marks.value[path] = { ...m, cropCount: (m.cropCount || 0) + 1 };
-    }
+  function markImported(path, identity = connectionKey.value) {
+    updateMark(path, { imported: true }, identity);
+  }
 
-    return {
-        eagleCfg,
-        eagleState,
-        folders,
-        folderId,
-        tagsInput,
-        markOf,
-        markImported,
-        addCropMark,
-        connectEagle,
-        saveEagleConfig,
-        persistFolderChoice,
+  function addCropMark(path, identity = connectionKey.value) {
+    updateMark(path, { cropCount: (markOf(path, identity).cropCount || 0) + 1 }, identity);
+  }
+
+  function isImporting(path, kind, identity = connectionKey.value) {
+    return pending.value.has(operationKey(path, kind, identity));
+  }
+
+  function beginImport(path, kind, identity = connectionKey.value) {
+    const key = operationKey(path, kind, identity);
+    if (pending.value.has(key)) return null;
+    pending.value = new Set([...pending.value, key]);
+    return () => {
+      const next = new Set(pending.value);
+      next.delete(key);
+      pending.value = next;
     };
+  }
+
+  return { eagleCfg, eagleState, folders, folderId, tagsInput, connectionKey,
+    markOf, markImported, addCropMark, connectEagle, saveEagleConfig, persistFolderChoice, isImporting, beginImport };
 }
