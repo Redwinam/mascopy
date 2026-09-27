@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>大师拷贝 · MasCopy</title>
+  <meta name="description" content="macOS 上的照片与视频整理工具：把存储卡里的素材按拍摄日期备份到本地磁盘或 NAS，按内容判重不误覆盖，支持相机 WiFi 直传与 Eagle 挑图导入。">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="assets/site.css">
+  <script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("dl-site-theme")==="light"?"light":"dark")}catch(e){}</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="assets/icon.png" alt="" width="26" height="26">大师拷贝<span class="brand-sub">MasCopy</span></a>
+    <nav class="nav" aria-label="主导航">
+      <a href="index.html#chapters">功能</a>
+      <a href="backup.html">备份</a>
+      <a href="tether.html">联机拍摄</a>
+      <a href="eagle.html">Eagle</a>
+      <a href="reliability.html">可靠性</a>
+    </nav>
+    <div class="header-tools">
+      <button class="icon-btn" type="button" data-theme-toggle aria-label="切换到浅色" title="切换到浅色"><svg class="icon only-dark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><svg class="icon only-light" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="index.html#download"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg><span class="btn-download-label">下载</span></a>
+      <button class="icon-btn menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-label="打开导航"><svg class="icon" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-ring" aria-hidden="true"></div>
+    <div class="hero-dot" aria-hidden="true"></div>
+    <div class="wrap">
+      <div class="hero-grid">
+        <p class="eyebrow">MasCopy · 给每天要倒卡的摄影师</p>
+        <h1 class="hero-title">大师拷贝</h1>
+        <p class="hero-lede">插上存储卡，照片和视频按拍摄日期整理进本地磁盘或 NAS。拷贝之前先告诉你每个文件去哪；同名文件按内容判重，从不静默覆盖。拍摄时让相机直接把照片传进来，挑好的图一键送进 Eagle。</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#download"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>下载 macOS 版</a>
+          <a class="btn" href="#chapters">看它能做什么<svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </div>
+        <p class="hero-meta">
+          <span><i class="dot" aria-hidden="true"></i>macOS</span>
+          <span>照片 · RAW · 视频 · 大疆素材</span>
+          <span>相机 WiFi 直传</span>
+          <span>全部在本地运行</span>
+        </p>
+      </div>
+
+      <figure class="hero-shot">
+        <div class="window">
+          <img class="only-dark" src="assets/shots/results-dark.webp" width="2800" height="1800" alt="大师拷贝的扫描结果页：顶部按日期和后缀筛选，下面的表格列出每个文件在 NAS 上的目标位置、类型、大小、拍摄日期，以及将上传、将覆盖、将跳过的状态。" fetchpriority="high">
+          <img class="only-light" src="assets/shots/results-light.webp" width="2800" height="1800" alt="大师拷贝的扫描结果页（浅色主题）。" loading="lazy">
+          <svg class="lights" viewBox="0 0 1400 900" aria-hidden="true"><circle cx="26" cy="31" r="6" fill="#ff5f57"/><circle cx="46" cy="31" r="6" fill="#febc2e"/><circle cx="66" cy="31" r="6" fill="#28c840"/></svg>
+        </div>
+        <figcaption><b>扫描结果。</b>每个文件去哪一目了然：<span class="status up">将上传</span> <span class="status over">将覆盖</span> <span class="status skip">将跳过</span>。示例文件与照片均为演示素材。</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section band" id="flow">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">一次倒卡</p>
+        <h2>三步完成备份</h2>
+        <p>选好存储卡和备份位置，先扫描看清楚，再开始拷贝。拷完可以直接推出存储卡，或者进入挑图。</p>
+      </div>
+      <div class="flow">
+        <div class="flow-step">
+          <div class="window">
+            <img class="only-dark" src="assets/shots/config-dark.webp" width="2800" height="1800" alt="配置页：左边选 SD 卡路径，右边选 NAS 备份位置，下面各有收藏夹；底部是覆盖重复文件、快速扫描、忽略缩略图文件夹三个开关和开始扫描按钮。" loading="lazy">
+            <img class="only-light" src="assets/shots/config-light.webp" width="2800" height="1800" alt="配置页（浅色主题）。" loading="lazy">
+          </div>
+          <h3>选好来源和目标</h3>
+          <p>左边选存储卡，右边选本地磁盘或已挂载的 NAS。常用路径点一下 ♥ 收进收藏夹，下次直接点选。SD 卡和大疆设备各记一套。</p>
+        </div>
+        <div class="flow-step">
+          <div class="window">
+            <img class="only-dark" src="assets/shots/results-dark.webp" width="2800" height="1800" alt="扫描结果：按日期和后缀筛选，表格显示目标位置与状态。" loading="lazy">
+            <img class="only-light" src="assets/shots/results-light.webp" width="2800" height="1800" alt="扫描结果（浅色主题）。" loading="lazy">
+          </div>
+          <h3>先扫描，看清每个文件去哪</h3>
+          <p>读取照片 EXIF 与视频的创建时间，算出每个文件落在哪个日期目录。按日期、后缀筛选，也可以只勾选一部分上传。</p>
+        </div>
+        <div class="flow-step">
+          <div class="window">
+            <img src="assets/shots/done-dark.webp" width="2800" height="1800" alt="备份完成弹窗：所有选中的文件已成功备份到目标目录，按钮有关闭、挑图导入 Eagle 和推出设备。" loading="lazy">
+          </div>
+          <h3>拷贝，完成后推出存储卡</h3>
+          <p>随时暂停、继续或取消，进度按字节算并估算剩余时间。全部完成后点「推出设备」，或者直接进入挑图导入 Eagle。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="archive">
+    <div class="wrap split">
+      <div>
+        <p class="eyebrow">归档与判重</p>
+        <h2>按天归档，按内容判重</h2>
+        <p>每个文件放进 <code>目标/YYYY-MM-DD/</code>，文件名保持原样。遇到同名文件，大师拷贝会逐字节比较内容，而不是只看名字和大小：内容相同就跳过，内容不同就自动改名，只有你明确打开「覆盖重复文件」时才会替换。</p>
+        <ul class="points">
+          <li>日期优先取照片 EXIF 的拍摄时间和视频容器里的创建时间，取不到再用文件修改时间。</li>
+          <li>同一批里两个同日同名的文件（例如来自两个 DCIM 子目录），第二个自动加 <code>_1</code>。</li>
+          <li>大疆素材连同 LRF 低清代理和 Osmo 360 的 OSV 一起归档。</li>
+        </ul>
+        <p style="margin-top: 22px"><a href="backup.html#archive">归档与判重的全部规则 →</a></p>
+      </div>
+      <div>
+<pre class="tree"><span class="dir">/Volumes/NAS/照片备份/</span>
+├─ <span class="dir">2026-08-09/</span>
+│  ├─ <span class="new">IMG_0409.CR3</span>      <span class="note">新文件，将上传</span>
+│  └─ <span class="ren">IMG_0411_1.JPG</span>    <span class="note">同名不同内容，自动改名</span>
+└─ <span class="dir">2026-08-10/</span>
+   ├─ <span class="new">IMG_0403.CR3</span>      <span class="note">新文件，将上传</span>
+   ├─ <span class="skip">IMG_0406.JPG</span>      <span class="note">内容相同，跳过</span>
+   └─ <span class="new">MVI_0408.MP4</span>      <span class="note">视频按创建时间归档</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="section band" id="tether">
+    <div class="wrap split reverse">
+      <div>
+        <p class="eyebrow">联机拍摄</p>
+        <h2>按下快门，照片自己进 NAS</h2>
+        <p>大师拷贝内置一个 FTP 服务器。相机连上同一个局域网，拍完的照片直接传过来，按日期入库，实时出现在照片流里。用 EOS Utility 联机时，也可以改成监听它的保存目录。</p>
+        <ul class="points">
+          <li>相机端怎么设置写在界面上：菜单路径、服务器地址、端口、账号，照着填一次存成预设。</li>
+          <li>传输先写进收件箱的暂存区，完整收到后才提交入库；传一半断了的文件不会混进图库。</li>
+          <li>备份位置暂时不可写（比如 NAS 掉线）会自动退避重试，恢复后接着入库。</li>
+          <li>监听模式永远不删除来源文件。</li>
+        </ul>
+        <p style="margin-top: 22px"><a href="tether.html">联机拍摄的完整说明 →</a></p>
+      </div>
+      <figure>
+        <div class="window">
+          <img class="only-dark" src="assets/shots/tether-dark.webp" width="2800" height="1800" alt="联机拍摄会话：顶部显示联机会话进行中、已接收 10 张、FTP 地址与用户；下面是相机端设置提示和照片流，照片卡片标着已入库、已存在、失败或接收中。" loading="lazy">
+          <img class="only-light" src="assets/shots/tether-light.webp" width="2800" height="1800" alt="联机拍摄会话（浅色主题）。" loading="lazy">
+          <svg class="lights" viewBox="0 0 1400 900" aria-hidden="true"><circle cx="26" cy="31" r="6" fill="#ff5f57"/><circle cx="46" cy="31" r="6" fill="#febc2e"/><circle cx="66" cy="31" r="6" fill="#28c840"/></svg>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section" id="eagle">
+    <div class="wrap split">
+      <div>
+        <p class="eyebrow">挑图</p>
+        <h2>RAW 也能看，挑好直接送进 Eagle</h2>
+        <p>备份完或联机时，点开照片放大看。RAW 和 HEIC 由 macOS 自带的 sips 转成预览，读进内存后立刻删掉临时文件，不留缓存。选好 Eagle 里的文件夹、填上标签，一键导入原图。</p>
+        <ul class="points">
+          <li>需要只要画面一部分时，框选裁剪：自由、1:1、4:3、3:2、16:9，选区旁实时显示像素尺寸。</li>
+          <li>裁剪用全分辨率原图完成，结果直接推给 Eagle，存储卡上不写任何文件，也不留下裁剪图。</li>
+          <li>方向键翻页，<kbd>Enter</kbd> 进入裁剪，<kbd>Esc</kbd> 退出。</li>
+        </ul>
+        <p style="margin-top: 22px"><a href="eagle.html">挑图与裁剪的完整说明 →</a></p>
+      </div>
+      <figure>
+        <div class="window">
+          <img src="assets/shots/crop-dark.webp" width="2800" height="1800" alt="裁剪模式：一张运河边的照片上框出 3:2 的选区，带三分线和拖拽柄，选区下方显示像素尺寸；底部是比例选择、导入名称、取消和裁剪并导入。" loading="lazy">
+          <svg class="lights" viewBox="0 0 1400 900" aria-hidden="true"><circle cx="26" cy="31" r="6" fill="#ff5f57"/><circle cx="46" cy="31" r="6" fill="#febc2e"/><circle cx="66" cy="31" r="6" fill="#28c840"/></svg>
+        </div>
+        <figcaption>照片来自 Unsplash，仅作演示。</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section band" id="safety">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">不丢一张</p>
+        <h2>拷贝过程出了意外，已有的文件也不会坏</h2>
+        <p>倒卡最怕的是拔错卡、NAS 掉线、半截文件覆盖了好文件。这些情况大师拷贝都按最坏的打算处理。</p>
+      </div>
+      <div class="states">
+        <div class="state"><span class="badge waiting">先写临时文件</span><p>每个文件先写成隐藏的临时文件，写完落盘再改成正式名字。中途失败或取消，临时文件自动删除。</p></div>
+        <div class="state"><span class="badge idle">绝不静默覆盖</span><p>发布新文件时如果目标已经存在，直接失败而不是盖过去。只有打开覆盖且内容确实不同，才会替换。</p></div>
+        <div class="state"><span class="badge attn">源文件不动</span><p>SD 卡和大疆素材只读不写，从不删除；监听模式也永远保留来源文件。</p></div>
+        <div class="state"><span class="badge notice">单个失败不拖累整批</span><p>拔卡、NAS 掉线只记为那一个文件失败。重试时只处理没完成的，已完成的原样保留。</p></div>
+        <div class="state"><span class="badge running">扫描后有变化会发现</span><p>拷贝前核对源文件的大小和修改时间，拷贝中文件还在变大也会停下，提示重新扫描。</p></div>
+        <div class="state"><span class="badge done">一切都在本地</span><p>没有账号，不连云端。配置文件只有你自己能读，RAW 预览和裁剪都不留缓存文件。</p></div>
+      </div>
+      <p style="margin-top: 24px"><a href="reliability.html">可靠性与隐私的全部设计 →</a></p>
+    </div>
+  </section>
+
+  <section class="section" id="formats">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">支持格式</p>
+        <h2>佳能、尼康、索尼的 RAW，大疆的视频</h2>
+        <p>扩展名不区分大小写。以 <code>.</code> 开头的隐藏文件和 macOS 的 <code>._</code> 伴生文件一律跳过。</p>
+      </div>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>格式</th><th>SD 卡</th><th>大疆</th><th>联机拍摄</th></tr></thead>
+          <tbody>
+            <tr><td>JPG / JPEG</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+            <tr><td>PNG、HEIC</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>RAW：NEF、CR2、CR3、ARW、DNG</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>HIF（佳能 HEIF）</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>视频：MP4、MOV</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+            <tr><td>视频：AVI、M4V、3GP、MKV</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>CRM（Cinema RAW Light）</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>LRF（大疆低清代理）、OSV（Osmo 360）</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top: 18px"><a href="reference.html">格式、快捷键与系统要求速查 →</a></p>
+    </div>
+  </section>
+
+  <section class="section band" id="chapters">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">功能总览</p>
+        <h2>五个章节，写到每一个开关</h2>
+      </div>
+      <div class="chapters five">
+        <a class="chapter-card tone-blue" href="backup.html">
+          <div class="chapter-bar"><svg class="icon" viewBox="0 0 24 24"><line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/></svg>SD 卡与大疆备份</div>
+          <div class="chapter-body">
+            <h3>扫描、归档、判重、拷贝、推出</h3>
+            <ul>
+              <li>EXIF 与视频创建时间定日期，归档到 YYYY-MM-DD</li>
+              <li>按日期、后缀筛选，勾选一部分上传</li>
+              <li>暂停、继续、取消，按字节算进度和剩余时间</li>
+              <li>部分失败时只重试没完成的文件</li>
+            </ul>
+            <span class="chapter-more">详细介绍<svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+          </div>
+        </a>
+        <a class="chapter-card tone-violet" href="tether.html">
+          <div class="chapter-bar"><svg class="icon" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>联机拍摄</div>
+          <div class="chapter-body">
+            <h3>相机 WiFi 直传，或监听 EOS Utility</h3>
+            <ul>
+              <li>内置 FTP 服务器，界面上写好相机端怎么设</li>
+              <li>收件箱两段提交，重启后继续入库</li>
+              <li>实时照片流：接收中、已入库、已存在、失败</li>
+              <li>备份位置掉线自动退避重试</li>
+            </ul>
+            <span class="chapter-more">详细介绍<svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+          </div>
+        </a>
+        <a class="chapter-card tone-copper" href="eagle.html">
+          <div class="chapter-bar"><svg class="icon" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>Eagle 挑图与裁剪</div>
+          <div class="chapter-body">
+            <h3>放大看 RAW，挑好就导入</h3>
+            <ul>
+              <li>RAW、HEIC 也能放大预览，不留缓存</li>
+              <li>选 Eagle 文件夹、加标签，一键导入原图</li>
+              <li>五种比例裁剪，按全分辨率原图导出</li>
+              <li>方向键翻页，Enter 裁剪，Esc 退出</li>
+            </ul>
+            <span class="chapter-more">详细介绍<svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+          </div>
+        </a>
+        <a class="chapter-card tone-live" href="reliability.html">
+          <div class="chapter-bar"><svg class="icon" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>可靠性与隐私</div>
+          <div class="chapter-body">
+            <h3>中断不留半成品，源文件从不动</h3>
+            <ul>
+              <li>临时文件写完落盘再独占发布</li>
+              <li>逐字节判重，比较期间两边都不能变</li>
+              <li>单个文件失败不拖累整批</li>
+              <li>全部本地运行，配置文件仅本人可读</li>
+            </ul>
+            <span class="chapter-more">详细介绍<svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+          </div>
+        </a>
+        <a class="chapter-card tone-neutral" href="reference.html">
+          <div class="chapter-bar"><svg class="icon" viewBox="0 0 24 24"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>格式、快捷键与系统要求</div>
+          <div class="chapter-body">
+            <h3>一页查全格式、默认值与快捷键</h3>
+            <ul>
+              <li>三种模式各支持哪些扩展名</li>
+              <li>日期规则、目录格式与界面状态含义</li>
+              <li>端口、预览尺寸、重试间隔等默认值</li>
+              <li>系统要求与首次打开的放行方法</li>
+            </ul>
+            <span class="chapter-more">详细介绍<svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="download">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">下载</p>
+        <h2>装上，插卡就能用</h2>
+      </div>
+      <div class="download">
+        <div id="requirements">
+          <h3>大师拷贝 <span data-release-version>最新版</span></h3>
+          <p style="color: var(--ink-2)" data-release-meta>macOS 安装包（.dmg），在 GitHub 发布。</p>
+          <p style="margin-top: 18px"><a class="btn btn-primary" href="https://github.com/Redwinam/mascopy/releases/latest" data-release-download><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>下载 .dmg</a></p>
+          <dl>
+            <dt>系统</dt><dd>macOS。依赖系统自带的 sips、diskutil 等组件</dd>
+            <dt>NAS</dt><dd>先在访达里挂载为可写目录</dd>
+            <dt>Eagle</dt><dd>挑图导入需要 Eagle 正在运行并开启本地 API</dd>
+            <dt>联机</dt><dd>FTP 直传需要相机与 Mac 在同一局域网，并在防火墙提示里允许</dd>
+            <dt>版本</dt><dd>联机拍摄、Eagle 挑图与裁剪、暂停与继续从 4.0 起提供</dd>
+          </dl>
+        </div>
+        <div>
+          <h3>第一次用</h3>
+          <ol class="steps">
+            <li>打开 .dmg，把「大师拷贝」拖进「应用程序」。</li>
+            <li>第一次打开时 macOS 会提示无法验证开发者（安装包未经 Apple 公证）。到「系统设置 → 隐私与安全性」底部点「仍要打开」；也可以在终端执行 <code>xattr -dr com.apple.quarantine /Applications/大师拷贝.app</code>。</li>
+            <li>插上存储卡，选「SD卡模式」或「DJI模式」，左边选卡上的目录，右边选备份位置。</li>
+            <li>点「开始扫描」，确认列表后点「开始上传」。</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div>
+      <a class="brand" href="index.html"><img src="assets/icon.png" alt="" width="26" height="26">大师拷贝</a>
+      <p class="fine">macOS 上的照片与视频整理工具：把存储卡里的素材按拍摄日期备份到本地磁盘或 NAS，支持相机联机拍摄与 Eagle 挑图导入。</p>
+      <p class="fine"><a href="https://github.com/Redwinam/mascopy">GitHub · Redwinam/mascopy</a></p>
+    </div>
+    <div>
+      <h4>功能</h4>
+      <ul>
+        <li><a href="backup.html">SD 卡与大疆备份</a></li>
+        <li><a href="tether.html">联机拍摄</a></li>
+        <li><a href="eagle.html">Eagle 挑图与裁剪</a></li>
+        <li><a href="reliability.html">可靠性与隐私</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>参考</h4>
+      <ul>
+        <li><a href="reference.html">格式、快捷键与系统要求</a></li>
+        <li><a href="https://github.com/Redwinam/mascopy/releases">版本发布记录</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>获取</h4>
+      <ul>
+        <li><a href="index.html#download">下载与安装</a></li>
+        <li><a href="reference.html#requirements">系统要求</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>

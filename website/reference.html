@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>格式、快捷键与系统要求 · 大师拷贝</title>
+  <meta name="description" content="大师拷贝速查：三种模式支持的格式、日期规则、快捷键、界面状态、默认值与上限、系统要求、配置文件与版本历史。">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="assets/site.css">
+  <script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("dl-site-theme")==="light"?"light":"dark")}catch(e){}</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="assets/icon.png" alt="" width="26" height="26">大师拷贝<span class="brand-sub">MasCopy</span></a>
+    <nav class="nav" aria-label="主导航">
+      <a href="index.html#chapters">功能</a>
+      <a href="backup.html">备份</a>
+      <a href="tether.html">联机拍摄</a>
+      <a href="eagle.html">Eagle</a>
+      <a href="reliability.html">可靠性</a>
+    </nav>
+    <div class="header-tools">
+      <button class="icon-btn" type="button" data-theme-toggle aria-label="切换到浅色" title="切换到浅色"><svg class="icon only-dark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><svg class="icon only-light" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="index.html#download"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg><span class="btn-download-label">下载</span></a>
+      <button class="icon-btn menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-label="打开导航"><svg class="icon" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap doc">
+  <aside class="doc-nav">
+    <details class="chapter-list">
+      <summary class="tone-neutral" title="切换章节"><span class="sw"></span><span class="cur">格式、快捷键与系统要求</span><span class="pos">5 / 5</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+      <ul>
+        <li><a class="tone-blue" href="backup.html"><span class="sw"></span>SD 卡与大疆备份</a></li>
+        <li><a class="tone-violet" href="tether.html"><span class="sw"></span>联机拍摄</a></li>
+        <li><a class="tone-copper" href="eagle.html"><span class="sw"></span>Eagle 挑图与裁剪</a></li>
+        <li><a class="tone-live" href="reliability.html"><span class="sw"></span>可靠性与隐私</a></li>
+        <li><a class="tone-neutral" href="reference.html" aria-current="page"><span class="sw"></span>格式、快捷键与系统要求</a></li>
+      </ul>
+    </details>
+    <nav class="toc" aria-label="本页目录">
+      <h4>本页</h4>
+      <ul>
+        <li><a href="#formats">支持的格式</a></li>
+        <li><a href="#dates">日期规则与归档目录</a></li>
+        <li><a href="#shortcuts">快捷键</a></li>
+        <li><a href="#mouse">鼠标操作</a></li>
+        <li><a href="#states">界面状态</a></li>
+        <li><a href="#defaults">默认值与上限</a></li>
+        <li><a href="#requirements">系统要求</a></li>
+        <li><a href="#config">配置文件</a></li>
+        <li><a href="#versions">版本历史</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main class="doc-main tone-neutral">
+    <header class="chapter-head">
+      <span class="chapter-label"><svg class="icon" viewBox="0 0 24 24"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>格式、快捷键与系统要求</span>
+      <h1>一页查全格式、默认值与快捷键</h1>
+      <p class="lede">前四章讲清楚了每个功能怎么用，这一页把其中的规则和数字集中列成表：三种模式各收哪些扩展名，日期怎么定，每个按键和界面状态是什么意思，各项默认值与上限，以及装机前要准备什么。</p>
+    </header>
+
+    <section id="formats">
+      <h2>支持的格式</h2>
+      <p>三种模式共用一张格式表，各自只收其中一部分。扩展名不区分大小写，<code>IMG_0421.CR3</code> 与 <code>img_0421.cr3</code> 同样识别。表里没有的扩展名，以及当前模式不收的格式，扫描时直接略过，不会出现在结果里。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>格式</th><th>类型</th><th>SD 卡模式</th><th>DJI 模式</th><th>联机拍摄</th></tr></thead>
+          <tbody>
+            <tr><td>JPG、JPEG</td><td>照片</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+            <tr><td>PNG</td><td>照片</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>HEIC</td><td>照片</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>HIF（佳能 HEIF）</td><td>照片</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>NEF（尼康 RAW）</td><td>照片</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>CR2、CR3（佳能 RAW）</td><td>照片</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>ARW（索尼 RAW）</td><td>照片</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>DNG</td><td>照片</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>MP4、MOV</td><td>视频</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+            <tr><td>AVI、M4V、3GP、MKV</td><td>视频</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>CRM（佳能 Cinema RAW Light）</td><td>视频</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>LRF（大疆低清代理）</td><td>视频</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td></tr>
+            <tr><td>OSV（Osmo 360 全景视频）</td><td>视频</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <aside class="note"><span class="note-label">细节</span>DJI 模式只收 JPG、MP4、MOV 和大疆特有的 LRF、OSV，不收 DNG。需要备份无人机的 DNG 时，用 SD 卡模式扫描那张卡。</aside>
+
+      <h3>扫描时跳过的文件</h3>
+      <ul class="facts">
+        <li><b>隐藏文件与目录</b>名字以 <code>.</code> 开头的文件和目录整个跳过，包括 macOS 在存储卡上留下的 <code>._</code> 伴生文件。这条规则始终生效，没有开关。</li>
+        <li><b>缩略图目录</b>打开 <span class="ui">忽略缩略图文件夹</span> 时（默认打开），跳过名字恰好是 <code>THM</code>，或名字里含 <code>THUMB</code>、<code>THMBNL</code> 的目录，大小写不限。只看目录名，普通照片文件不受影响。</li>
+        <li><b>模式外的格式</b>例如 SD 卡模式下的 LRF、DJI 模式下的 DNG，扫描结果里不会出现。</li>
+        <li><b>读不出的目录</b>遍历途中有目录读取失败，整次扫描失败并提示无法完整扫描目录，不给出残缺的结果。</li>
+      </ul>
+    </section>
+
+    <section id="dates">
+      <h2>日期规则与归档目录</h2>
+      <p>每个文件归进哪个日期目录，取决于扫描方式。所有时间都按这台 Mac 当前的本地时区换算成日期。扫描结果表的日期列显示的就是最终用来归档的时间，上传前可以先核对。</p>
+
+      <h3>标准扫描</h3>
+      <p>关闭 <span class="ui">快速扫描模式</span> 时按下表顺序尝试，前一步取不到才进入下一步。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>顺序</th><th>来源</th><th>适用范围与判定</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>EXIF 拍摄时间</td><td class="wrap-ok">读取 <code>DateTimeOriginal</code>，所有格式都先尝试。EXIF 时间不带时区，按本机时区解释。夏令时回拨导致同一时刻出现两次时取较早的一次；落在夏令时跳过的空档里视为取不到。</td></tr>
+            <tr><td>2</td><td>视频容器创建时间</td><td class="wrap-ok">只对 MP4、MOV、M4V、3GP、OSV、LRF，读取 <code>moov</code> 里 <code>mvhd</code> 的创建时间，支持 v0 与 v1 两种结构。早于 1970 年、或晚于当前时间 366 天以上视为无效。AVI、MKV 不走这一步。</td></tr>
+            <tr><td>3</td><td>文件修改时间</td><td class="wrap-ok">前两步都取不到时使用。</td></tr>
+            <tr><td>4</td><td>当前时间</td><td class="wrap-ok">连修改时间也读不出时兜底。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>快速扫描与联机拍摄</h3>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>场景</th><th>日期来源</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>快速扫描</td><td>文件修改时间</td><td class="wrap-ok">不打开文件读 EXIF，扫描更快。每次启动应用都默认开启。</td></tr>
+            <tr><td>联机 · 相机 WiFi 直传</td><td>文件修改时间</td><td class="wrap-ok">也就是照片传到 Mac 的时间，不读 EXIF。</td></tr>
+            <tr><td>联机 · 监听文件夹</td><td>文件修改时间</td><td class="wrap-ok">监听目录里那个文件的修改时间，不读 EXIF。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <aside class="note warn"><span class="note-label">注意</span>CR3 的 EXIF 有时读不出来，这时会回退到文件修改时间。扫描过程没有进度显示，也不能取消；标准扫描要逐个打开文件，文件多时比快速扫描慢。</aside>
+
+      <h3>归档目录格式</h3>
+      <p>目标路径固定为 <code>&lt;目标目录&gt;/YYYY-MM-DD/&lt;原文件名&gt;</code>，只有一层日期目录，文件名保持原样。备份与联机拍摄用同一套格式。</p>
+<pre class="tree"><span class="dir">/Volumes/NAS/照片备份/</span>
+├─ <span class="dir">2026-08-09/</span>
+│  ├─ <span class="new">IMG_0409.CR3</span>          <span class="note">新文件，用原名</span>
+│  ├─ <span class="skip">IMG_0411.JPG</span>          <span class="note">目标里原有的文件</span>
+│  └─ <span class="ren">IMG_0411_1.JPG</span>        <span class="note">同名不同内容，自动改名</span>
+├─ <span class="dir">2026-08-10/</span>
+│  ├─ <span class="skip">IMG_0406.JPG</span>          <span class="note">内容相同，跳过</span>
+│  └─ <span class="new">.mascopy-4127-3.part</span>  <span class="note">正在拷贝的临时文件</span>
+└─ <span class="dir">.mascopy-inbox/</span>          <span class="note">联机 FTP 收件箱</span>
+   ├─ <span class="dir">.mascopy-staging/</span>     <span class="note">正在传输</span>
+   └─ <span class="dir">.mascopy-completed/</span>   <span class="note">已收完，等待入库</span></pre>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>遇到的情况</th><th>结果</th></tr></thead>
+          <tbody>
+            <tr><td>日期目录里没有同名文件</td><td class="wrap-ok">用原名写入。</td></tr>
+            <tr><td>同名，内容逐字节相同</td><td class="wrap-ok">跳过，不再拷贝。</td></tr>
+            <tr><td>同名，内容不同，已开覆盖</td><td class="wrap-ok">替换原名文件。</td></tr>
+            <tr><td>同名，内容不同，未开覆盖</td><td class="wrap-ok">依次试 <code>_1</code>、<code>_2</code>……每个候选名重新判断，某个候选名下内容相同也算跳过。</td></tr>
+            <tr><td>同一批里两个同日同名</td><td class="wrap-ok">例如来自两个 DCIM 子目录，第二个自动改为 <code>_1</code>。批内比较文件名不分大小写。</td></tr>
+            <tr><td>联机拍摄遇到同名</td><td class="wrap-ok">内容相同记为已存在，内容不同改名为 <code>_1</code>。联机从不覆盖。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="shortcuts">
+      <h2>快捷键</h2>
+      <p>快捷键集中在 Eagle 灯箱、裁剪和弹窗里，扫描与上传界面没有专门的快捷键。文中的 <kbd>Option</kbd> 即 Alt 键。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>位置</th><th>按键</th><th>作用</th></tr></thead>
+          <tbody>
+            <tr><td>灯箱</td><td><kbd>←</kbd> <kbd>→</kbd></td><td class="wrap-ok">上一张、下一张。联机时新入库的照片会实时加入翻页。</td></tr>
+            <tr><td>灯箱</td><td><kbd>Enter</kbd></td><td class="wrap-ok">进入裁剪。</td></tr>
+            <tr><td>灯箱</td><td><kbd>Esc</kbd></td><td class="wrap-ok">关闭灯箱。</td></tr>
+            <tr><td>裁剪中</td><td><kbd>Enter</kbd></td><td class="wrap-ok">裁剪并导入 Eagle。</td></tr>
+            <tr><td>裁剪中</td><td><kbd>Esc</kbd></td><td class="wrap-ok">取消裁剪，回到灯箱。</td></tr>
+            <tr><td>裁剪选区</td><td><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td class="wrap-ok">移动选区，每次移动画面宽或高的 1%。</td></tr>
+            <tr><td>裁剪选区</td><td><kbd>Option</kbd> + 方向键</td><td class="wrap-ok">移动选区，每次 5%。</td></tr>
+            <tr><td>裁剪选区</td><td><kbd>Shift</kbd> + 方向键</td><td class="wrap-ok">调整大小：<kbd>→</kbd> 加宽、<kbd>←</kbd> 收窄、<kbd>↓</kbd> 加高、<kbd>↑</kbd> 变矮，每次 1%，最小到画面的 2%。固定比例时另一条边按比例跟着变。</td></tr>
+            <tr><td>裁剪选区</td><td><kbd>Option</kbd> + <kbd>Shift</kbd> + 方向键</td><td class="wrap-ok">调整大小，每次 5%。</td></tr>
+            <tr><td>弹窗</td><td><kbd>Esc</kbd></td><td class="wrap-ok">关闭最上面的一层弹窗。</td></tr>
+            <tr><td>弹窗</td><td><kbd>Tab</kbd>、<kbd>Shift</kbd> + <kbd>Tab</kbd></td><td class="wrap-ok">焦点在弹窗内循环，不会跑到背后的页面；弹窗关闭后焦点回到打开它的位置。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <aside class="note"><span class="note-label">细节</span>裁剪选区的方向键只在选区获得焦点时生效，用 <kbd>Tab</kbd> 把焦点移到选区上即可。焦点停在标签输入框、文件夹下拉框或按钮上时，方向键和 <kbd>Enter</kbd> 交给这些控件处理，灯箱不会翻页。</aside>
+    </section>
+
+    <section id="mouse">
+      <h2>鼠标操作</h2>
+      <p>除了普通的点击按钮，下面这些操作不太容易从界面上直接看出来。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>位置</th><th>操作</th><th>作用</th></tr></thead>
+          <tbody>
+            <tr><td>扫描结果表</td><td>右键点一行</td><td class="wrap-ok">弹出菜单，<span class="ui">在 Finder 中显示</span> 定位到源文件，<span class="ui">复制路径</span> 复制源文件的完整路径。点菜单以外的地方、滚动、缩放窗口或切到别的应用时菜单收起。</td></tr>
+            <tr><td>扫描结果表</td><td>点整行</td><td class="wrap-ok">在 <span class="ui">选择文件</span> 模式下勾选或取消这一行。只有 <span class="status up">将上传</span> 和 <span class="status over">将覆盖</span> 且还没完成的行可以勾选。表头复选框一次勾选当前表格里所有可勾的行。</td></tr>
+            <tr><td>日期与后缀筛选</td><td>点小片</td><td class="wrap-ok">切换是否显示这一天或这种后缀，每组都有 <span class="ui">全部</span> 与 <span class="ui">清除</span>。<span class="ui">开始上传</span> 上传的是这两组筛选后的全部文件。</td></tr>
+            <tr><td>状态计数条</td><td>点某个状态</td><td class="wrap-ok">只过滤表格里显示的行，不改变 <span class="ui">开始上传</span> 的范围。</td></tr>
+            <tr><td>收藏夹</td><td>点路径 / 悬停点 ×</td><td class="wrap-ok">点路径直接选为源或目标；悬停时出现 ×，点它移除这一条。</td></tr>
+            <tr><td>挑图网格</td><td>点照片</td><td class="wrap-ok">打开灯箱。</td></tr>
+            <tr><td>联机照片流</td><td>点照片</td><td class="wrap-ok">打开灯箱。只有 <span class="status ok">已入库</span> 和 <span class="status skip">已存在</span> 的照片能点开，视频不进灯箱。</td></tr>
+            <tr><td>裁剪</td><td>拖动选区内部</td><td class="wrap-ok">整体移动选区，不改变大小。</td></tr>
+            <tr><td>裁剪</td><td>拖四个角的柄</td><td class="wrap-ok">以对角为锚点缩放，保持拖动开始时选区的宽高比，自由比例下也一样。</td></tr>
+            <tr><td>裁剪</td><td>拖四条边中点的柄</td><td class="wrap-ok">以对边为锚点只改一个方向。固定比例时另一条边跟着变，并保持原来的中心线。</td></tr>
+            <tr><td>裁剪</td><td>在选区外按下拖动</td><td class="wrap-ok">从按下的位置重新画一个选区。</td></tr>
+            <tr><td>裁剪</td><td>松手时选区太小</td><td class="wrap-ok">宽或高在屏幕上不到 24 像素时，自动恢复默认选区。</td></tr>
+            <tr><td>裁剪</td><td>点比例按钮</td><td class="wrap-ok">可选 <span class="ui">自由</span>、1:1、4:3、3:2、16:9。切换后选区拉满为该比例下最大的居中框，选自由时为整张图。</td></tr>
+            <tr><td>弹窗</td><td>点弹窗外的背景</td><td class="wrap-ok">关闭弹窗，与 <kbd>Esc</kbd> 相同。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="states">
+      <h2>界面状态</h2>
+      <p>扫描结果、上传过程和联机照片流各有一套状态标签，颜色与应用里一致。</p>
+
+      <h3>扫描结果</h3>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>状态</th><th>含义</th><th>上传时</th></tr></thead>
+          <tbody>
+            <tr><td><span class="status up">将上传</span></td><td class="wrap-ok">日期目录里没有这个文件名，或者已经自动改成 <code>_1</code> 这样的新名字。目标目录列能看到最终文件名。</td><td class="wrap-ok">写入新文件。</td></tr>
+            <tr><td><span class="status over">将覆盖</span></td><td class="wrap-ok">日期目录里有同名文件，内容不同，并且打开了 <span class="ui">覆盖重复文件</span>。</td><td class="wrap-ok">写完临时文件后原子替换原文件。</td></tr>
+            <tr><td><span class="status skip">将跳过</span></td><td class="wrap-ok">原名或某个 <code>_N</code> 名字下已经有内容完全相同的文件。</td><td class="wrap-ok">再比对一次，仍然相同就记为已跳过，不拷贝。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>结果页顶部的状态计数条分别用蓝、琥珀、浅灰三种颜色标出这三类的数量。开关 <span class="ui">覆盖重复文件</span> 后需要重新扫描，状态才会跟着变。</p>
+
+      <h3>上传中的文件行</h3>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>状态</th><th>含义</th><th>接下来</th></tr></thead>
+          <tbody>
+            <tr><td>行内进度条</td><td class="wrap-ok">正在拷贝这个文件，旁边显示本文件的百分比。</td><td class="wrap-ok">可以暂停、继续或取消整个任务。</td></tr>
+            <tr><td><span class="status ok">已完成</span></td><td class="wrap-ok">文件已写完、落盘，并以正式名字发布到日期目录。</td><td class="wrap-ok">之后再上传不会重复处理。</td></tr>
+            <tr><td><span class="status skip">已跳过</span></td><td class="wrap-ok">扫描时判为将跳过，上传时再次比对确认内容仍然相同。</td><td class="wrap-ok">可以和已完成的照片一起进入挑图。</td></tr>
+            <tr><td><span class="status err">失败</span></td><td class="wrap-ok">读写出错、存储卡或 NAS 掉线、源文件在扫描后变化等。原因写进日志，弹窗显示第一条。</td><td class="wrap-ok">再点上传只处理没完成的文件；源文件变化的需要重新扫描。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>联机照片</h3>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>状态</th><th>含义</th><th>接下来</th></tr></thead>
+          <tbody>
+            <tr><td><span class="status up">接收中</span></td><td class="wrap-ok">照片正在传入或等待写完，后面附已收到的大小。监听模式要等文件 1.2 秒不再变化才开始入库。</td><td class="wrap-ok">完成后自动变成已入库或已存在。</td></tr>
+            <tr><td><span class="status ok">已入库</span></td><td class="wrap-ok">已按日期存进备份目标。</td><td class="wrap-ok">点开放大、导入 Eagle 或裁剪导入。</td></tr>
+            <tr><td><span class="status skip">已存在</span></td><td class="wrap-ok">日期目录里已有内容相同的文件，没有再存一份。</td><td class="wrap-ok">同样可以点开挑图。</td></tr>
+            <tr><td><span class="status err">失败</span></td><td class="wrap-ok">最近一次入库没有成功，卡片带红框，鼠标悬停可看原因。</td><td class="wrap-ok">备份目标暂时不可写时按退避间隔自动重试，恢复后接着入库。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>照片卡片上还可能出现两个标记：剪刀图标加数字表示裁剪导入过几次，对勾加 Eagle 表示原图已导入。这两个标记只记在内存里，重启应用或换 Eagle 连接后消失。</p>
+    </section>
+
+    <section id="defaults">
+      <h2>默认值与上限</h2>
+      <p>下面的数值都写在应用里，界面上能改的已注明，其余是固定值。</p>
+
+      <h3>扫描与备份</h3>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>项目</th><th>默认值 / 上限</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>覆盖重复文件</td><td>关</td><td class="wrap-ok">SD 卡模式与 DJI 模式分别保存。</td></tr>
+            <tr><td>快速扫描模式</td><td>开</td><td class="wrap-ok">不保存，每次启动都恢复为开。</td></tr>
+            <tr><td>忽略缩略图文件夹</td><td>开</td><td class="wrap-ok">不保存，每次启动都恢复为开。</td></tr>
+            <tr><td>收藏夹</td><td>每列最多 8 条</td><td class="wrap-ok">新加的排最前，重复的合并。SD 源、SD 目标、DJI 源、DJI 目标各一列；联机拍摄的目标收藏沿用备份的目标收藏。</td></tr>
+            <tr><td>拷贝与判重</td><td>每次读写 1 MiB</td><td class="wrap-ok">判重逐字节比较，比较期间两边文件都不能发生变化。</td></tr>
+            <tr><td>进度刷新</td><td>约 120 毫秒一次</td><td class="wrap-ok">百分比按字节计算，保留 1 位小数；暂停后重新测速。</td></tr>
+            <tr><td>临时文件</td><td><code>.mascopy-&lt;进程号&gt;-&lt;序号&gt;.part</code></td><td class="wrap-ok">写在日期目录里，权限 0600；失败或取消时自动删除。</td></tr>
+            <tr><td>上传任务</td><td>同时 1 个</td><td class="wrap-ok">任务进行中再发起会提示已有上传任务运行中。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>联机拍摄</h3>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>项目</th><th>默认值 / 上限</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>联机方式</td><td>相机 WiFi 直传</td><td class="wrap-ok">另一种是监听文件夹。</td></tr>
+            <tr><td>FTP 端口</td><td><code>2121</code></td><td class="wrap-ok">可改，范围 1–65535。</td></tr>
+            <tr><td>用户名 / 密码</td><td><code>eos</code> / <code>eos</code></td><td class="wrap-ok">可改。密码框输入时掩码显示；相机端设置提示里明文显示，方便照着填。</td></tr>
+            <tr><td>被动端口</td><td><code>50021</code>–<code>50040</code></td><td class="wrap-ok">固定，用于 FTP 数据连接。</td></tr>
+            <tr><td>监听地址</td><td>本机所有 IPv4 地址</td><td class="wrap-ok">界面上优先显示私网地址，自动过滤代理与虚拟网卡。</td></tr>
+            <tr><td>监听静默时间</td><td>1.2 秒</td><td class="wrap-ok">文件大小、修改时间和 inode 都 1.2 秒不变才拷贝，拷贝中仍在变就重新等待。</td></tr>
+            <tr><td>目标不可写重试</td><td>0.5、1、2、4、8、16 秒</td><td class="wrap-ok">逐次翻倍，16 秒封顶后保持每 16 秒一次，恢复后自动继续。</td></tr>
+            <tr><td>照片流缩略图</td><td>384 像素</td><td class="wrap-ok">滚动到可见时才加载。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>预览、裁剪与 Eagle</h3>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>项目</th><th>默认值 / 上限</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>挑图网格缩略图</td><td>512 像素</td><td class="wrap-ok">滚动到可见时才加载。</td></tr>
+            <tr><td>灯箱预览</td><td>长边 2560 像素</td><td class="wrap-ok">RAW、HEIC 由系统的 <code>sips</code> 转成 JPEG；JPG、PNG 直接读原图。</td></tr>
+            <tr><td>预览内存缓存</td><td>最近 12 张</td><td class="wrap-ok">只保存在内存里，不写缓存文件。</td></tr>
+            <tr><td>裁剪源图</td><td>全分辨率</td><td class="wrap-ok">JPG、PNG 直接读原图，RAW、HEIC 先转成质量 95 的 JPEG，再按 EXIF 方向转正。</td></tr>
+            <tr><td>裁剪输出</td><td>JPEG 质量 92</td><td class="wrap-ok">直接推给 Eagle，备注写明裁剪自哪个路径，不在磁盘上留裁剪文件。</td></tr>
+            <tr><td>默认裁剪选区</td><td>居中最大的 1:1 框</td><td class="wrap-ok">固定比例下选区太小复位时，用该比例的最大框。</td></tr>
+            <tr><td>Eagle 地址</td><td><code>http://localhost:41595</code></td><td class="wrap-ok">可在灯箱的设置区修改，只支持 http。</td></tr>
+            <tr><td>Eagle 请求超时</td><td>读取 6 秒，导入 30 秒</td><td class="wrap-ok">首次打开灯箱时才连接 Eagle。</td></tr>
+            <tr><td>窗口</td><td>1400 × 900</td><td class="wrap-ok">可以自由调整大小。</td></tr>
+            <tr><td>主题</td><td>跟随系统</td><td class="wrap-ok">右上角三段开关可切到浅色或深色。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="requirements">
+      <h2>系统要求</h2>
+      <p>大师拷贝只提供 macOS 版本，安装包是 .dmg。转码、推出和定位文件都调用系统自带的组件，不需要另装运行库。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>项目</th><th>要求</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>系统</td><td>macOS</td><td class="wrap-ok">其他系统没有安装包。</td></tr>
+            <tr><td>存储卡</td><td>在访达里出现为一个卷</td><td class="wrap-ok">读卡器插上后出现在 <code>/Volumes</code> 下即可。<span class="ui">推出设备</span> 只对 <code>/Volumes</code> 下的源目录有效。</td></tr>
+            <tr><td>NAS</td><td>先在访达里挂载为可写目录</td><td class="wrap-ok">例如 <code>/Volumes/NAS/照片备份</code>。应用不负责连接或登录 NAS，扫描前目标目录必须已经存在。</td></tr>
+            <tr><td>Eagle</td><td>Eagle 正在运行，并开启本地 API</td><td class="wrap-ok">设了令牌时，到 <span class="ui">Eagle → 偏好设置 → 开发者</span> 复制，填进灯箱设置区的 Token 栏。</td></tr>
+            <tr><td>联机 · WiFi 直传</td><td>相机与 Mac 在同一局域网</td><td class="wrap-ok">相机端协议选普通 FTP，不选 FTPS 或 SFTP，并启用被动模式。第一次开始会话时 macOS 若弹出防火墙提示，选 <span class="ui">允许</span>；另装了防火墙的，放行 <code>2121</code> 与 <code>50021</code>–<code>50040</code>。建议用 5GHz 网络。</td></tr>
+            <tr><td>联机 · 监听文件夹</td><td>照片先存进本机可读的文件夹</td><td class="wrap-ok">通常是 EOS Utility 的保存目标文件夹。监听目录与备份目标不能相同，也不能互相包含。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>依赖的系统组件</h3>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>组件</th><th>用途</th></tr></thead>
+          <tbody>
+            <tr><td><code>/usr/bin/sips</code></td><td class="wrap-ok">RAW、HEIC 的灯箱预览，挑图网格与联机照片流的缩略图，裁剪前把 RAW 转成全尺寸 JPEG。</td></tr>
+            <tr><td><code>diskutil eject</code></td><td class="wrap-ok">备份完成弹窗里的 <span class="ui">推出设备</span>。</td></tr>
+            <tr><td><code>open -R</code></td><td class="wrap-ok">扫描结果右键菜单的 <span class="ui">在 Finder 中显示</span>。</td></tr>
+            <tr><td><code>renamex_np</code></td><td class="wrap-ok">以 <code>RENAME_EXCL</code> 方式发布新文件：目标位置已有同名文件时直接失败，不会盖过去。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <aside class="note warn"><span class="note-label">注意</span>发布新文件依赖目标卷支持独占改名。某个网络卷如果不支持，对应的文件会记为失败，不会退回到可能覆盖已有文件的写法。</aside>
+
+      <h3>第一次打开</h3>
+      <p>安装包在本机构建，只做了临时签名（ad-hoc），没有经过 Apple 公证。第一次打开时 macOS 会提示无法验证开发者，用下面任一方法放行一次，以后正常双击即可。</p>
+      <ol class="steps">
+        <li>把大师拷贝拖进 <span class="ui">应用程序</span> 后先双击打开一次，出现提示后关掉它。</li>
+        <li>打开 <span class="ui">系统设置 → 隐私与安全性</span>，在页面底部找到关于大师拷贝的提示，点 <span class="ui">仍要打开</span>，再按提示确认。</li>
+      </ol>
+      <p>也可以在终端里去掉下载隔离标记，效果相同：</p>
+      <pre class="code"><code><span class="p">$ </span>xattr -dr com.apple.quarantine /Applications/大师拷贝.app</code></pre>
+    </section>
+
+    <section id="config">
+      <h2>配置文件</h2>
+      <p>所有设置改动后立即自动保存，界面上没有保存按钮。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>项目</th><th>内容</th></tr></thead>
+          <tbody>
+            <tr><td>位置</td><td class="wrap-ok"><code>~/Library/Application Support/com.mascopy.mascopy/config.json</code></td></tr>
+            <tr><td>权限</td><td class="wrap-ok">目录 0700、文件 0600，只有当前用户能读写。已有的文件在读取时也会收紧到这个权限。</td></tr>
+            <tr><td>写入方式</td><td class="wrap-ok">先写临时文件再原子替换，不会留下写了一半的配置。</td></tr>
+            <tr><td>旧版迁移</td><td class="wrap-ok">新位置还没有配置、但存在 <code>~/.mascopy-config.json</code> 时，读入旧文件并写到新位置，旧文件留在原处。缺少的字段按默认值补齐。</td></tr>
+            <tr><td>主题</td><td class="wrap-ok">不在配置文件里，保存在应用的本地存储键 <code>mascopy.theme</code>，取值 <code>system</code>、<code>light</code>、<code>dark</code>。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>文件内容</h3>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>分组</th><th>字段</th><th>含义</th></tr></thead>
+          <tbody>
+            <tr><td><code>sd</code>、<code>dji</code></td><td class="wrap-ok"><code>source_dir</code>、<code>target_dir</code>、<code>overwrite_duplicates</code></td><td class="wrap-ok">两种备份模式各自的源目录、目标目录和覆盖开关。</td></tr>
+            <tr><td><code>favorites</code></td><td class="wrap-ok"><code>sd_sources</code>、<code>sd_targets</code>、<code>dji_sources</code>、<code>dji_targets</code></td><td class="wrap-ok">四列收藏夹。<code>dji_sources</code> 的每一条带 <code>path</code> 与 <code>device_type</code>。</td></tr>
+            <tr><td><code>eagle</code></td><td class="wrap-ok"><code>base_url</code>、<code>token</code>、<code>last_folder_id</code></td><td class="wrap-ok">Eagle 地址、令牌、上次选的目标文件夹。</td></tr>
+            <tr><td><code>tether</code></td><td class="wrap-ok"><code>mode</code>、<code>watch_dir</code>、<code>target_dir</code></td><td class="wrap-ok">联机方式（<code>ftp</code> 或 <code>watch</code>）、监听目录、备份目标。</td></tr>
+            <tr><td><code>tether</code></td><td class="wrap-ok"><code>ftp_port</code>、<code>ftp_user</code>、<code>ftp_pass</code></td><td class="wrap-ok">FTP 端口、用户名、密码。</td></tr>
+            <tr><td><code>tether</code></td><td class="wrap-ok"><code>delete_source</code></td><td class="wrap-ok">旧版的入库后删除来源文件选项，已作废。界面始终写入 <code>false</code>，监听模式下后端也会拒绝删除。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>快速扫描与忽略缩略图两个开关、日志、联机会话的照片列表、Eagle 的已导入与裁剪标记，都只在本次运行期间存在，不写进任何文件。</p>
+      <aside class="note warn"><span class="note-label">注意</span>FTP 密码和 Eagle 令牌以明文写在这个文件里，靠 0600 权限保护。FTP 本身也是明文协议，联机会话只在自己信任的局域网里开启。</aside>
+    </section>
+
+    <section id="versions">
+      <h2>版本历史</h2>
+      <ul class="facts">
+        <li><b>v1.0</b>2025 年 4 月。PyQt 写的照片 / 视频 NAS 上传工具，按日期归类，上传前先预扫描。1.0.1 增加 DNG 与 CR3。</li>
+        <li><b>v2.0</b>2025 年 8 月。改用 Electron 重写，2.0.1 增加 DJI 模式。</li>
+        <li><b>v2.2</b>2025 年 9 月。增加快速扫描，应用名从 MasCopy 改为大师拷贝；2.2.x 修正了时区导致的日期错误。</li>
+        <li><b>v3.0</b>2026 年 1 月。用 Tauri、Rust 与 Vue 3 重写，增加收藏夹。3.0.3 与 3.0.4 增加日期与后缀筛选、推出设备、深色主题、Finder 右键菜单、忽略缩略图目录和应用内提示弹窗。</li>
+        <li><b>v4.0</b>2026 年 8 月打了标签，尚未发布。分块拷贝，支持暂停、继续、取消；临时文件原子发布；勾选部分文件上传；目标路径校验；Eagle 挑图与裁剪导入；联机拍摄（相机 WiFi 直传与监听文件夹）。之后又修正了 FTP 传输完成的判定，加入浅色、深色、跟随系统三段主题开关。</li>
+        <li><b>下一版</b>同名文件逐字节比较内容；视频按容器里的创建时间归档；FTP 收件箱分暂存与已完成两段提交，重启后继续入库；监听模式不再删除来源文件；收紧内容安全策略与配置文件权限；错误信息里隐藏 Eagle 令牌；FTP 密码输入时掩码显示；若干无障碍改进。</li>
+      </ul>
+      <aside class="note warn"><span class="note-label">注意</span>目前 GitHub 上最新的正式版是 v3.0.4，4.0 尚未发布。本站各章按 4.0 之后的下一版编写，联机拍摄、Eagle 挑图与裁剪、暂停与继续等功能在 3.0.4 里还没有。各版本的安装包见 <a href="https://github.com/Redwinam/mascopy/releases">GitHub 发布记录</a>。</aside>
+    </section>
+
+    <nav class="pager" aria-label="翻页">
+      <a class="prev" href="reliability.html"><span>← 上一章</span>可靠性与隐私</a>
+      <a class="next" href="index.html"><span>回到首页 →</span>大师拷贝</a>
+    </nav>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div>
+      <a class="brand" href="index.html"><img src="assets/icon.png" alt="" width="26" height="26">大师拷贝</a>
+      <p class="fine">macOS 上的照片与视频整理工具：把存储卡里的素材按拍摄日期备份到本地磁盘或 NAS，支持相机联机拍摄与 Eagle 挑图导入。</p>
+      <p class="fine"><a href="https://github.com/Redwinam/mascopy">GitHub · Redwinam/mascopy</a></p>
+    </div>
+    <div>
+      <h4>功能</h4>
+      <ul>
+        <li><a href="backup.html">SD 卡与大疆备份</a></li>
+        <li><a href="tether.html">联机拍摄</a></li>
+        <li><a href="eagle.html">Eagle 挑图与裁剪</a></li>
+        <li><a href="reliability.html">可靠性与隐私</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>参考</h4>
+      <ul>
+        <li><a href="reference.html">格式、快捷键与系统要求</a></li>
+        <li><a href="https://github.com/Redwinam/mascopy/releases">版本发布记录</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>获取</h4>
+      <ul>
+        <li><a href="index.html#download">下载与安装</a></li>
+        <li><a href="reference.html#requirements">系统要求</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>

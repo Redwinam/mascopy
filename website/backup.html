@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SD 卡与大疆备份 · 大师拷贝</title>
+  <meta name="description" content="SD 卡与大疆素材备份：扫描规则、按拍摄日期归档、逐字节判重、筛选与勾选上传、暂停与取消、失败重试和推出设备。">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="assets/site.css">
+  <script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("dl-site-theme")==="light"?"light":"dark")}catch(e){}</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="assets/icon.png" alt="" width="26" height="26">大师拷贝<span class="brand-sub">MasCopy</span></a>
+    <nav class="nav" aria-label="主导航">
+      <a href="index.html#chapters">功能</a>
+      <a href="backup.html">备份</a>
+      <a href="tether.html">联机拍摄</a>
+      <a href="eagle.html">Eagle</a>
+      <a href="reliability.html">可靠性</a>
+    </nav>
+    <div class="header-tools">
+      <button class="icon-btn" type="button" data-theme-toggle aria-label="切换到浅色" title="切换到浅色"><svg class="icon only-dark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><svg class="icon only-light" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="index.html#download"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg><span class="btn-download-label">下载</span></a>
+      <button class="icon-btn menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-label="打开导航"><svg class="icon" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap doc">
+  <aside class="doc-nav">
+    <details class="chapter-list">
+      <summary class="tone-blue" title="切换章节"><span class="sw"></span><span class="cur">SD 卡与大疆备份</span><span class="pos">1 / 5</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+      <ul>
+        <li><a class="tone-blue" href="backup.html" aria-current="page"><span class="sw"></span>SD 卡与大疆备份</a></li>
+        <li><a class="tone-violet" href="tether.html"><span class="sw"></span>联机拍摄</a></li>
+        <li><a class="tone-copper" href="eagle.html"><span class="sw"></span>Eagle 挑图与裁剪</a></li>
+        <li><a class="tone-live" href="reliability.html"><span class="sw"></span>可靠性与隐私</a></li>
+        <li><a class="tone-neutral" href="reference.html"><span class="sw"></span>格式、快捷键与系统要求</a></li>
+      </ul>
+    </details>
+    <nav class="toc" aria-label="本页目录">
+      <h4>本页</h4>
+      <ul>
+        <li><a href="#flow">一次备份的流程</a></li>
+        <li><a href="#config">配置页</a></li>
+        <li><a href="#dji">DJI 模式</a></li>
+        <li><a href="#scan">扫描收哪些文件</a></li>
+        <li><a href="#dates">拍摄日期怎么定</a></li>
+        <li><a href="#archive">归档目录与判重</a></li>
+        <li><a href="#results">扫描结果页</a></li>
+        <li><a href="#select">只上传一部分</a></li>
+        <li><a href="#upload">上传任务</a></li>
+        <li><a href="#finish">完成、失败与推出</a></li>
+        <li><a href="#favorites">收藏夹与配置</a></li>
+        <li><a href="#limits">已知限制</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main class="doc-main tone-blue">
+    <header class="chapter-head">
+      <span class="chapter-label"><svg class="icon" viewBox="0 0 24 24"><line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/></svg>SD 卡与大疆备份</span>
+      <h1>插上存储卡，先看清每个文件去哪</h1>
+      <p class="lede">这一章讲从插卡到推出的整条备份流程：选来源和目标，扫描收哪些文件、日期怎么定，文件归档到哪里、同名文件怎么处理，以及上传时的进度、暂停、取消和失败重试。相机存储卡和大疆设备各有一个模式，用法相同，收的格式不同。</p>
+    </header>
+
+    <figure>
+      <div class="window">
+        <img class="only-dark" src="assets/shots/results-dark.webp" width="2800" height="1800" alt="扫描结果页：顶部是日期筛选和后缀筛选，下面一排状态计数写着全部 29、将上传 25、将覆盖 2、将跳过 2，右边是挑图导入、选择文件、开始上传三个按钮；表格每行列出 NAS 上的目标目录和文件名、类型、大小、拍摄时间和状态。">
+        <img class="only-light" src="assets/shots/results-light.webp" width="2800" height="1800" alt="扫描结果页（浅色主题）。" loading="lazy">
+        <svg class="lights" viewBox="0 0 1400 900" aria-hidden="true"><circle cx="26" cy="31" r="6" fill="#ff5f57"/><circle cx="46" cy="31" r="6" fill="#febc2e"/><circle cx="66" cy="31" r="6" fill="#28c840"/></svg>
+      </div>
+      <figcaption><b>扫描结果页。</b>上方按日期和后缀筛选，中间是状态计数和操作按钮，表格每一行写明目标目录和最终文件名。示例文件与照片均为演示素材。</figcaption>
+    </figure>
+
+    <section id="flow">
+      <h2>一次备份的流程</h2>
+      <p>大师拷贝把一次倒卡分成三个画面：配置、扫描结果、挑图。顶栏中间的页签跟着画面变。配置画面显示 <span class="ui">SD卡模式</span> <span class="ui">DJI模式</span> <span class="ui">联机拍摄</span> 三个页签；进入结果画面后换成 <span class="ui">扫描结果</span> 和 <span class="ui">日志</span>，右上角多出 <span class="ui">返回配置</span>。</p>
+      <ol class="steps">
+        <li>在顶栏选 <span class="ui">SD卡模式</span> 或 <span class="ui">DJI模式</span>。</li>
+        <li>在左边的源目录卡片里点 <span class="ui">选择目录</span>，选中存储卡或卡上的某个文件夹，例如 <code>/Volumes/EOS_DIGITAL</code>。</li>
+        <li>在右边的目标目录卡片里选备份位置，例如已经挂载的 <code>/Volumes/NAS/照片备份</code>。</li>
+        <li>按需要调整底栏的三个开关，点 <span class="ui">开始扫描</span>。</li>
+        <li>扫描完成后自动进入结果页。按日期、后缀筛选，确认每个文件的目标位置和状态。</li>
+        <li>点 <span class="ui">开始上传</span> 拷贝当前筛选下的全部文件，或者点 <span class="ui">选择文件</span> 只勾选一部分。</li>
+        <li>全部成功后弹出 <span class="ui">🎉 备份完成</span>。可以直接 <span class="ui">推出设备</span>，也可以进入挑图，把照片导入 Eagle。</li>
+      </ol>
+      <p>整个过程不改动存储卡上的任何文件。扫描只读取文件信息，上传只从卡上读数据，所有写入都发生在目标目录里。</p>
+      <ul class="facts">
+        <li><b>扫描中</b>按钮变成 <span class="ui">扫描中...</span> 并转圈。配置表单和顶栏的模式页签同时锁住，扫描到一半不能改路径或切模式。</li>
+        <li><b>上传中</b><span class="ui">返回配置</span> 不可点，结果页的操作按钮暂时隐藏。可以切到 <span class="ui">日志</span> 页签看逐条记录。</li>
+        <li><b>日志</b>每条记录带时分秒，信息、成功、警告、错误分别用蓝、绿、黄、红标出。日志只保存在本次运行里，退出应用后清空；也可以点 <span class="ui">清空日志</span> 手动清掉。</li>
+      </ul>
+    </section>
+
+    <section id="config">
+      <h2>配置页：来源、目标与三个开关</h2>
+      <figure>
+        <div class="window">
+          <img class="only-dark" src="assets/shots/config-dark.webp" width="2800" height="1800" alt="配置页：左边的源目录卡片选中了 /Volumes/EOS_DIGITAL，下面收藏夹里有两张存储卡；右边的目标目录卡片选中了 /Volumes/NAS/照片备份，收藏夹里有 NAS 和一块备份硬盘；底栏是覆盖重复文件、快速扫描模式、忽略缩略图文件夹三个开关和开始扫描按钮。" loading="lazy">
+          <img class="only-light" src="assets/shots/config-light.webp" width="2800" height="1800" alt="配置页（浅色主题）。" loading="lazy">
+          <svg class="lights" viewBox="0 0 1400 900" aria-hidden="true"><circle cx="26" cy="31" r="6" fill="#ff5f57"/><circle cx="46" cy="31" r="6" fill="#febc2e"/><circle cx="66" cy="31" r="6" fill="#28c840"/></svg>
+        </div>
+        <figcaption><b>配置页。</b>左边是存储卡，右边是 NAS，两边各有自己的收藏夹。底栏默认打开快速扫描和忽略缩略图文件夹，覆盖重复文件默认关闭。</figcaption>
+      </figure>
+      <p>配置页左右两张卡片，中间一个箭头，意思是从左拷到右。</p>
+
+      <h3>源目录</h3>
+      <p>左边卡片的角标是 <span class="ui">📂 源目录</span>，右上角显示当前模式。标题写着 <span class="ui">选择SD卡路径</span>，DJI 模式下是 <span class="ui">选择DJI设备路径</span>。还没选路径时，这里提示 <span class="ui">请选择包含照片/视频的文件夹</span>。</p>
+      <p>点 <span class="ui">选择目录</span> 会打开 macOS 自带的文件夹选择框。可以选整张卡的根目录 <code>/Volumes/EOS_DIGITAL</code>，也可以只选其中一个文件夹，例如 <code>/Volumes/EOS_DIGITAL/DCIM/100CANON</code>。扫描会进入所选文件夹下的每一层子文件夹。旁边的心形按钮 <span class="ui">加入收藏</span> 把当前路径收进下方的收藏夹。</p>
+
+      <h3>目标目录</h3>
+      <p>右边卡片的角标是 <span class="ui">💾 目标目录</span>，右上角写着 <span class="ui">NAS / 备份盘</span>。标题是 <span class="ui">选择备份位置</span>，没选时提示 <span class="ui">请选择备份目标文件夹</span>。目标可以是本机磁盘、外接硬盘，也可以是在访达里挂载好的 NAS 共享文件夹。NAS 需要先挂载成可写的目录。备份只在这个目录下按日期建子文件夹，不往别处写文件。</p>
+      <p>源和目标都选好之后，<span class="ui">开始扫描</span> 才能点。两个路径必须互相独立：不能是同一个文件夹，也不能一个在另一个里面。借符号链接绕一圈指向同一处，也会被识别出来。</p>
+
+      <h3>三个开关</h3>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>开关</th><th>界面说明</th><th>默认</th><th>作用</th></tr></thead>
+          <tbody>
+            <tr><td>覆盖重复文件</td><td class="wrap-ok">相同文件名将被覆盖</td><td>关</td><td class="wrap-ok">目标里已有同名文件、内容又不同时，用新文件替换它；关着时改名另存。内容相同的文件无论开关开不开都跳过。SD 卡模式和 DJI 模式各记一份，重启后保留。</td></tr>
+            <tr><td>快速扫描模式</td><td class="wrap-ok">仅对比修改时间 (跳过EXIF)</td><td>开</td><td class="wrap-ok">只用文件修改时间定日期，不读照片 EXIF 和视频创建时间。不记忆，每次启动都是开。</td></tr>
+            <tr><td>忽略缩略图文件夹</td><td class="wrap-ok">自动跳过 THMBNL 等缩略图目录</td><td>开</td><td class="wrap-ok">跳过名为 THM、名字里含 THUMB 或 THMBNL 的文件夹。不记忆，每次启动都是开。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <aside class="note"><span class="note-label">细节</span>三个开关都在点下 <span class="ui">开始扫描</span> 的那一刻生效，结果页上的状态按当时的设置算好。扫描完回到配置页改了开关，要再扫描一次，新设置才会体现在结果里。</aside>
+      <aside class="note warn"><span class="note-label">注意</span>快速扫描默认开着。想让照片按 EXIF 拍摄时间归档、视频按容器里的创建时间归档，每次启动应用后先把它关掉。规则见 <a href="#dates">拍摄日期怎么定</a>。</aside>
+    </section>
+
+    <section id="dji">
+      <h2>DJI 模式</h2>
+      <p>顶栏切到 <span class="ui">DJI模式</span>，界面和 SD 卡模式一样，标题换成 <span class="ui">选择DJI设备路径</span>，右上角显示 <span class="ui">DJI模式</span>。两个模式各管各的：源目录、目标目录、覆盖开关、源收藏、目标收藏都分开保存。上午用 SD 卡模式倒相机卡，下午切到 DJI 模式倒无人机或 Osmo 的卡，两边的路径都不用重选。</p>
+      <p>两个模式的差别在于收哪些格式。DJI 模式只收大疆设备常见的几种文件：</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>格式</th><th>SD 卡模式</th><th>DJI 模式</th></tr></thead>
+          <tbody>
+            <tr><td>JPG / JPEG</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+            <tr><td>PNG、HEIC</td><td class="yes">✓</td><td class="no">—</td></tr>
+            <tr><td>RAW：NEF、CR2、CR3、ARW、DNG</td><td class="yes">✓</td><td class="no">—</td></tr>
+            <tr><td>视频：MP4、MOV</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+            <tr><td>视频：AVI、M4V、3GP、MKV</td><td class="yes">✓</td><td class="no">—</td></tr>
+            <tr><td>LRF（大疆低清代理）</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>OSV（Osmo 360 全景视频）</td><td class="no">—</td><td class="yes">✓</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="facts">
+        <li><b>LRF</b>大疆设备录像时和正片一起生成的低分辨率代理文件。DJI 模式把它和正片一起按日期归档，文件名和正片一样保持原样，剪辑时按主文件名就能对上。</li>
+        <li><b>OSV</b>Osmo 360 拍的全景视频文件，按视频处理，和 MP4、MOV 一样读取容器里的创建时间。</li>
+        <li><b>DNG</b>DJI 模式不收 DNG。需要大疆机器拍的 DNG 时，改用 <span class="ui">SD卡模式</span> 扫描同一张卡：DNG、JPG、MP4、MOV 都会收进来，LRF 和 OSV 不会。</li>
+        <li><b>大小写</b>扩展名不区分大小写，<code>.MP4</code> 和 <code>.mp4</code> 一样处理。</li>
+      </ul>
+      <p>联机拍摄另有一套格式规则，多收佳能的 HIF 和 CRM，见 <a href="tether.html">联机拍摄</a>。各模式的完整格式表也收在 <a href="reference.html">格式、快捷键与系统要求</a>。</p>
+    </section>
+
+    <section id="scan">
+      <h2>扫描：哪些文件会被收进来</h2>
+      <p>点 <span class="ui">开始扫描</span> 后，大师拷贝先检查两个路径，再遍历源目录，最后给每个文件算好日期和目标位置。三步都完成才进入结果页，任何一步出错都停在配置页并弹出提示。</p>
+
+      <h3>路径检查</h3>
+      <ul class="facts">
+        <li><b>源目录</b>必须是一个存在的文件夹。存储卡没插好或已经推出时，弹出 <span class="ui">源路径不可用</span>：<span class="ui">未检测到源设备，请确认已挂载并重新选择目录。</span></li>
+        <li><b>目标目录</b>必须是一个存在的文件夹。NAS 没挂载或目录被移走时，弹出 <span class="ui">目标路径不可用</span>：<span class="ui">目标磁盘可能未挂载或目录已被移动，请确认后重新选择备份位置。</span></li>
+        <li><b>互相独立</b>源和目标相同或互相包含时，弹出 <span class="ui">扫描失败</span>，原因是 <span class="ui">源目录与目标目录必须分离，不能相同或互相包含</span>。这条规则防止把备份目录再拷回它自己。</li>
+      </ul>
+
+      <h3>遍历规则</h3>
+      <ul>
+        <li>逐层进入所有子文件夹，只收当前模式支持的格式（见上一节的表格），其他文件直接忽略。</li>
+        <li>名字以 <code>.</code> 开头的文件和文件夹一律跳过。macOS 在存储卡上生成的 <code>._</code> 伴生文件，以及 <code>.Trashes</code>、<code>.Spotlight-V100</code> 这类系统文件夹，都不会出现在结果里。</li>
+        <li>打开 <span class="ui">忽略缩略图文件夹</span> 时，跳过名字等于 <code>THM</code>，或者名字里含 <code>THUMB</code>、<code>THMBNL</code> 的文件夹，不分大小写。例如索尼相机存放视频缩略图的 <code>PRIVATE/M4ROOT/THMBNL</code>。这条规则只看子文件夹，你选中的源目录本身叫什么都不受影响。</li>
+        <li>符号链接不跟随，链接指向的文件和文件夹不会收进来。</li>
+      </ul>
+      <p>遍历途中任何一个文件夹读不出来，比如读卡器接触不良，整次扫描判为失败，弹出 <span class="ui">扫描失败</span>，原因里写着 <span class="ui">无法完整扫描目录</span>。大师拷贝不会拿一份缺了一截的列表让你上传，免得你以为整张卡都拷完了。</p>
+
+      <h3>扫描期间与扫描之后</h3>
+      <p>按钮显示 <span class="ui">扫描中...</span> 并转圈。扫描没有进度条，也不能中途取消，只能等它结束。关掉快速扫描后要逐个打开文件读取 EXIF 和视频头，文件多的卡会慢一些。</p>
+      <p>扫描完成后自动切到结果页，日志记一行 <span class="ui">扫描完成，共找到 N 个文件</span>。一个文件都没找到时，结果页显示 🔍 <span class="ui">未找到符合条件的文件</span>。遇到这种情况，先确认模式和源目录选对了，比如用 DJI 模式扫一张只有 CR3 的相机卡，就会一个都找不到。</p>
+    </section>
+
+    <section id="dates">
+      <h2>拍摄日期怎么定</h2>
+      <p>文件归到哪个日期目录，取决于扫描时算出的日期。快速扫描开着和关着，规则不同。</p>
+
+      <h3>标准扫描（关掉快速扫描）</h3>
+      <p>对每个文件依次尝试下面几种来源，拿到第一个有效值就停：</p>
+      <ol class="steps">
+        <li>读 EXIF 里的拍摄时间（DateTimeOriginal）。JPG、HEIC 和 NEF、CR2、ARW、DNG 这类 RAW 一般都带这个字段。CR3 的 EXIF 可能读不出来，这时往下走。</li>
+        <li>MP4、MOV、M4V、3GP、OSV、LRF 读视频容器头部（mvhd）记录的创建时间。</li>
+        <li>用文件的修改时间。</li>
+        <li>修改时间也读不到时，用扫描当下的时间。</li>
+      </ol>
+      <ul class="facts">
+        <li><b>时区</b>EXIF 里的时间不带时区，大师拷贝按这台 Mac 当前的时区理解。所以照片 EXIF 写的是 8 月 10 日，就归到 <code>2026-08-10</code>，和电脑设在哪个时区无关。</li>
+        <li><b>夏令时</b>夏令时结束那天，有一个小时会出现两次，这段时间里的照片取较早的那一次。夏令时开始那天被跳过的一小时并不存在，落在这一小时里的 EXIF 时间视为无效，改用修改时间。</li>
+        <li><b>视频</b>创建时间为零、早于 1970 年、或者比现在晚一年以上，都视为相机时钟没设好，改用修改时间。AVI、MKV 没有这个字段，直接用修改时间。</li>
+        <li><b>修改时间</b>直接从相机存储卡读取时，修改时间一般就是相机写入文件的时间。文件被拷来拷去或者编辑过，修改时间可能已经变了。</li>
+      </ul>
+
+      <h3>快速扫描（默认）</h3>
+      <p>只用文件修改时间，不打开文件读 EXIF 和视频头，省掉逐个打开文件的时间。卡上的文件经过电脑拷贝或者修改过，就应该关掉快速扫描再扫。</p>
+      <aside class="note"><span class="note-label">细节</span>按修改时间和视频创建时间定日期的文件，日期目录跟着这台 Mac 的时区走。出差时改了系统时区，午夜前后拍的文件可能落到相邻的一天。按 EXIF 定日期的照片不受影响。</aside>
+    </section>
+
+    <section id="archive">
+      <h2>归档目录与判重</h2>
+      <p>目标目录下只建一层日期目录，格式 <code>YYYY-MM-DD</code>，文件名保持原样。<code>IMG_0421.CR3</code> 拍于 2026 年 8 月 10 日，就放到 <code>/Volumes/NAS/照片备份/2026-08-10/IMG_0421.CR3</code>。日期目录还不存在时，上传时自动创建。</p>
+      <ul class="facts">
+        <li><b>结构固定</b>只有 <code>目标/YYYY-MM-DD/文件名</code> 这一种结构，没有按年、按月的上层目录，也不按相机或卡分组。</li>
+        <li><b>名字不改</b>只在同名冲突时加 <code>_1</code>、<code>_2</code> 这样的后缀，扩展名和它的大小写保持原样。</li>
+        <li><b>先排序再分配</b>扫描完先按拍摄时间、文件名、源路径排好序，再依次分配目标。发生同名冲突时，排在前面的文件保留原名。</li>
+      </ul>
+
+      <h3>目标里已有同名文件</h3>
+      <p>分配目标时，大师拷贝先看日期目录里有没有同名文件。有的话，把两边的内容逐字节比较，每次各读 1 MiB；大小不同直接判为不同。比较完还要再核对两边的大小、修改时间和文件身份，确认比较期间谁都没被改过。有变化就报 <span class="ui">比较期间文件发生变化，请重新扫描</span>。</p>
+      <p>只比名字和大小不够。名字和大小都相同、内容却不同的文件，只看大小会被误判成重复而漏拷；逐字节比较能把它们分开。比较的结果决定状态：</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>目标里的情况</th><th>覆盖重复文件：关</th><th>覆盖重复文件：开</th></tr></thead>
+          <tbody>
+            <tr><td>没有同名文件</td><td><span class="status up">将上传</span></td><td><span class="status up">将上传</span></td></tr>
+            <tr><td>同名，内容相同</td><td><span class="status skip">将跳过</span></td><td><span class="status skip">将跳过</span></td></tr>
+            <tr><td>同名，内容不同</td><td class="wrap-ok">改名为 <code>_1</code> 后 <span class="status up">将上传</span></td><td class="wrap-ok"><span class="status over">将覆盖</span>，替换原文件</td></tr>
+            <tr><td>同名的是一个文件夹</td><td class="wrap-ok">改名为 <code>_1</code></td><td class="wrap-ok">改名为 <code>_1</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>改名后的候选名要过同样的检查。<code>IMG_0421_1.JPG</code> 也已经存在时，照样逐字节比较：内容相同就 <span class="status skip">将跳过</span>，不同就接着试 <code>IMG_0421_2.JPG</code>，直到找到空位或者内容相同的文件。覆盖只作用在原名上。<code>_1</code>、<code>_2</code> 这些候选名即使已存在、内容不同，也不会被覆盖，只会继续往后试。</p>
+
+      <h3>同一批里的同名文件</h3>
+      <p>同一天的两个源文件同名，也会冲突。常见的情况是一张卡上的 <code>DCIM/100CANON</code> 和 <code>DCIM/101CANON</code> 里各有一个 <code>IMG_0001.JPG</code>。大师拷贝记着这一批已经分配出去的名字，排在后面的那个自动改成 <code>IMG_0001_1.JPG</code>。这里比较名字不分大小写，<code>IMG_0001.JPG</code> 和 <code>img_0001.jpg</code> 算同名。</p>
+      <p>这条规则不看覆盖开关。同一批里的两个文件永远不会写到同一个目标上，也就不会互相覆盖。</p>
+
+      <h3>一个例子</h3>
+      <p>存储卡上是这些文件，NAS 上的 <code>2026-08-10</code> 已经有 <code>IMG_0406.JPG</code>（和卡上的是同一张）与 <code>IMG_0421.JPG</code>（同名的另一张）：</p>
+<pre class="tree"><span class="dir">/Volumes/EOS_DIGITAL/DCIM/</span>
+├─ <span class="dir">100CANON/</span>
+│  ├─ IMG_0001.JPG      <span class="note">8 月 10 日 09:12</span>
+│  ├─ IMG_0403.CR3      <span class="note">8 月 10 日 14:23</span>
+│  ├─ IMG_0406.JPG      <span class="note">NAS 上已有同一张</span>
+│  └─ IMG_0421.JPG      <span class="note">NAS 上有同名的另一张</span>
+└─ <span class="dir">101CANON/</span>
+   └─ IMG_0001.JPG      <span class="note">8 月 10 日 16:40，和上面的同名</span></pre>
+      <p>覆盖开关关着，上传完成后 NAS 上是这样：</p>
+<pre class="tree"><span class="dir">/Volumes/NAS/照片备份/</span>
+└─ <span class="dir">2026-08-10/</span>
+   ├─ <span class="new">IMG_0001.JPG</span>        <span class="note">新文件，来自 100CANON</span>
+   ├─ <span class="ren">IMG_0001_1.JPG</span>      <span class="note">同批同日同名，来自 101CANON，自动改名</span>
+   ├─ <span class="new">IMG_0403.CR3</span>        <span class="note">新文件</span>
+   ├─ <span class="skip">IMG_0406.JPG</span>        <span class="note">内容相同，跳过，原文件不动</span>
+   ├─ IMG_0421.JPG        <span class="note">NAS 上原有的那张，原样保留</span>
+   └─ <span class="ren">IMG_0421_1.JPG</span>      <span class="note">同名不同内容，改名写入</span></pre>
+      <p>09:12 那张排在 16:40 那张前面，所以它保留原名。打开覆盖开关再扫描，<code>IMG_0421.JPG</code> 这一行会变成 <span class="status over">将覆盖</span>：NAS 上原来那张被卡上的替换，不再多出 <code>_1</code>。其余几行不变。</p>
+
+      <aside class="note warn"><span class="note-label">注意</span><span class="ui">覆盖重复文件</span> 的说明写着 <span class="ui">相同文件名将被覆盖</span>，实际只覆盖内容不同的同名文件。内容相同的文件无论开关开不开都跳过，不会重写一遍。覆盖用原子替换完成：新内容完整写好、落盘之后才换掉旧文件，中途失败时旧文件原样保留。</aside>
+
+      <h3>日期目录的安全检查</h3>
+      <p>目标里某个日期目录如果是指向目标外部的符号链接，扫描直接失败，提示 <span class="ui">日期目录指向目标目录外部，请重新选择目标</span>。上传时还会再查一遍：每个文件都必须落在目标下一层、名字是合法日期、而且不是符号链接的普通文件夹里。</p>
+    </section>
+
+    <section id="results">
+      <h2>扫描结果页</h2>
+      <p>扫描完成后进入结果页。顶栏中间换成 <span class="ui">扫描结果</span> 和 <span class="ui">日志</span> 两个页签，右上角是 <span class="ui">返回配置</span>。回到配置页后想看新的结果，要重新扫描。</p>
+
+      <h3>日期筛选与后缀筛选</h3>
+      <p>表格上方左右两块。<span class="ui">日期筛选</span> 列出这次扫描涉及的每一天，每个小片写着日期和文件数，最新的一天排在最前。<span class="ui">后缀筛选</span> 列出 CR3、JPG、MP4 这样的扩展名和数量，文件多的排在前面。</p>
+      <ul>
+        <li>扫描完两组默认全选。点一个小片切换它的选中状态。</li>
+        <li>每组右上角有 <span class="ui">全部</span> 和 <span class="ui">清除</span>。只想看某一天时，先点 <span class="ui">清除</span>，再点那一天。</li>
+        <li>两组都至少要选一个。任何一组被清空，表格的位置显示 📅 <span class="ui">请选择至少一个日期和后缀以查看文件</span>。</li>
+        <li>筛选决定 <span class="ui">开始上传</span> 的范围。只选 <code>2026-08-10</code> 和 CR3，上传的就只有那一天的 CR3。</li>
+      </ul>
+
+      <h3>状态条</h3>
+      <p>筛选下方是一排状态：<span class="ui">全部</span> <span class="ui">将上传</span> <span class="ui">将覆盖</span> <span class="ui">将跳过</span>，每项后面跟着数量，将上传用蓝色、将覆盖用琥珀色、将跳过用浅灰。数量随日期和后缀筛选实时变化。点其中一项，表格只显示这种状态的文件；点 <span class="ui">全部</span> 恢复。某个状态下没有文件时，表格里显示 <span class="ui">该状态下暂无文件</span>。</p>
+      <p>状态条只影响表格里显示哪些行，不改变上传范围。</p>
+
+      <h3>文件表格</h3>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>列</th><th>内容</th></tr></thead>
+          <tbody>
+            <tr><td>文件名 / 目标目录</td><td class="wrap-ok">目标日期目录加上最终文件名，例如 <code>/Volumes/NAS/照片备份/2026-08-10/IMG_0421_1.JPG</code>。自动改名时，这里显示改名后的名字。鼠标停在上面会显示完整的目标路径。</td></tr>
+            <tr><td>类型</td><td class="wrap-ok">照片 或 视频。LRF、OSV 算视频。</td></tr>
+            <tr><td>大小</td><td class="wrap-ok">按 KB、MB、GB 显示，保留一位小数。</td></tr>
+            <tr><td>日期</td><td class="wrap-ok">扫描时算出的日期，按本地时间显示到秒，例如 <code>2026/8/10 14:23:05</code>。</td></tr>
+            <tr><td>状态</td><td class="wrap-ok">扫描后是 <span class="status up">将上传</span> <span class="status over">将覆盖</span> <span class="status skip">将跳过</span>；上传时变成行内进度条，结束后变成 <span class="status ok">已完成</span> <span class="status skip">已跳过</span> <span class="status err">失败</span>。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>表头固定在顶部，列表往下滚时也看得到列名。</p>
+
+      <h3>右键菜单</h3>
+      <p>在任意一行上点右键，弹出两项：</p>
+      <ul class="facts">
+        <li><b>在 Finder 中显示</b>在访达里打开源文件所在的文件夹，并选中这个文件。</li>
+        <li><b>复制路径</b>把源文件的完整路径复制到剪贴板，例如 <code>/Volumes/EOS_DIGITAL/DCIM/100CANON/IMG_0421.JPG</code>。</li>
+      </ul>
+      <p>两项都针对存储卡上的源文件。操作失败时弹出 <span class="ui">无法在 Finder 中显示文件</span> 或 <span class="ui">复制路径失败</span>，并附上原因。</p>
+
+      <h3>结果页的按钮</h3>
+      <p>状态条右边有三个按钮：</p>
+      <ul class="facts">
+        <li><b>挑图导入</b>把当前筛选下的照片放进挑图网格，放大看、导入 Eagle。已经在目标里的照片（<span class="status skip">将跳过</span> 的，或者这次已上传的）从目标读取，存储卡拔掉也能看；其余照片从卡上读。当前视图里一张照片都没有时不可点。详见 <a href="eagle.html">Eagle 挑图与裁剪</a>。</li>
+        <li><b>选择文件</b>进入勾选模式，只上传其中一部分，见下一节。</li>
+        <li><b>开始上传</b>上传当前日期和后缀筛选下的全部文件。</li>
+      </ul>
+    </section>
+
+    <section id="select">
+      <h2>只上传一部分</h2>
+      <p>有时只想先拷今天的 RAW，或者只要其中几段视频。先用日期和后缀筛选缩小范围，再进入勾选模式。</p>
+      <ol class="steps">
+        <li>点 <span class="ui">选择文件</span>。表格最左边多出一列勾选框，右上角的按钮换成 <span class="ui">退出选择</span> 和 <span class="ui">上传选中 (0)</span>。</li>
+        <li>点整行或者点勾选框，勾上要上传的文件。按钮上的数字跟着变。</li>
+        <li>需要一次选很多时，用表头的勾选框。它对当前显示的可勾选文件做全选或全不选；只勾了其中一部分时，它显示为半选。</li>
+        <li>点 <span class="ui">上传选中 (N)</span> 开始上传。不想传了就点 <span class="ui">退出选择</span>，回到普通模式。</li>
+      </ol>
+      <ul class="facts">
+        <li><b>能勾的文件</b>只有 <span class="status up">将上传</span> 和 <span class="status over">将覆盖</span>，而且这次还没传完的文件。<span class="status skip">将跳过</span> 的行和已经 <span class="status ok">已完成</span> 的行，勾选框是灰的。</li>
+        <li><b>配合状态条</b>先点状态条的 <span class="ui">将覆盖</span>，再点表头的勾选框，就能一次勾上所有要覆盖的文件。</li>
+        <li><b>配合筛选</b>勾选之后又用日期或后缀筛掉的文件，不会上传，也不计入按钮上的数字。被状态条暂时隐藏的文件仍然算在勾选里。</li>
+        <li><b>重新开始</b>每次点 <span class="ui">选择文件</span> 进入勾选模式，上一次的勾选都会清空。</li>
+      </ul>
+    </section>
+
+    <section id="upload">
+      <h2>上传任务：进度、暂停与取消</h2>
+      <p>点 <span class="ui">开始上传</span> 或 <span class="ui">上传选中</span> 后，结果页顶部出现进度条，筛选和表格留在原处。文件按表格里的顺序一个接一个拷贝，每次读写 1 MiB。日志记一行 <span class="ui">开始上传 (N 个文件)...</span>。</p>
+      <figure>
+        <div class="crop"><img src="assets/shots/progress-dark.webp" width="2800" height="230" alt="上传进度条：左上是正在拷贝的 IMG_0407.CR3，右上是 10.2%，下面一行写着 179.5 MB / 1.73 GB、9/29文件、94.0 MB/s、约17秒，右侧是暂停和取消两个按钮。" loading="lazy"></div>
+        <figcaption><b>进度条。</b>文件名、按字节算的百分比、已传与总量、第几个文件、速度和剩余时间，右边是暂停与取消。</figcaption>
+      </figure>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>位置</th><th>内容</th></tr></thead>
+          <tbody>
+            <tr><td>左上</td><td class="wrap-ok">当前文件名。刚开始、还没轮到第一个文件时显示 <span class="ui">准备中...</span>。</td></tr>
+            <tr><td>右上</td><td class="wrap-ok">总进度百分比，保留一位小数，按字节计算，大视频和小照片按实际大小计入。</td></tr>
+            <tr><td>已传 / 总量</td><td class="wrap-ok">例如 <code>179.5 MB / 1.73 GB</code>。总量只算将上传和将覆盖的文件，跳过的文件不计。</td></tr>
+            <tr><td>文件计数</td><td class="wrap-ok">例如 <code>9/29文件</code>，表示正在处理第 9 个、共 29 个。总数包含需要复核的将跳过文件。</td></tr>
+            <tr><td>速度</td><td class="wrap-ok">例如 <code>94.0 MB/s</code>。还没测出来时显示 <code>--</code>。</td></tr>
+            <tr><td>剩余时间</td><td class="wrap-ok">按当前速度估算，写成 <code>约17秒</code>、<code>约3分20秒</code>、<code>约1时5分</code>。速度为零或者已经传完时不显示。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>进度大约每 120 毫秒刷新一次。速度按最近一小段时间计算；暂停后恢复，会重新开始测，暂停的那段时间不会把速度拉低。</p>
+
+      <h3>行内进度</h3>
+      <p>正在拷贝的那一行，状态列变成一条迷你进度条和整数百分比。拷完的行变成 <span class="status ok">已完成</span>，复核通过的跳过文件变成 <span class="status skip">已跳过</span>，出错的变成 <span class="status err">失败</span>。还没轮到的行保持原来的状态。</p>
+      <figure>
+        <div class="window">
+          <img src="assets/shots/upload-dark.webp" width="2800" height="1800" alt="上传进行中：顶部进度条显示 10.2%，表格里前 8 个文件标着已完成，IMG_0407.CR3 这一行是 62% 的迷你进度条，后面的 IMG_0407.JPG 和 MVI_0408.MP4 仍是将上传。" loading="lazy">
+          <svg class="lights" viewBox="0 0 1400 900" aria-hidden="true"><circle cx="26" cy="31" r="6" fill="#ff5f57"/><circle cx="46" cy="31" r="6" fill="#febc2e"/><circle cx="66" cy="31" r="6" fill="#28c840"/></svg>
+        </div>
+        <figcaption><b>上传进行中。</b>前面的文件已完成，IMG_0407.CR3 正在拷贝，后面的文件还在排队。</figcaption>
+      </figure>
+
+      <h3>暂停、继续、取消</h3>
+      <ul class="facts">
+        <li><b>暂停</b>点进度条右边的暂停按钮。当前这 1 MiB 读写完就停下，已经写好的部分留在临时文件里，等你继续。日志记 <span class="ui">上传已暂停</span>。</li>
+        <li><b>继续</b>暂停后按钮变成播放图标，点它从停下的位置接着拷。日志记 <span class="ui">继续上传</span>。</li>
+        <li><b>取消</b>点叉号按钮。日志记 <span class="ui">正在取消上传，等待文件处理结束…</span>。正在拷贝的文件就地停止，它的临时文件被删除；已经完成的文件留在目标里。暂停状态下也能直接取消。</li>
+        <li><b>取消中</b>暂停和取消两个按钮都变灰，直到当前文件收尾。</li>
+      </ul>
+      <p>同一时间只运行一个上传任务，上一次没结束之前不能开始下一次。</p>
+
+      <h3>将跳过的文件也要复核</h3>
+      <p>点 <span class="ui">开始上传</span> 时，当前筛选下的将跳过文件也在上传列表里。轮到它们时不拷贝，只把源文件和目标里的那份再逐字节比较一次。仍然相同，记为 <span class="status skip">已跳过</span>；扫描之后任何一边有变化，记为 <span class="status err">失败</span>，原因是 <span class="ui">源文件或重复目标已变化，请重新扫描</span>。<span class="ui">上传选中</span> 只包含勾选的将上传和将覆盖文件，不做这一步。</p>
+
+      <h3>写入安全</h3>
+      <p>每个文件都按同一套步骤写入。任何一步失败，目标里原有的文件都不受影响：</p>
+      <ol class="steps">
+        <li>核对源文件的大小和修改时间。和扫描时不一样就停下，提示 <span class="ui">源文件在扫描后发生变化，请重新扫描</span>。</li>
+        <li>在日期目录里建一个隐藏的临时文件 <code>.mascopy-&lt;进程号&gt;-&lt;序号&gt;.part</code>，权限设为只有你自己能读写。</li>
+        <li>逐块拷贝。读到的数据比扫描时的大小还多，说明源文件还在变大，停下并提示 <span class="ui">源文件在复制期间增长，请重新扫描</span>。</li>
+        <li>拷完再核对一次源文件，确认拷贝期间它没有变过。</li>
+        <li>给临时文件带上源文件的权限、访问时间和修改时间，然后落盘（fsync）。</li>
+        <li>发布成正式文件名。新文件用独占方式发布：那个名字已经被占用就直接失败，绝不静默覆盖。只有 <span class="status over">将覆盖</span> 的文件才原子替换旧文件。</li>
+      </ol>
+      <p>失败或取消时，临时文件自动删除。拔卡、NAS 掉线这类读写错误只记为出错的那个文件失败，后面的文件照常继续。发布之前还会确认：目标必须恰好在目标下一层的合法日期目录里，且不是符号链接；两个源文件不能落到同一个目标；源文件不能位于目标目录里。</p>
+      <p>扫描之后，目标里新冒出一个同名文件，比如另一台电脑刚好传了同一张，独占发布会失败。这个文件记为失败，新出现的那个文件原样保留。重新扫描后，它会按判重规则重新处理。完整的设计见 <a href="reliability.html">可靠性与隐私</a>。</p>
+    </section>
+
+    <section id="finish">
+      <h2>完成、部分失败与推出设备</h2>
+      <p>上传结束时，大师拷贝按结果分四种情况处理。</p>
+
+      <h3>全部成功</h3>
+      <figure>
+        <div class="window">
+          <img src="assets/shots/done-dark.webp" width="2800" height="1800" alt="备份完成弹窗：标题是备份完成，正文写着所有选中的文件已成功备份到目标目录，现在您可以安全地移除源设备；底部三个按钮是关闭、挑图导入 Eagle (26) 和推出设备。" loading="lazy">
+          <svg class="lights" viewBox="0 0 1400 900" aria-hidden="true"><circle cx="26" cy="31" r="6" fill="#ff5f57"/><circle cx="46" cy="31" r="6" fill="#febc2e"/><circle cx="66" cy="31" r="6" fill="#28c840"/></svg>
+        </div>
+        <figcaption><b>备份完成。</b>弹窗背后已经回到配置页，下一张卡可以接着倒。</figcaption>
+      </figure>
+      <p>没有失败、也没有取消时，日志记 <span class="ui">上传完成!</span>，弹出 <span class="ui">🎉 备份完成</span>，正文是 <span class="ui">所有选中的文件已成功备份到目标目录。</span> 和 <span class="ui">现在您可以安全地移除源设备。</span>。弹窗底部三个按钮：</p>
+      <ul class="facts">
+        <li><b>关闭</b>关掉弹窗。也可以按 <kbd>Esc</kbd>、点右上角的叉，或者点弹窗外面。</li>
+        <li><b>🖼️ 挑图导入 Eagle (N)</b>N 是这次扫描里已经上传或确认已存在的照片数，视频不算。点它直接进入挑图网格，照片从目标目录读取。一张照片都没有时不可点。</li>
+        <li><b>推出设备</b>推出这次的来源设备，见本节最后。</li>
+      </ul>
+      <p>弹窗背后，应用已经回到配置页，这次的扫描结果随之清空。路径和开关都还在，插上下一张卡直接点 <span class="ui">开始扫描</span> 就行。</p>
+
+      <h3>部分文件失败</h3>
+      <p>只要有文件失败，就弹出 <span class="ui">部分文件未备份</span>：<span class="ui">有 N 个文件失败。已完成的文件将保留，重试只处理未完成的文件。</span> 下面一行小字是第一个失败文件的原因。日志里逐条记下每个失败的文件名和原因，最后一行汇总 <span class="ui">本次已完成 X 个，跳过 Y 个，失败 N 个</span>。</p>
+      <p>应用停在结果页，失败的行标着 <span class="status err">失败</span>。排除问题之后，比如把 NAS 重新挂载好，再点一次 <span class="ui">开始上传</span>：已完成和已跳过的文件自动排除，只重试剩下的。重试沿用这次扫描的计划；源文件在这期间变过的，重试时会提示重新扫描。</p>
+
+      <h3>只取消、没有失败</h3>
+      <p>不弹窗，只在日志里记一行 <span class="ui">本次已完成 X 个，跳过 Y 个，失败 0 个；已取消</span>。应用停在结果页，已完成的行保持 <span class="status ok">已完成</span>。之后再点 <span class="ui">开始上传</span>，从没完成的文件接着传。</p>
+
+      <h3>整批被拒绝</h3>
+      <p>有些问题在拷贝开始之前就能发现，例如目标磁盘在扫描之后被卸载了，或者计划里有文件的目标位置不合规。这时一个文件都不拷，直接弹出 <span class="ui">上传失败</span> 并附上原因。重新挂载目标或者重新扫描之后再试。</p>
+
+      <h3>推出设备</h3>
+      <p>在 <span class="ui">🎉 备份完成</span> 弹窗里点 <span class="ui">推出设备</span>，大师拷贝从这次扫描的源路径里取出卷名，对 <code>/Volumes/卷名</code> 执行 <code>diskutil eject</code>，效果和在访达里点推出一样。源路径是 <code>/Volumes/EOS_DIGITAL/DCIM/100CANON</code> 时，推出的是整个 <code>/Volumes/EOS_DIGITAL</code>。</p>
+      <ul class="facts">
+        <li><b>成功</b>完成弹窗关闭，提示 <span class="ui">设备已安全推出</span>：<span class="ui">现在可以安全移除源设备。</span> 日志记 <span class="ui">设备已推出</span>。</li>
+        <li><b>失败</b>弹出 <span class="ui">推出失败</span>，附上系统返回的原因，例如卡上还有文件被别的程序占用。</li>
+        <li><b>范围</b>源路径不在 <code>/Volumes/</code> 下时无法推出，比如源目录选的是本机上的某个文件夹。</li>
+        <li><b>入口</b><span class="ui">推出设备</span> 只出现在备份完成弹窗里。关掉弹窗之后，或者上传有失败、被取消时，请在访达里推出。</li>
+      </ul>
+    </section>
+
+    <section id="favorites">
+      <h2>收藏夹与配置保存</h2>
+      <p>常用的存储卡路径和备份位置收进收藏夹，下次点一下就选中。收藏夹在两张卡片的下半部分，列表为空时不显示。</p>
+      <ul class="facts">
+        <li><b>加入</b>选好路径后，点旁边的心形按钮 <span class="ui">加入收藏</span>。新加的排在最前；已经在收藏里的路径不会重复添加。</li>
+        <li><b>选用</b>点收藏夹里的某条路径，它立即填进上面的选择框。</li>
+        <li><b>移除</b>鼠标移到某条收藏上，右边出现 <span class="ui">×</span>，点它移除。用键盘把焦点移到这一条时也会出现。</li>
+        <li><b>上限</b>每个列表最多 8 条。第 9 条加进来时，排在最后的那条被移出。</li>
+        <li><b>分开保存</b>SD 卡的源、SD 卡的目标、大疆的源、大疆的目标，一共四个列表，互不影响。</li>
+        <li><b>和联机拍摄共用</b>联机拍摄选备份目标时，会同时列出 SD 卡和大疆两边的目标收藏；在联机拍摄页面新加的目标收藏，存进 SD 卡的目标列表。</li>
+      </ul>
+
+      <h3>配置自动保存</h3>
+      <p>选路径、切换覆盖开关、增删收藏，改完立即保存，没有保存按钮。保存失败时弹出 <span class="ui">保存配置失败</span> 并附上原因。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>分组</th><th>保存的内容</th></tr></thead>
+          <tbody>
+            <tr><td>SD 卡模式</td><td class="wrap-ok">源目录、目标目录、覆盖重复文件</td></tr>
+            <tr><td>DJI 模式</td><td class="wrap-ok">源目录、目标目录、覆盖重复文件</td></tr>
+            <tr><td>收藏夹</td><td class="wrap-ok">上面说的四个列表</td></tr>
+            <tr><td>Eagle</td><td class="wrap-ok">API 地址、令牌、上次选的文件夹</td></tr>
+            <tr><td>联机拍摄</td><td class="wrap-ok">联机方式、FTP 端口、用户名、密码、监听目录、备份目标</td></tr>
+            <tr><td>不保存</td><td class="wrap-ok">快速扫描模式、忽略缩略图文件夹（每次启动都是开）；日志</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>配置文件在 <code>~/Library/Application Support/com.mascopy.mascopy/config.json</code>。所在文件夹只有你自己能进入，文件只有你自己能读写。每次保存先写临时文件，写完再原子替换，保存时断电也不会留下写了一半的配置文件。</p>
+      <p>第一次运行新版本时，旧版本放在 <code>~/.mascopy-config.json</code> 的配置会自动迁移过来；缺的字段按默认值补上。界面主题（浅色、深色、跟随系统）不在这个文件里，单独存在应用本地。</p>
+    </section>
+
+    <section id="limits">
+      <h2>已知限制</h2>
+      <p>下面这些是当前版本的实际行为，用之前心里有数。</p>
+      <ul class="facts">
+        <li><b>扫描不能取消</b>扫描没有进度条，也没有取消按钮。关掉快速扫描去扫一张大卡时，只能等它结束。</li>
+        <li><b>快速扫描默认开</b>每次启动都是开，不记忆上次的选择。</li>
+        <li><b>覆盖只覆盖内容不同的同名文件</b>开关说明写着 <span class="ui">相同文件名将被覆盖</span>，内容相同的文件照样跳过；<code>_1</code>、<code>_2</code> 这些候选名也不会被覆盖。</li>
+        <li><b>开关在扫描时生效</b>扫描之后再改覆盖或扫描开关，要重新扫描才会反映到状态里。</li>
+        <li><b>部分格式按修改时间归档</b>CR3 的 EXIF 可能读不出来，AVI、MKV 没有容器创建时间，这些文件都按修改时间定日期。</li>
+        <li><b>格式按模式区分</b>DJI 模式不收 DNG；SD 卡模式不收 LRF、OSV，也不收只在联机拍摄里支持的 HIF 和 CRM。</li>
+        <li><b>目录结构固定</b>只有 <code>YYYY-MM-DD</code> 一层，不能自定义目录格式或命名规则。</li>
+        <li><b>推出入口有限</b>只有全部成功时的完成弹窗里有 <span class="ui">推出设备</span>，而且只能推出 <code>/Volumes/</code> 下的设备。</li>
+        <li><b>日志不存盘</b>日志只保存在本次运行里，退出应用后清空。</li>
+      </ul>
+      <p>系统要求、首次打开的放行方法和全部默认值，见 <a href="reference.html">格式、快捷键与系统要求</a>。</p>
+    </section>
+
+    <nav class="pager" aria-label="翻页">
+      <a class="prev" href="index.html"><span>← 首页</span>大师拷贝</a>
+      <a class="next" href="tether.html"><span>下一章 →</span>联机拍摄</a>
+    </nav>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div>
+      <a class="brand" href="index.html"><img src="assets/icon.png" alt="" width="26" height="26">大师拷贝</a>
+      <p class="fine">macOS 上的照片与视频整理工具：把存储卡里的素材按拍摄日期备份到本地磁盘或 NAS，支持相机联机拍摄与 Eagle 挑图导入。</p>
+      <p class="fine"><a href="https://github.com/Redwinam/mascopy">GitHub · Redwinam/mascopy</a></p>
+    </div>
+    <div>
+      <h4>功能</h4>
+      <ul>
+        <li><a href="backup.html">SD 卡与大疆备份</a></li>
+        <li><a href="tether.html">联机拍摄</a></li>
+        <li><a href="eagle.html">Eagle 挑图与裁剪</a></li>
+        <li><a href="reliability.html">可靠性与隐私</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>参考</h4>
+      <ul>
+        <li><a href="reference.html">格式、快捷键与系统要求</a></li>
+        <li><a href="https://github.com/Redwinam/mascopy/releases">版本发布记录</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>获取</h4>
+      <ul>
+        <li><a href="index.html#download">下载与安装</a></li>
+        <li><a href="reference.html#requirements">系统要求</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>

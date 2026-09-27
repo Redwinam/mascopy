@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>联机拍摄 · 大师拷贝</title>
+  <meta name="description" content="相机 WiFi 直传到内置 FTP 服务器，或监听 EOS Utility 的保存目录；照片完整收到才入库，按日期整理进 NAS，实时显示在照片流里。">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="assets/site.css">
+  <script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("dl-site-theme")==="light"?"light":"dark")}catch(e){}</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="assets/icon.png" alt="" width="26" height="26">大师拷贝<span class="brand-sub">MasCopy</span></a>
+    <nav class="nav" aria-label="主导航">
+      <a href="index.html#chapters">功能</a>
+      <a href="backup.html">备份</a>
+      <a href="tether.html">联机拍摄</a>
+      <a href="eagle.html">Eagle</a>
+      <a href="reliability.html">可靠性</a>
+    </nav>
+    <div class="header-tools">
+      <button class="icon-btn" type="button" data-theme-toggle aria-label="切换到浅色" title="切换到浅色"><svg class="icon only-dark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><svg class="icon only-light" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="index.html#download"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg><span class="btn-download-label">下载</span></a>
+      <button class="icon-btn menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-label="打开导航"><svg class="icon" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap doc">
+  <aside class="doc-nav">
+    <details class="chapter-list">
+      <summary class="tone-violet" title="切换章节"><span class="sw"></span><span class="cur">联机拍摄</span><span class="pos">2 / 5</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+      <ul>
+        <li><a class="tone-blue" href="backup.html"><span class="sw"></span>SD 卡与大疆备份</a></li>
+        <li><a class="tone-violet" href="tether.html" aria-current="page"><span class="sw"></span>联机拍摄</a></li>
+        <li><a class="tone-copper" href="eagle.html"><span class="sw"></span>Eagle 挑图与裁剪</a></li>
+        <li><a class="tone-live" href="reliability.html"><span class="sw"></span>可靠性与隐私</a></li>
+        <li><a class="tone-neutral" href="reference.html"><span class="sw"></span>格式、快捷键与系统要求</a></li>
+      </ul>
+    </details>
+    <nav class="toc" aria-label="本页目录">
+      <h4>本页</h4>
+      <ul>
+        <li><a href="#modes">两种联机方式</a></li>
+        <li><a href="#setup">会话设置</a></li>
+        <li><a href="#camera">相机端设置</a></li>
+        <li><a href="#network">本机地址与网卡过滤</a></li>
+        <li><a href="#session">会话状态条</a></li>
+        <li><a href="#stream">照片流</a></li>
+        <li><a href="#inbox">FTP 收件箱</a></li>
+        <li><a href="#ftp-server">FTP 服务器的边界</a></li>
+        <li><a href="#watch">监听文件夹</a></li>
+        <li><a href="#archive">日期与重名</a></li>
+        <li><a href="#recovery">掉线重试与结束会话</a></li>
+        <li><a href="#security">明文传输与凭据</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main class="doc-main tone-violet">
+    <header class="chapter-head">
+      <span class="chapter-label"><svg class="icon" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>联机拍摄</span>
+      <h1>按下快门，照片自己进 NAS</h1>
+      <p class="lede">拍摄时让大师拷贝一直开着。相机通过 WiFi 把照片直接传给内置的 FTP 服务器，或者由 EOS Utility 存进文件夹，大师拷贝接手后按日期整理进备份目录，照片流里一张张实时出现。本章写清两种方式怎么设置、照片在哪一步才算收到、断网和重启时会发生什么，以及这套方案的限制。</p>
+    </header>
+
+    <figure>
+      <div class="window">
+        <img class="only-dark" src="assets/shots/tether-dark.webp" width="2800" height="1800" alt="联机拍摄会话：顶部状态条显示联机会话进行中、已接收 10 张、FTP 192.168.31.218:2121 · 用户 eos，右边是清空记录和结束会话；下面是相机端设置提示和备选 IP 10.0.0.12；照片流里的卡片标着已入库、已存在、失败或接收中。" loading="lazy">
+        <img class="only-light" src="assets/shots/tether-light.webp" width="2800" height="1800" alt="联机拍摄会话（浅色主题）。" loading="lazy">
+        <svg class="lights" viewBox="0 0 1400 900" aria-hidden="true"><circle cx="26" cy="31" r="6" fill="#ff5f57"/><circle cx="46" cy="31" r="6" fill="#febc2e"/><circle cx="66" cy="31" r="6" fill="#28c840"/></svg>
+      </div>
+      <figcaption><b>联机会话进行中。</b>状态条上是已接收张数和相机要填的 FTP 地址；中间的虚线框是相机端设置提示，最后一行列出备选 IP；照片流里有 <span class="status ok">已入库</span> <span class="status skip">已存在</span> <span class="status err">失败</span> <span class="status up">接收中</span> 四种卡片。示例文件与照片均为演示素材。</figcaption>
+    </figure>
+
+    <section id="modes">
+      <h2>两种联机方式</h2>
+      <p>点顶部的 <span class="ui">联机拍摄</span> 页签，先在两张模式卡片里选一张。两种方式最后都把照片整理进同一种日期目录，区别只在照片怎么到达 Mac。</p>
+      <ul class="facts">
+        <li><b>📶 相机 WiFi 直传</b>卡片副标题写着 <span class="ui">R5 Mark II 机身 FTP 直连本软件，无需其他软件</span>。大师拷贝在 Mac 上开一个 FTP 服务器，相机拍完通过局域网把照片推过来。这是默认模式。</li>
+        <li><b>🔌 监听文件夹</b>副标题写着 <span class="ui">配合 EOS Utility 联机拍摄（USB 或 WiFi 均可）</span>。照片先由 EOS Utility 存进它的保存目标文件夹，大师拷贝盯着这个文件夹，把新出现的照片拷进备份目录。</li>
+      </ul>
+      <p>选中的卡片会高亮，并立即存进配置。下次打开应用，还是上次选的模式。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>对比项</th><th>📶 相机 WiFi 直传</th><th>🔌 监听文件夹</th></tr></thead>
+          <tbody>
+            <tr><td>需要的软件</td><td class="wrap-ok">只要大师拷贝</td><td class="wrap-ok">EOS Utility 加大师拷贝</td></tr>
+            <tr><td>相机怎么连</td><td class="wrap-ok">机身的 FTP 传输功能，走 WiFi</td><td class="wrap-ok">EOS Utility 联机，USB 或 WiFi 都行</td></tr>
+            <tr><td>什么时候算收到</td><td class="wrap-ok">相机发完数据、落盘并提交进收件箱之后</td><td class="wrap-ok">文件大小、修改时间和文件身份连续 1.2 秒不变之后</td></tr>
+            <tr><td>归档日期</td><td class="wrap-ok">Mac 收完这张照片的时间</td><td class="wrap-ok">EOS Utility 写入文件的时间</td></tr>
+            <tr><td>来源文件</td><td class="wrap-ok">收件箱里的副本确认入库后删除</td><td class="wrap-ok">永远保留，需要自己清理</td></tr>
+            <tr><td>应用重启之后</td><td class="wrap-ok">已完整收到、还没入库的照片，下次会话接着入库</td><td class="wrap-ok">只处理新会话开始后出现或改动的文件</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>收哪些文件</h3>
+      <p>联机拍摄接受的格式比 SD 卡模式多两种：佳能的 HIF 和 Cinema RAW Light 的 CRM。完整列表如下，扩展名不分大小写：</p>
+      <ul>
+        <li>照片：JPG、JPEG、PNG、HEIC、HIF，RAW 格式 NEF、CR2、CR3、ARW、DNG。</li>
+        <li>视频：MP4、MOV、AVI、M4V、3GP、MKV、CRM。</li>
+      </ul>
+      <p>大疆的 LRF 和 OSV 不在联机拍摄的列表里。以 <code>.</code> 开头的隐藏文件一律忽略。完整的格式对照见 <a href="reference.html">格式、快捷键与系统要求</a>。</p>
+    </section>
+
+    <section id="setup">
+      <h2>会话设置</h2>
+      <p>模式卡片下面是这次会话要填的内容。每个字段改完立即自动保存，没有单独的保存按钮。WiFi 直传模式显示端口、用户名、密码三个小输入框；监听模式换成监听目录选择器。两种模式都要选备份目标目录。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>字段</th><th>默认值</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>端口</td><td><code>2121</code></td><td class="wrap-ok">只在 WiFi 直传模式出现。必须是 1 到 65535 的整数，超出范围时开始按钮不可点。清空或填 0，会恢复成 2121。</td></tr>
+            <tr><td>用户名</td><td><code>eos</code></td><td class="wrap-ok">相机登录 FTP 用的账号。留空时服务器按 <code>eos</code> 处理，但相机端设置提示会显示空白，建议不要留空。</td></tr>
+            <tr><td>密码</td><td><code>eos</code></td><td class="wrap-ok">输入时显示为圆点。留空时同样按 <code>eos</code> 处理。</td></tr>
+            <tr><td>监听目录</td><td>无</td><td class="wrap-ok">只在监听模式出现，占位文字是 <span class="ui">选择 EOS Utility 的「保存目标文件夹」</span>。</td></tr>
+            <tr><td>备份目标目录</td><td>无</td><td class="wrap-ok">占位文字是 <span class="ui">接收的照片将按日期（YYYY-MM-DD）整理到这里</span>。WiFi 直传的收件箱也建在这里。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>目录旁边有两个按钮：<span class="ui">选择目录</span> 打开 macOS 原生的文件夹对话框，♥ <span class="ui">加入收藏</span> 把当前备份目标收进收藏夹。</p>
+      <p>备份目标下面的 <span class="ui">收藏夹</span> 一行，复用 SD 卡模式和大疆模式里收藏过的备份位置。每个收藏以小片显示路径的最后三段，比如 <code>/Volumes/NAS/照片备份/棚拍</code> 显示成 <code>NAS/照片备份/棚拍</code>；鼠标悬停看完整路径，点一下就选中。在联机页签里新收藏的位置存进 SD 卡模式的目标收藏夹，列表最多 8 条，新加的排最前。</p>
+      <h3>开始会话</h3>
+      <p>备份目标选好、端口合法，监听模式下再选好监听目录，<span class="ui">开始联机会话</span> 才能点。点下去按钮变成 <span class="ui">启动中…</span>，表单暂时锁住。启动成功后配置区收起，换成会话状态条；启动失败时，原因显示在按钮左边，表单解锁，改好再点。</p>
+      <h3>启动失败时</h3>
+      <p>启动错误都以 <code>联机:</code> 开头，后面是具体原因：</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>提示</th><th>原因</th><th>怎么办</th></tr></thead>
+          <tbody>
+            <tr><td class="wrap-ok"><span class="ui">联机会话已在运行，请先结束当前会话</span></td><td class="wrap-ok">上一个会话还没结束</td><td class="wrap-ok">点 <span class="ui">结束会话</span>，等收尾完成再开始</td></tr>
+            <tr><td class="wrap-ok"><span class="ui">目标目录不存在</span></td><td class="wrap-ok">备份位置找不到，常见于 NAS 没挂载或目录被移走</td><td class="wrap-ok">在访达里重新挂载 NAS，或重新选择目录</td></tr>
+            <tr><td class="wrap-ok"><span class="ui">请先选择监听目录</span><br><span class="ui">监听目录不存在</span></td><td class="wrap-ok">监听模式缺监听目录，或目录已被删除、改名</td><td class="wrap-ok">重新选择监听目录</td></tr>
+            <tr><td class="wrap-ok"><span class="ui">监听目录与目标目录不能相同或互相包含</span></td><td class="wrap-ok">两个目录是同一个，或者一个在另一个里面</td><td class="wrap-ok">把备份目标放到监听目录之外</td></tr>
+            <tr><td class="wrap-ok"><span class="ui">FTP 端口无法使用</span></td><td class="wrap-ok">端口被别的程序占用，冒号后面附系统给出的原因</td><td class="wrap-ok">换一个端口，相机端同步改</td></tr>
+            <tr><td class="wrap-ok"><span class="ui">创建收件箱失败</span><br><span class="ui">收件箱不能是符号链接</span></td><td class="wrap-ok">备份目标不可写，或者 <code>.mascopy-inbox</code> 的位置被符号链接、普通文件占了</td><td class="wrap-ok">检查 NAS 的写权限，移走占位的文件或链接</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="camera">
+      <h2>相机端设置</h2>
+      <p>选了 WiFi 直传，配置区和会话中都会显示一块虚线框提示，标题是 <span class="ui">📷 相机端设置（R5 Mark II · 只需配置一次并保存为预设）</span>。提示里的服务器地址、端口、用户名、密码都是当前真实值，照着抄进相机就行。下面按顺序写一遍，假设 Mac 的地址是 <code>192.168.31.218</code>。</p>
+      <ol class="steps">
+        <li>让相机和 Mac 连上同一个局域网。提示里建议用 5GHz 频段，传得更快。</li>
+        <li>在大师拷贝里选好备份目标目录，点 <span class="ui">开始联机会话</span>。第一次启动时 macOS 可能弹出防火墙提示，选 <span class="ui">允许</span>。</li>
+        <li>在相机上依次进入 <span class="ui">菜单</span> → <span class="ui">网络</span> → <span class="ui">连接/网络设置</span> → <span class="ui">FTP 传输</span>。</li>
+        <li>协议选 FTP。FTPS 和 SFTP 都不行，大师拷贝只实现了普通 FTP。</li>
+        <li>服务器地址填 <code>192.168.31.218</code>，端口填 <code>2121</code>。</li>
+        <li>用户名填 <code>eos</code>，密码填 <code>eos</code>。改过的话，以提示里显示的为准。</li>
+        <li>被动模式设为启用。</li>
+        <li>自动传输设为启用。传输类型可以选「仅 JPEG」，RAW 留在存储卡里，收工后用 SD 卡模式整卡备份。</li>
+        <li>把这套设置存成相机里的预设。只要 Mac 的地址不变，以后开会话、开相机就能直接传。</li>
+        <li>拍一张试试。照片流里出现这张照片，标着 <span class="status ok">已入库</span>，就说明通了。</li>
+      </ol>
+      <p>为什么建议只传 JPEG：RAW 文件大，走 WiFi 慢，连拍时会在相机里排队。现场挑图、导入 Eagle，JPEG 已经够用。RAW 等收工插卡备份，读卡器比 WiFi 快得多，也不占拍摄时的无线带宽。</p>
+      <aside class="note"><span class="note-label">细节</span>密码输入框显示圆点，但相机端设置提示里的密码是明文，方便你对照着在相机上一个字一个字输入。共享屏幕或录屏时留意这一点。</aside>
+      <aside class="note warn"><span class="note-label">注意</span>界面上的菜单路径按 R5 Mark II 写。其他机身只要支持 FTP 被动模式上传，服务器地址、端口、账号照填即可，菜单位置以相机说明书为准。如果当初在防火墙提示里点了拒绝，到 macOS 的防火墙设置里把大师拷贝改回允许传入连接，否则相机连不上。</aside>
+    </section>
+
+    <section id="network">
+      <h2>本机地址与网卡过滤</h2>
+      <p>相机要知道 Mac 的地址才能连上来。一台 Mac 往往同时有好几个地址：WiFi 一个，网线一个，代理软件、VPN、虚拟机还会各自加几个。大师拷贝打开联机页签时读取本机所有 IPv4 地址，先去掉相机肯定连不到的，再把最可能的排到第一位，填进相机端设置提示的服务器地址。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>过滤掉的</th><th>范围</th><th>一般是什么</th></tr></thead>
+          <tbody>
+            <tr><td>虚拟网卡</td><td class="wrap-ok">名字以 <code>utun</code> <code>tun</code> <code>tap</code> <code>awdl</code> <code>llw</code> <code>bridge</code> <code>vmnet</code> <code>lo</code> <code>gif</code> <code>stf</code> <code>anpi</code> 开头的接口</td><td class="wrap-ok">代理和 VPN 的隧道、隔空投送用的直连接口、虚拟机网桥、回环接口等</td></tr>
+            <tr><td>链路本地地址</td><td><code>169.254.0.0/16</code></td><td class="wrap-ok">没拿到正常地址时系统自己配的地址</td></tr>
+            <tr><td>基准测试网段</td><td><code>198.18.0.0/15</code></td><td class="wrap-ok">常被代理软件的 TUN 模式占用</td></tr>
+            <tr><td>运营商级 NAT 网段</td><td><code>100.64.0.0/10</code></td><td class="wrap-ok">Tailscale 这类组网工具常用</td></tr>
+            <tr><td>回环与未指定</td><td><code>127.0.0.1</code> 等</td><td class="wrap-ok">只在本机内部有效</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>剩下的地址按三条规则排序：私网地址（<code>10.x</code>、<code>172.16</code> 到 <code>172.31</code>、<code>192.168.x</code>）排在前面；其次是名字以 <code>en</code> 开头的物理网卡，也就是 WiFi 和有线网口；其余按接口名排序。</p>
+      <p>过滤后还剩不止一个地址时，提示底部多出一行：<span class="ui">已自动过滤代理/虚拟网卡地址；若相机连不上，可尝试备选 IP：…</span>，后面列出其他候选。比如 Mac 同时连着 WiFi 和网线，另一个网口的地址就会列在这里。截图里的备选是 <code>10.0.0.12</code>。</p>
+      <ul class="facts">
+        <li><b>什么时候检测</b>每次打开联机拍摄页签时检测一次。换了网络，切到别的页签再切回来，就会重新检测。</li>
+        <li><b>会话里以状态条为准</b>点开始时大师拷贝会再取一次首选地址，显示在会话状态条上。会话期间，相机端设置提示里的服务器地址也换成这个值。</li>
+        <li><b>备选地址同样可用</b>FTP 服务器监听本机所有网络接口。首选地址不对时，相机改填备选地址就能连，不用重开会话。</li>
+        <li><b>一个都没找到</b>会话开始前，提示里显示 <span class="ui">（本机局域网 IP）</span>；会话开始后状态条显示 <code>127.0.0.1</code>。这时相机肯定连不上，先检查 Mac 有没有连上局域网。</li>
+      </ul>
+      <aside class="note warn"><span class="note-label">注意</span>有些路由器的访客网络会开启 AP 隔离，同一个 WiFi 下的设备互相访问不到。地址填对了还是连不上时，把相机和 Mac 换到主网络再试。</aside>
+    </section>
+
+    <section id="session">
+      <h2>会话状态条</h2>
+      <p>会话开始后，配置区收起，页面顶部换成一条状态条。左边是会话信息，右边是两个按钮。</p>
+      <ul class="facts">
+        <li><b>跳动的绿点</b>旁边写着 <span class="ui">联机会话进行中</span>，表示服务器或监听正在后台运行。</li>
+        <li><b>已接收 N 张</b>统计照片流里 <span class="status ok">已入库</span> 和 <span class="status skip">已存在</span> 的卡片，<span class="status up">接收中</span> 和 <span class="status err">失败</span> 的不算。截图里的 10 张，是 9 张已入库加 1 张已存在。</li>
+        <li><b>FTP 地址</b>只在 WiFi 直传模式显示，格式是 <code>FTP 192.168.31.218:2121 · 用户 eos</code>。相机里要填的就是这几项。</li>
+        <li><b>清空记录</b>清掉照片流里的所有卡片，计数归零。只清列表，已经入库的文件原样留在备份目录里。照片流为空时按钮不可点。</li>
+        <li><b>结束会话</b>关掉 FTP 服务器或停止监听，等进行中的写入收尾后回到配置区。收尾的具体顺序见 <a href="#recovery">掉线重试与结束会话</a>。</li>
+      </ul>
+      <p>会话在后台运行，和当前页签无关。拍摄中切到 <span class="ui">SD卡模式</span> 或 <span class="ui">DJI模式</span> 页签，照片照常入库，照片流照常更新；切回来时状态条和照片流都还在。</p>
+      <p>WiFi 直传模式下，相机端设置提示在会话中继续显示在状态条下方，方便现场再给另一台相机配置。结束会话失败时，状态条下方会出现 <span class="ui">结束会话失败：…</span> 附原因，会话保持运行，可以再点一次。</p>
+      <aside class="note warn"><span class="note-label">注意</span>会话和照片流只存在内存里。退出或重启大师拷贝后照片流清空，会话也不会自动恢复，需要重新点 <span class="ui">开始联机会话</span>。已经入库的文件不受影响；WiFi 直传收件箱里已完整收到、还没入库的照片，下次会话会接着处理。</aside>
+    </section>
+
+    <section id="stream">
+      <h2>照片流</h2>
+      <p>状态条下面是照片流：方形卡片排成网格，最新的在最前面。每张卡片右上角是状态标签，底部压着文件名。</p>
+      <figure>
+        <div class="crop"><img src="assets/shots/tether-grid-dark.webp" width="2800" height="640" alt="照片流局部：一排方形照片卡片，右上角标着已入库或已存在；IMG_0520 是红框卡片，中间一个警告图标，标着失败；第二排最后一张是蓝色虚线框，标着接收中 · 7.4 MB，中间在转圈。" loading="lazy"></div>
+        <figcaption><b>照片流。</b>最新的在最前。<code>IMG_0520.JPG</code> 入库失败，红框标出，悬停可看原因；<code>IMG_0516.JPG</code> 和备份目录里已有的文件内容相同，记为 <span class="status skip">已存在</span>；<code>IMG_0512.JPG</code> 正在写进备份目录。</figcaption>
+      </figure>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>状态</th><th>卡片样子</th><th>含义</th></tr></thead>
+          <tbody>
+            <tr><td><span class="status up">接收中 · 7.4 MB</span></td><td class="wrap-ok">蓝色虚线框，中间转圈</td><td class="wrap-ok">照片已经到了，正在等它写完或正在拷进备份目录。后面的数字是文件大小，1 MB 以下显示 KB。</td></tr>
+            <tr><td><span class="status ok">已入库</span></td><td class="wrap-ok">缩略图</td><td class="wrap-ok">已经写进备份目录的日期文件夹。</td></tr>
+            <tr><td><span class="status skip">已存在</span></td><td class="wrap-ok">缩略图</td><td class="wrap-ok">日期文件夹里已有同名、内容完全相同的文件，这次没有再写一份。</td></tr>
+            <tr><td><span class="status err">失败</span></td><td class="wrap-ok">红框，中间 ⚠️</td><td class="wrap-ok">这次入库没成功，鼠标悬停显示原因。会话期间会自动重试，成功后变成已入库。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>两种模式里 <span class="status up">接收中</span> 的意思略有不同。监听模式下，文件一出现在监听目录就有卡片，等它写完这段时间一直显示接收中。WiFi 直传模式下，照片在网络上传输的那段时间不会出现在照片流里；卡片在照片完整收到、提交进收件箱之后才出现，这时的接收中表示正在写进备份目录，通常一闪而过，备份目标是较慢的 NAS 时停留久一些。</p>
+      <h3>缩略图与点开</h3>
+      <p>已入库和已存在的照片滚动到视野附近时，才生成 384 像素的缩略图。缩略图从备份目录里的文件生成，用的是 macOS 自带的图像转换，RAW 和 HEIC 也能显示。缩略图还没出来或者生成不了时，卡片中间显示扩展名，比如 <code>CR3</code>。</p>
+      <p>点一张已入库或已存在的照片，打开灯箱看大图、裁剪、导入 Eagle，打开的是备份目录里的那一份。灯箱的顺序和照片流一致，用 <kbd>←</kbd> <kbd>→</kbd> 翻页；拍摄中新入库的照片会实时加进灯箱的张数。在灯箱里导入过 Eagle 的照片，卡片上多一个 <span class="ui">✓ Eagle</span>；裁剪导入过的，多一个 <span class="ui">✂ N</span>，N 是裁剪导入的次数。这两个标记只在内存里，重启后消失。灯箱的全部功能见 <a href="eagle.html">Eagle 挑图与裁剪</a>。</p>
+      <p>视频、接收中和失败的卡片不能点开。监听模式下，文件还没入库就被上游删掉的话，它的卡片会从照片流里消失。</p>
+      <h3>空状态与日志</h3>
+      <ul class="facts">
+        <li><b>🔌 会话开始前</b>照片流里写着 <span class="ui">开始会话后，本次联机拍摄的照片会实时显示在这里</span>。</li>
+        <li><b>📡 会话中还没收到照片</b>写着 <span class="ui">等待相机拍摄…按下快门后照片会自动出现在这里</span>。</li>
+        <li><b>日志</b>每张照片入库记一条 <span class="ui">联机入库: IMG_0523.JPG</span>，失败记 <span class="ui">联机入库失败: 文件名 - 原因</span>。同一个文件因为同样的原因反复失败时，只记一次。</li>
+      </ul>
+    </section>
+
+    <section id="inbox">
+      <h2>FTP 收件箱</h2>
+      <p>WiFi 直传最怕传到一半断掉：信号弱了、相机关机、电池没电。半截文件要是混进图库，事后很难发现。大师拷贝给 FTP 上传设了一个收件箱，照片必须完整收到才提交，提交之后才入库。</p>
+      <p>收件箱建在备份目标目录里，名叫 <code>.mascopy-inbox</code>，里面分两个区：<code>.mascopy-staging</code> 是暂存区，放正在传的文件；<code>.mascopy-completed</code> 是已提交区，放完整收到、等待入库的文件。三个都是隐藏目录，访达默认看不到，按 <kbd>⇧</kbd> <kbd>⌘</kbd> <kbd>.</kbd> 可以显示。</p>
+      <h3>一张照片从相机到日期目录</h3>
+      <ol class="steps">
+        <li>相机登录后开始上传。大师拷贝在暂存区里为这次传输新建一个独立目录，名字形如 <code>transfer-进程号-时间戳-序号</code>，文件写在里面。</li>
+        <li>一直读到相机把数据发完。中途断开、会话被结束或者写入出错，这次传输就停在这一步。</li>
+        <li>把文件写进磁盘并执行 fsync，确认数据真正落盘。</li>
+        <li>把整个传输目录原子地移进已提交区。只有走到这一步，这张照片才算收到。</li>
+        <li>立即开始入库：拷进备份目录的日期文件夹。拷贝先写成隐藏的临时文件，写完再以正式文件名发布，发布时目标位置已有文件就换名字，绝不覆盖。</li>
+        <li>入库成功，或者确认日期文件夹里已有内容相同的文件之后，才删除已提交区里的这份副本和它的空目录。</li>
+      </ol>
+      <pre class="tree"><span class="dir">/Volumes/NAS/棚拍/</span>              <span class="note">备份目标目录</span>
+├─ <span class="dir">.mascopy-inbox/</span>              <span class="note">FTP 收件箱，相机看不到里面的两个区</span>
+│  ├─ <span class="dir">.mascopy-staging/</span>
+│  │  └─ <span class="dir">transfer-4127-…-7/</span>
+│  │     └─ <span class="skip">IMG_0524.JPG</span>        <span class="note">传到一半断了，残片原地保留，不入库</span>
+│  └─ <span class="dir">.mascopy-completed/</span>
+│     └─ <span class="dir">transfer-4127-…-8/</span>
+│        └─ <span class="ren">IMG_0525.JPG</span>        <span class="note">已完整收到，正在入库或等待重试</span>
+└─ <span class="dir">2026-09-27/</span>
+   ├─ <span class="new">IMG_0523.JPG</span>              <span class="note">已入库，收件箱副本已删除</span>
+   └─ <span class="new">IMG_0522.JPG</span></pre>
+      <ul class="facts">
+        <li><b>重启后继续入库</b>已提交区里的文件本身就是完成记录。应用中途退出、Mac 重启、NAS 掉线之后，下次用同一个备份目标开始 WiFi 直传会话时，这些照片自动接着入库，不用相机重传。</li>
+        <li><b>残片原地保留</b>暂存区里的都是没传完的文件。大师拷贝不会把它们入库，也不会自动删除。确认照片还在相机存储卡上，或者已经重传入库之后，可以手动删掉这些目录。</li>
+        <li><b>旧版收件箱的文件</b>早先的版本直接把文件写在 <code>.mascopy-inbox</code> 根目录。升级后这些文件原地保留，同样不会自动入库，需要自己检查处理。</li>
+        <li><b>各传各的</b>每次上传都有自己的传输目录。两张同名照片同时传来，不会在收件箱里互相覆盖；入库时再按 <a href="#archive">重名规则</a> 处理。</li>
+        <li><b>卡住不算完成</b>传输停在半路，不管停多久，都不会被当成传完。大师拷贝只认相机把数据发完这一个信号，不靠一段时间没动静来猜。</li>
+      </ul>
+      <aside class="note warn"><span class="note-label">注意</span>不支持断点续传。服务器不接受 FTP 的 REST 续传命令，传输中断后，相机要把这张照片从头整张重传；上一次的残片留在暂存区。</aside>
+    </section>
+
+    <section id="ftp-server">
+      <h2>FTP 服务器的边界</h2>
+      <p>内置的 FTP 服务器只为相机上传照片而设，能做的事情有明确的范围。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>项目</th><th>值</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>协议</td><td>FTP</td><td class="wrap-ok">明文协议。不支持 FTPS，也不支持 SFTP。</td></tr>
+            <tr><td>控制端口</td><td><code>2121</code></td><td class="wrap-ok">默认值，在会话设置里可改。</td></tr>
+            <tr><td>被动端口</td><td><code>50021–50040</code></td><td class="wrap-ok">共 20 个，用于被动模式下的数据传输。</td></tr>
+            <tr><td>监听范围</td><td>本机所有网络接口</td><td class="wrap-ok">相机填本机任何一个可达地址都能连上。</td></tr>
+            <tr><td>账号</td><td>一个</td><td class="wrap-ok">用户名和密码来自会话设置，留空时按 <code>eos</code>。</td></tr>
+            <tr><td>登录后的根目录</td><td><code>.mascopy-inbox</code></td><td class="wrap-ok">只能看到收件箱，碰不到备份目录里的日期文件夹。</td></tr>
+            <tr><td>断点续传</td><td class="no">不支持</td><td class="wrap-ok">中断后整张重传。</td></tr>
+            <tr><td>同时连接</td><td>不限</td><td class="wrap-ok">每个连接独立处理，两台相机可以同时往里传。</td></tr>
+            <tr><td>欢迎语</td><td><code>mascopy tether</code></td><td class="wrap-ok">FTP 客户端连上时看到的问候。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="facts">
+        <li><b>看不见内部目录</b>列目录时，所有以 <code>.mascopy-</code> 开头的条目都被隐藏。直接按名字进入、读取或写入这些目录，一律返回权限不足。</li>
+        <li><b>走不出收件箱</b>路径里的 <code>..</code> 最多退回收件箱根目录，再往上就拒绝。路径穿越到备份目录或者系统其他位置的请求都会被拦下。</li>
+        <li><b>只取文件名</b>相机按自己的文件夹结构上传也可以，服务器允许建目录。入库时只看文件名，一律按日期归档。</li>
+        <li><b>不在列表里的文件</b>扩展名不在 <a href="#modes">支持列表</a> 里的文件会照常收下、提交，但不会入库，留在已提交区里。需要的话去收件箱里取。</li>
+      </ul>
+      <aside class="note warn"><span class="note-label">注意</span>开着 macOS 防火墙时，大师拷贝需要被允许接受传入连接。路由器或 Mac 上还装了其他防火墙软件的话，要放行控制端口 <code>2121</code> 和被动端口 <code>50021–50040</code>，只放行 2121 会出现能登录却传不了文件的情况。</aside>
+    </section>
+
+    <section id="watch">
+      <h2>监听文件夹</h2>
+      <p>用 EOS Utility 联机拍摄时，照片由 EOS Utility 从相机取回，存进它的「保存目标文件夹」。大师拷贝监听这个文件夹，把新照片拷进备份目录。相机和电脑之间用 USB 线还是 WiFi，对大师拷贝没有区别。</p>
+      <ol class="steps">
+        <li>在 EOS Utility 里确认「保存目标文件夹」的位置。</li>
+        <li>在大师拷贝里选 <span class="ui">🔌 监听文件夹</span>，<span class="ui">监听目录</span> 选同一个文件夹。</li>
+        <li><span class="ui">备份目标目录</span> 选 NAS 或备份盘。它不能和监听目录相同，也不能一个在另一个里面。</li>
+        <li>点 <span class="ui">开始联机会话</span>，然后在 EOS Utility 里正常拍摄。</li>
+      </ol>
+      <ul class="facts">
+        <li><b>递归监听</b>子文件夹里的新文件也会被发现。EOS Utility 按日期建子文件夹也没关系，入库时一样按大师拷贝的日期规则归档。</li>
+        <li><b>等文件写完</b>文件的大小、修改时间和文件身份连续 1.2 秒都不变，才开始拷贝。文件身份指磁盘上的 inode，同名文件被整个换掉也能察觉。0 字节的文件不处理。</li>
+        <li><b>拷贝中还在变就重来</b>拷贝期间源文件又被改写，这次拷贝作废，临时文件删除，重新等 1.2 秒再拷。</li>
+        <li><b>只管新文件</b>只处理会话开始后新出现或被改动的文件。会话开始前已经在文件夹里的照片不会补拷；需要的话，用 SD 卡模式扫描这个文件夹。</li>
+        <li><b>保留文件属性</b>入库的文件保留源文件的权限和修改时间。</li>
+        <li><b>不跟随外部链接</b>监听目录里指向外部位置的符号链接会被忽略。</li>
+        <li><b>上游改写后再入库</b>已入库的文件如果又被 EOS Utility 改写，新版本会当作新文件再入库一次，按重名规则改名，比如 <code>IMG_0518_1.CR3</code>。</li>
+      </ul>
+      <aside class="note warn"><span class="note-label">注意</span>监听模式永远不删除来源文件。大师拷贝没法确认 EOS Utility 什么时候真正写完，删源的风险太高。旧版本里的「入库后删除」选项已经去掉，即使配置文件里还留着旧设置，大师拷贝也拒绝删除。界面上写着 <span class="ui">监听模式保留来源文件，请确认上游保存结束后再清理</span>：监听目录会越积越多，确认 EOS Utility 保存结束、照片都已入库后，自己清理。</aside>
+    </section>
+
+    <section id="archive">
+      <h2>日期与重名</h2>
+      <p>两种模式最后走同一套入库规则：照片放进 <code>备份目标/YYYY-MM-DD/</code>，只有一层日期文件夹，文件名保持原样。</p>
+      <ul class="facts">
+        <li><b>日期取修改时间</b>联机入库不读 EXIF。WiFi 直传模式下，文件的修改时间就是 Mac 收完这张照片的时间；监听模式下，是 EOS Utility 写入文件的时间。日期按 Mac 本机时区换算。</li>
+        <li><b>同名、内容相同</b>逐字节比较，完全相同就记为 <span class="status skip">已存在</span>，不再写一份。WiFi 直传模式下，收件箱里的这份副本随后删除。</li>
+        <li><b>同名、内容不同</b>依次尝试 <code>IMG_0516_1.JPG</code>、<code>IMG_0516_2.JPG</code>……每个候选名都重新判一次，候选名下的文件内容相同，同样记为已存在。</li>
+        <li><b>从不覆盖</b>联机入库没有覆盖选项，SD 卡模式的 <span class="ui">覆盖重复文件</span> 开关对这里不起作用。</li>
+        <li><b>日期文件夹必须是普通目录</b>日期文件夹如果是符号链接，入库失败，提示 <span class="ui">日期目录必须是目标目录内的普通目录，不能是符号链接</span>。</li>
+      </ul>
+      <pre class="tree"><span class="dir">/Volumes/NAS/棚拍/</span>
+├─ <span class="dir">2026-09-26/</span>
+│  └─ <span class="new">IMG_0498.JPG</span>        <span class="note">23:58 收到，归到 26 日</span>
+└─ <span class="dir">2026-09-27/</span>
+   ├─ <span class="new">IMG_0499.JPG</span>        <span class="note">00:01 收到，归到 27 日</span>
+   ├─ <span class="skip">IMG_0516.JPG</span>        <span class="note">相机重传了同一张，记为已存在，不多写一份</span>
+   └─ <span class="ren">IMG_0516_1.JPG</span>      <span class="note">同名但内容不同，自动改名</span></pre>
+      <p>同名不同内容，常见于两台相机的文件编号撞在一起，或者相机的文件编号归零之后。</p>
+      <aside class="note warn"><span class="note-label">注意</span>联机归档按接收时间，不按照片里的拍摄时间。跨午夜拍摄时，前后两张可能分进两天的文件夹；相机积压了一批照片隔天才传完，也会归到传完的那天。SD 卡模式的日期规则不同（见 <a href="backup.html#archive">SD 卡与大疆备份</a>），所以同一张照片的 JPEG 联机入库、RAW 收工后插卡备份，有可能落在不同的日期文件夹里。</aside>
+    </section>
+
+    <section id="recovery">
+      <h2>掉线重试与结束会话</h2>
+      <p>NAS 掉线、备份盘满了、目录权限变了，入库都会失败。大师拷贝不会就此放弃这张照片：卡片标成 <span class="status err">失败</span>，然后按递增的间隔自动重试。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>连续失败次数</th><th>下次重试前等待</th></tr></thead>
+          <tbody>
+            <tr><td>第 1 次</td><td>0.5 秒</td></tr>
+            <tr><td>第 2 次</td><td>1 秒</td></tr>
+            <tr><td>第 3 次</td><td>2 秒</td></tr>
+            <tr><td>第 4 次</td><td>4 秒</td></tr>
+            <tr><td>第 5 次</td><td>8 秒</td></tr>
+            <tr><td>第 6 次及以后</td><td>16 秒，不再增加</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>重试一直持续到会话结束。备份位置恢复后，下一次重试就会成功，卡片变成 <span class="status ok">已入库</span>，相机不用重传，你也不用做任何操作。间隔封顶 16 秒，所以恢复之后最多等十几秒。</p>
+      <aside class="note warn"><span class="note-label">注意</span>收件箱也建在备份目标里。NAS 整个断开时，相机那边的上传也会失败，相机会报传输错误。已经提交进收件箱的照片等 NAS 回来后自动入库；没传成的照片还在相机存储卡上，NAS 恢复后在相机上重新传输，或者收工后用 SD 卡模式备份。</aside>
+      <h3>结束会话</h3>
+      <p>点 <span class="ui">结束会话</span> 后，大师拷贝按下面的顺序收尾：</p>
+      <ol class="steps">
+        <li>停止接受新连接，断开所有已连接的相机。</li>
+        <li>正在传的文件立即中断，残片留在暂存区，不会提交。</li>
+        <li>等已经排进队列的磁盘写入全部完成，释放 FTP 端口和被动端口。</li>
+        <li>正在入库的照片停止拷贝，隐藏的临时文件删除，日期文件夹里不留半成品。WiFi 直传模式下，它在已提交区的副本保留，下次会话继续入库。</li>
+        <li>全部收尾完成后，界面回到配置区。</li>
+      </ol>
+      <ul class="facts">
+        <li><b>不会抢端口</b>下一次会话要等上一次完全收尾才开始。结束后马上再点开始，也不会出现两个会话抢同一个端口。</li>
+        <li><b>照片流保留</b>结束会话后照片流里的卡片还在，下次开始会话时计数接着累计。想从零开始，在会话中点 <span class="ui">清空记录</span>。</li>
+        <li><b>监听模式的遗留</b>结束时还没来得及入库的文件留在监听目录里。下次会话只管新文件，不会自动补拷它们。</li>
+      </ul>
+    </section>
+
+    <section id="security">
+      <h2>明文传输与凭据</h2>
+      <p>FTP 是一个很老的协议，账号、密码和照片内容在网络上都不加密。大师拷贝用它，是因为相机机身普遍支持。开会话之前，先了解它意味着什么。</p>
+      <ul class="facts">
+        <li><b>明文传输</b>同一网络里的其他设备有条件截获相机和 Mac 之间的流量，看到用户名、密码和照片本身。大师拷贝不支持 FTPS 和 SFTP。</li>
+        <li><b>密码明文保存</b>端口、用户名、密码和其他设置一起存在 <code>~/Library/Application Support/com.mascopy.mascopy/config.json</code>，密码没有加密。配置文件权限是 0600、所在目录 0700，只有你的 macOS 账户能读。</li>
+        <li><b>屏幕上的明文</b>密码输入框显示圆点，相机端设置提示里的密码却是明文。</li>
+        <li><b>默认账号</b>默认用户名和密码都是 <code>eos</code>，谁都猜得到。</li>
+        <li><b>登录后能做什么</b>知道账号密码的人登录后只能进收件箱，看不到、也读不到备份目录里已经入库的照片。但他可以上传文件，这些文件会像相机的照片一样入库；入库照样从不覆盖已有文件。</li>
+      </ul>
+      <p>几条建议：</p>
+      <ul>
+        <li>把默认的 <code>eos</code> / <code>eos</code> 换掉，用一个不和其他账户共用的密码，相机端同步改。</li>
+        <li>只在自己信得过的局域网里开会话，别在酒店、展会这类公共 WiFi 上开。</li>
+        <li>拍完就点 <span class="ui">结束会话</span>，端口随之关闭。</li>
+        <li>共享屏幕前先切到别的页签，免得相机端设置提示里的密码被看到。</li>
+      </ul>
+      <p>应用整体的写入安全、权限与隐私设计，见 <a href="reliability.html">可靠性与隐私</a>。</p>
+    </section>
+
+    <nav class="pager" aria-label="翻页">
+      <a class="prev" href="backup.html"><span>← 上一章</span>SD 卡与大疆备份</a>
+      <a class="next" href="eagle.html"><span>下一章 →</span>Eagle 挑图与裁剪</a>
+    </nav>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div>
+      <a class="brand" href="index.html"><img src="assets/icon.png" alt="" width="26" height="26">大师拷贝</a>
+      <p class="fine">macOS 上的照片与视频整理工具：把存储卡里的素材按拍摄日期备份到本地磁盘或 NAS，支持相机联机拍摄与 Eagle 挑图导入。</p>
+      <p class="fine"><a href="https://github.com/Redwinam/mascopy">GitHub · Redwinam/mascopy</a></p>
+    </div>
+    <div>
+      <h4>功能</h4>
+      <ul>
+        <li><a href="backup.html">SD 卡与大疆备份</a></li>
+        <li><a href="tether.html">联机拍摄</a></li>
+        <li><a href="eagle.html">Eagle 挑图与裁剪</a></li>
+        <li><a href="reliability.html">可靠性与隐私</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>参考</h4>
+      <ul>
+        <li><a href="reference.html">格式、快捷键与系统要求</a></li>
+        <li><a href="https://github.com/Redwinam/mascopy/releases">版本发布记录</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>获取</h4>
+      <ul>
+        <li><a href="index.html#download">下载与安装</a></li>
+        <li><a href="reference.html#requirements">系统要求</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>

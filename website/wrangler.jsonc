@@ -1,0 +1,17 @@
+// 大师拷贝官网：Cloudflare Workers 静态资源（新版 Pages）。在 website/ 目录里执行 `npx wrangler deploy`。
+// 部署令牌走环境变量 CLOUDFLARE_API_TOKEN，不写进仓库。
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "mascopy-web",
+  "compatibility_date": "2026-09-25",
+  "workers_dev": true,
+  // 大陆优选入口（和开发启动器官网、ext、sync 同一种接法）：DNS 灰云 A → 优选 IP，备注 [if9-edge-worker]，
+  // 由这条 Route 接管请求（比 if9-edge 的 *.if9.cool/* 更具体，优先匹配）。
+  "routes": [
+    { "pattern": "mascopy.if9.cool/*", "zone_name": "if9.cool" }
+  ],
+  "assets": {
+    "directory": "."
+  },
+  "observability": { "enabled": true }
+}

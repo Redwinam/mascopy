@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Eagle 挑图与裁剪 · 大师拷贝</title>
+  <meta name="description" content="挑图网格、RAW 内存预览、原图与裁剪图导入 Eagle，以及连接设置、快捷键和令牌保护的完整说明。">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="assets/site.css">
+  <script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("dl-site-theme")==="light"?"light":"dark")}catch(e){}</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="assets/icon.png" alt="" width="26" height="26">大师拷贝<span class="brand-sub">MasCopy</span></a>
+    <nav class="nav" aria-label="主导航">
+      <a href="index.html#chapters">功能</a>
+      <a href="backup.html">备份</a>
+      <a href="tether.html">联机拍摄</a>
+      <a href="eagle.html">Eagle</a>
+      <a href="reliability.html">可靠性</a>
+    </nav>
+    <div class="header-tools">
+      <button class="icon-btn" type="button" data-theme-toggle aria-label="切换到浅色" title="切换到浅色"><svg class="icon only-dark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><svg class="icon only-light" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="index.html#download"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg><span class="btn-download-label">下载</span></a>
+      <button class="icon-btn menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-label="打开导航"><svg class="icon" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap doc">
+  <aside class="doc-nav">
+    <details class="chapter-list">
+      <summary class="tone-copper" title="切换章节"><span class="sw"></span><span class="cur">Eagle 挑图与裁剪</span><span class="pos">3 / 5</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+      <ul>
+        <li><a class="tone-blue" href="backup.html"><span class="sw"></span>SD 卡与大疆备份</a></li>
+        <li><a class="tone-violet" href="tether.html"><span class="sw"></span>联机拍摄</a></li>
+        <li><a class="tone-copper" href="eagle.html" aria-current="page"><span class="sw"></span>Eagle 挑图与裁剪</a></li>
+        <li><a class="tone-live" href="reliability.html"><span class="sw"></span>可靠性与隐私</a></li>
+        <li><a class="tone-neutral" href="reference.html"><span class="sw"></span>格式、快捷键与系统要求</a></li>
+      </ul>
+    </details>
+    <nav class="toc" aria-label="本页目录">
+      <h4>本页</h4>
+      <ul>
+        <li><a href="#entry">从哪里开始挑图</a></li>
+        <li><a href="#picker">挑图网格</a></li>
+        <li><a href="#lightbox">灯箱与 RAW 预览</a></li>
+        <li><a href="#connect">连接 Eagle</a></li>
+        <li><a href="#import">导入原图</a></li>
+        <li><a href="#crop">框选裁剪</a></li>
+        <li><a href="#crop-output">裁剪在内存里完成</a></li>
+        <li><a href="#marks">已导入与裁剪标记</a></li>
+        <li><a href="#shortcuts">快捷键</a></li>
+        <li><a href="#token">令牌与连接安全</a></li>
+        <li><a href="#compat">Eagle 兼容说明</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main class="doc-main tone-copper">
+    <header class="chapter-head">
+      <span class="chapter-label"><svg class="icon" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>Eagle 挑图与裁剪</span>
+      <h1>放大看 RAW，挑好直接送进 Eagle</h1>
+      <p class="lede">备份完或联机拍摄时，把照片放大逐张看。RAW 和 HEIC 也能转成预览，选好 Eagle 文件夹、填上标签，一键导入原图。只要画面的一部分时，框选裁剪，结果直接推给 Eagle。整个过程中，大师拷贝不在存储卡和备份目录里写任何文件。</p>
+    </header>
+
+    <figure>
+      <div class="window">
+        <img src="assets/shots/lightbox-dark.webp" width="2800" height="1800" alt="灯箱：一张运河边的 CR3 照片铺满窗口，左上角是文件名 IMG_0405.CR3 和序号 5 / 26，两侧是翻页箭头；底部工具栏依次是 Eagle 4.0.0 连接状态、目标文件夹「2026 夏 · 旅拍」、标签「旅拍, 海边」、裁剪按钮和导入 Eagle 按钮。" loading="lazy">
+        <svg class="lights" viewBox="0 0 1400 900" aria-hidden="true"><circle cx="26" cy="31" r="6" fill="#ff5f57"/><circle cx="46" cy="31" r="6" fill="#febc2e"/><circle cx="66" cy="31" r="6" fill="#28c840"/></svg>
+      </div>
+      <figcaption><b>灯箱。</b>顶部是文件名和序号，两侧箭头翻页。底部工具栏从左到右：Eagle 连接状态、目标文件夹、标签、裁剪、导入 Eagle。照片来自 Unsplash，仅作演示。</figcaption>
+    </figure>
+
+    <section id="entry">
+      <h2>从哪里开始挑图</h2>
+      <p>挑图有三个入口。前两个在备份流程里，打开一整页挑图网格；第三个在联机拍摄的照片流里，点一张照片直接放大。三个入口最后都进到同一个灯箱，导入和裁剪的用法完全一样。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>入口</th><th>挑哪些照片</th><th>读哪一份文件</th><th>看完回到</th></tr></thead>
+          <tbody>
+            <tr><td>扫描结果页的<span class="ui">挑图导入</span></td><td class="wrap-ok">当前日期筛选和后缀筛选下的全部照片</td><td class="wrap-ok">备份位置里已经有的（<span class="status skip">将跳过</span>的，或本次已拷完、已跳过的）读备份副本；其余读存储卡上的原件</td><td>扫描结果</td></tr>
+            <tr><td>备份完成弹窗的<span class="ui">🖼️ 挑图导入 Eagle (N)</span></td><td class="wrap-ok">本次上传完成的照片，加上备份位置里本来就有、这次跳过的照片</td><td class="wrap-ok">全部读备份目录里的副本</td><td>配置页</td></tr>
+            <tr><td>联机拍摄的照片流</td><td class="wrap-ok"><span class="status ok">已入库</span> 和 <span class="status skip">已存在</span> 的照片</td><td class="wrap-ok">备份目录里的副本</td><td>照片流</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>只有照片进挑图：JPG、JPEG、PNG、HEIC、HIF，以及 NEF、CR2、CR3、ARW、DNG 这几种 RAW。视频不出现在网格里。当前范围里一张照片都没有时，入口按钮是灰的。完成弹窗按钮括号里的 N 就是能挑的照片数。</p>
+      <p>结果页的挑图范围跟随上方的<span class="ui">日期筛选</span>和<span class="ui">后缀筛选</span>。同时拍了 RAW 和 JPG 时，在后缀里只留 CR3，网格里同一个画面就不会出现两次。状态条上的 <span class="status up">将上传</span> <span class="status over">将覆盖</span> <span class="status skip">将跳过</span> 只过滤表格，不影响挑图范围。</p>
+      <figure>
+        <div class="window">
+          <img src="assets/shots/done-dark.webp" width="2800" height="1800" alt="备份完成弹窗：标题「🎉 备份完成」，正文「所有选中的文件已成功备份到目标目录。」和「现在您可以安全地移除源设备。」，底部三个按钮：关闭、🖼️ 挑图导入 Eagle (26)、推出设备。" loading="lazy">
+          <svg class="lights" viewBox="0 0 1400 900" aria-hidden="true"><circle cx="26" cy="31" r="6" fill="#ff5f57"/><circle cx="46" cy="31" r="6" fill="#febc2e"/><circle cx="66" cy="31" r="6" fill="#28c840"/></svg>
+        </div>
+        <figcaption><b>备份完成弹窗。</b>中间的按钮进入挑图，括号里的 26 是这次能挑的照片数。</figcaption>
+      </figure>
+      <aside class="note"><span class="note-label">细节</span>从完成弹窗进来的挑图读的全是备份目录里的副本，存储卡可以先拔下来。从结果页进来时，已经在备份位置里的照片同样读副本，只有还没拷过去的照片才读存储卡。</aside>
+    </section>
+
+    <section id="picker">
+      <h2>挑图网格</h2>
+      <p>网格页顶部写着<span class="ui">🖼️ 挑图导入 Eagle</span>，旁边是张数和一句提示，例如<span class="ui">共 26 张 · 点击照片放大后可导入或裁剪导入</span>。下面是全部照片的方格，点任意一格打开灯箱。</p>
+      <figure>
+        <div class="window">
+          <img src="assets/shots/picker-dark.webp" width="2800" height="1800" alt="挑图网格：顶部工具栏「🖼️ 挑图导入 Eagle 共 26 张 · 点击照片放大后可导入或裁剪导入」，右上角是返回按钮；下面是四行正方形缩略图，IMG_0403.CR3 与 IMG_0403.JPG 这样的 RAW 和 JPG 成对排列，每格底部压着文件名。" loading="lazy">
+          <svg class="lights" viewBox="0 0 1400 900" aria-hidden="true"><circle cx="26" cy="31" r="6" fill="#ff5f57"/><circle cx="46" cy="31" r="6" fill="#febc2e"/><circle cx="66" cy="31" r="6" fill="#28c840"/></svg>
+        </div>
+        <figcaption><b>挑图网格。</b>RAW 和同名 JPG 并排出现，点任意一格放大。照片来自 Unsplash，仅作演示。</figcaption>
+      </figure>
+      <ul class="facts">
+        <li><b>排列</b>正方形格子，每格至少 168 像素宽，列数跟着窗口宽度变。照片居中填满格子，文件名压在底部。</li>
+        <li><b>缩略图</b>格子滚动到可视范围附近才开始生成，长边 512 像素。用 macOS 自带的 <code>sips</code> 转成 JPEG：转换结果先写到系统临时目录，读进内存后立即删除，不留缩略图缓存。</li>
+        <li><b>占位</b>缩略图出来之前，格子里显示后缀标签（CR3、JPG 等）和转圈。生成失败时显示 ⚠️，格子仍然可以点开。</li>
+        <li><b>徽标</b>右上角的<span class="ui">✂ 2</span>表示这张已经裁剪导入过 2 次，<span class="ui">已导入</span>表示原图已经导入 Eagle。</li>
+        <li><b>返回</b>窗口右上角的<span class="ui">返回</span>回到进来的地方：从结果页进来回结果页，从完成弹窗进来回配置页。</li>
+        <li><b>空列表</b>没有照片时显示<span class="ui">🫥 没有可挑选的照片</span>。</li>
+        <li><b>并发</b>缩略图、大图预览和裁剪共用 4 个处理名额。照片再多，同一时刻最多转 4 张。</li>
+      </ul>
+    </section>
+
+    <section id="lightbox">
+      <h2>灯箱与 RAW 预览</h2>
+      <p>点一格照片打开灯箱。灯箱铺满整个窗口，背后的页面变暗，不能操作。顶部左边是文件名和序号；导入过或裁剪过的照片，旁边跟着<span class="ui">已导入</span>和<span class="ui">✂ N</span>徽标。右上角是关闭按钮。两侧的箭头翻上一张、下一张，到第一张或最后一张时，对应的箭头变灰。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>格式</th><th>预览怎么来</th><th>预览尺寸</th></tr></thead>
+          <tbody>
+            <tr><td>JPG、JPEG、PNG</td><td class="wrap-ok">直接显示原文件</td><td>原图尺寸</td></tr>
+            <tr><td>HEIC 与各家 RAW</td><td class="wrap-ok">用 macOS 自带的 <code>sips</code> 转成 JPEG；临时文件读进内存后立即删除，不留缓存</td><td>长边 2560 像素</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>转码要花一点时间，这期间照片位置显示<span class="ui">加载预览…</span>。翻得快时，前面没转完的照片不会突然跳出来，屏幕上始终是你停下的那一张。最近转过的 12 张预览留在内存里，翻回去立刻显示；离开挑图页时，这些预览全部释放。</p>
+      <p>转码失败时，照片位置显示失败原因。这时<span class="ui">裁剪</span>按钮不可用，原图仍然可以导入 Eagle。</p>
+      <aside class="note"><span class="note-label">细节</span><code>sips</code> 转码的中间文件写在系统临时目录，读进内存后立刻删除。大师拷贝不在存储卡或备份目录里留下任何预览文件。</aside>
+      <aside class="note warn"><span class="note-label">注意</span>RAW 解码靠 macOS 自带的图像组件。相机机型比系统新时，这台 Mac 可能还不认识它的 RAW，预览会转码失败；原图照常可以导入。</aside>
+      <p>从联机照片流打开的灯箱跟着会话实时更新。新照片入库后，序号里的总数随之增加。翻页顺序和照片流一致，最新的在前。点<span class="ui">清空记录</span>后，正在看的照片不在列表里了，灯箱自动关闭。</p>
+      <p>关闭灯箱有三种方式：点右上角的 ×，按 <kbd>Esc</kbd>，或者在浏览时点照片外的空白处。灯箱打开期间，<kbd>Tab</kbd> 只在灯箱里的控件之间循环。</p>
+    </section>
+
+    <section id="connect">
+      <h2>连接 Eagle</h2>
+      <p>导入要用到 Eagle 的本地 API。先打开 Eagle，让它保持运行；大师拷贝不会替你启动 Eagle。</p>
+      <p>大师拷贝启动时不去连 Eagle。第一次打开灯箱时才连接：先读 Eagle 的版本号，再读资源库的文件夹列表，两步都成功才算连上。连接状态显示在底部工具栏最左边的按钮上。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>状态按钮</th><th>含义</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ui">Eagle 4.0.0</span></td><td class="wrap-ok">已连上，前面亮绿点，后面是 Eagle 报告的版本号</td></tr>
+            <tr><td><span class="ui">连接中…</span></td><td class="wrap-ok">正在连接</td></tr>
+            <tr><td><span class="ui">未连接 Eagle</span></td><td class="wrap-ok">还没连，或者连接失败。鼠标停在按钮上能看到失败原因</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>点状态按钮，工具栏上方展开一行连接设置；再点一次收起。连接失败时这一行自动展开，并在下方显示错误信息。</p>
+      <ul class="facts">
+        <li><b>API 地址</b>默认 <code>http://localhost:41595</code>，即 Eagle 本地 API 的默认端口。留空时按这个地址连，末尾多余的斜杠自动去掉。</li>
+        <li><b>API Token</b>输入框的提示写着「Eagle → 偏好设置 → 开发者」，令牌在那里复制。输入框按密码显示，不露明文。留空时，请求里不带令牌。</li>
+        <li><b>重新连接</b>改完地址或令牌后点它。连接期间按钮显示<span class="ui">连接中…</span>，不能重复点。</li>
+      </ul>
+      <p>地址和令牌在输入框失去焦点或按 <kbd>Enter</kbd> 时存进配置文件，下次启动还在。改动任何一项，状态都会回到<span class="ui">未连接 Eagle</span>，文件夹列表清空。点<span class="ui">重新连接</span>立即用新设置连；不点的话，翻到下一张或重新打开灯箱时也会自动连。连接失败后不会自动重试，改好设置再点<span class="ui">重新连接</span>。</p>
+      <h3>第一次设置</h3>
+      <ol class="steps">
+        <li>打开 Eagle，保持运行。</li>
+        <li>在 Eagle 的偏好设置里找到开发者相关的设置，复制 API Token。具体位置以你安装的 Eagle 版本为准。</li>
+        <li>在大师拷贝里打开任意一张照片的灯箱。状态显示<span class="ui">未连接 Eagle</span>时，连接设置会自动展开。</li>
+        <li>填好 API 地址和 Token，点<span class="ui">重新连接</span>。Eagle 装在本机时，地址用默认值即可。</li>
+        <li>状态按钮变成 Eagle 加版本号，文件夹下拉框可以选了，就算连好。</li>
+      </ol>
+      <h3>连不上时看提示</h3>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>提示</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>无法连接 Eagle（请确认 Eagle 已启动）</td><td class="wrap-ok">请求没送到 Eagle。常见原因：Eagle 没开，地址或端口填错，地址写成了 <code>https://</code>。等待超时也显示这条</td></tr>
+            <tr><td>Eagle 返回 HTTP 加状态码</td><td class="wrap-ok">请求到了对方，对方用 HTTP 错误码拒绝</td></tr>
+            <tr><td>解析 Eagle 响应失败</td><td class="wrap-ok">这个地址上有服务回应，但回应的内容无法按 Eagle 的格式解读</td></tr>
+            <tr><td>Eagle 返回错误，或 Eagle 自己的说明</td><td class="wrap-ok">Eagle 收到请求但处理失败。大师拷贝照录 Eagle 的说明，其中的令牌显示为 <code>[已隐藏]</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="import">
+      <h2>导入原图</h2>
+      <p>连上之后，底部工具栏的文件夹和标签才能用。选好它们，点<span class="ui">导入 Eagle</span>，这张照片的原图就进了 Eagle。</p>
+      <ul class="facts">
+        <li><b>目标文件夹</b>下拉框第一项是<span class="ui">不指定文件夹</span>，这时大师拷贝不给 Eagle 传文件夹。下面是 Eagle 资源库里的整棵文件夹树，子文件夹用缩进表示层级。没连上时下拉框是灰的。</li>
+        <li><b>记住文件夹</b>导入成功后，这次用的文件夹写进配置文件。下次连上时自动选中它；如果 Eagle 里已经删了这个文件夹，就回到<span class="ui">不指定文件夹</span>。只在下拉框里换了选择、还没导入，不会存盘，但本次运行期间一直保留。</li>
+        <li><b>标签</b>多个标签用英文逗号、中文逗号、顿号或空格隔开，重复的自动合并，空的忽略。输入「旅拍，海边、旅拍」得到「旅拍」「海边」两个标签。</li>
+        <li><b>标签保留多久</b>标签框的内容在本次运行里一直保留，翻页、关掉灯箱再打开都还在，但不写进配置文件。</li>
+      </ul>
+      <p>点<span class="ui">导入 Eagle</span>时，大师拷贝把这张照片的完整路径交给 Eagle，由 Eagle 把文件复制进资源库。原文件原地不动。导入名称是去掉后缀的文件名，<code>IMG_0405.CR3</code> 在 Eagle 里叫 <code>IMG_0405</code>。RAW 按原格式交过去，在 Eagle 里怎么显示由 Eagle 决定。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>按钮</th><th>什么时候</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ui">导入 Eagle</span></td><td class="wrap-ok">已连上，这张原图还没导入过</td></tr>
+            <tr><td><span class="ui">导入中…</span></td><td class="wrap-ok">正在导入，按钮暂时不能点</td></tr>
+            <tr><td><span class="ui">已导入</span></td><td class="wrap-ok">这张原图已经导入成功。按钮变灰，同一个连接下不会重复导入</td></tr>
+            <tr><td>灰色的<span class="ui">导入 Eagle</span></td><td class="wrap-ok">还没连上 Eagle。鼠标停上去提示<span class="ui">未连接 Eagle</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>导入成功后，照片上方浮出提示<span class="ui">已导入到 Eagle「2026 夏 · 旅拍」</span>；没选文件夹时只显示<span class="ui">已导入到 Eagle</span>。失败时显示<span class="ui">导入失败:</span>加上原因。提示几秒后自动消失。</p>
+      <p>导入在后台进行。点完可以直接翻到下一张，结果照样记在原来那张上；提示只在你还停在那张照片时出现。</p>
+      <aside class="note"><span class="note-label">细节</span>导入原图不经过大师拷贝中转，文件由 Eagle 按路径自己读取。所以读存储卡原件的照片，导入时卡要插着；读备份副本的照片，NAS 要保持挂载。</aside>
+    </section>
+
+    <section id="crop">
+      <h2>框选裁剪</h2>
+      <p>只要画面的一部分时，点<span class="ui">裁剪</span>或按 <kbd>Enter</kbd> 进入裁剪。选区外的部分压暗，选区里画出三分线，四角和四边中点各有一个拖拽柄，选区下方实时显示尺寸。裁剪期间，两侧翻页箭头和连接设置收起，底部工具栏换成比例、导入名称、<span class="ui">取消</span>和<span class="ui">裁剪并导入</span>。</p>
+      <figure>
+        <div class="window">
+          <img src="assets/shots/crop-dark.webp" width="2800" height="1800" alt="裁剪模式：运河照片上框出 3:2 的选区，选区外压暗，选区内有三分线，四角是圆形拖拽柄，四边中点是短条拖拽柄，选区下方标着 ≈784×522；底部工具栏是比例选择（自由、1:1、4:3、3:2、16:9，3:2 高亮）、导入名称 IMG_0405、取消和裁剪并导入。" loading="lazy">
+          <svg class="lights" viewBox="0 0 1400 900" aria-hidden="true"><circle cx="26" cy="31" r="6" fill="#ff5f57"/><circle cx="46" cy="31" r="6" fill="#febc2e"/><circle cx="66" cy="31" r="6" fill="#28c840"/></svg>
+        </div>
+        <figcaption><b>裁剪。</b>3:2 选区带三分线和八个拖拽柄，下方的尺寸前带 ≈，因为这是一张 CR3。照片来自 Unsplash，仅作演示。</figcaption>
+      </figure>
+      <p>刚进入裁剪时，比例停在<span class="ui">自由</span>，选区是画面正中最大的正方形。点其他比例，选区换成该比例下居中的最大框。从别的比例点回<span class="ui">自由</span>，选区铺满整张图。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>比例</th><th>选区</th></tr></thead>
+          <tbody>
+            <tr><td>自由</td><td class="wrap-ok">宽高随意。刚进入裁剪时给出 1:1 最大框，从别的比例切回来时铺满整张图</td></tr>
+            <tr><td>1:1</td><td class="wrap-ok">正方形</td></tr>
+            <tr><td>4:3</td><td class="wrap-ok">宽 4 高 3</td></tr>
+            <tr><td>3:2</td><td class="wrap-ok">宽 3 高 2，和多数单反、无反相机的原生画幅相同</td></tr>
+            <tr><td>16:9</td><td class="wrap-ok">宽 16 高 9，宽屏</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <aside class="note warn"><span class="note-label">注意</span>固定比例都是横向的，没有竖向的 3:4、2:3、9:16。竖构图请用自由比例手动框。</aside>
+      <h3>用鼠标调整选区</h3>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>操作</th><th>效果</th></tr></thead>
+          <tbody>
+            <tr><td>拖选区内部</td><td class="wrap-ok">平移选区，不会移出照片</td></tr>
+            <tr><td>拖四个角</td><td class="wrap-ok">对角不动，缩放选区。自由模式下也按拖动开始时的形状等比缩放</td></tr>
+            <tr><td>拖四边中点</td><td class="wrap-ok">对边不动。自由模式只改宽或只改高；固定比例时另一边跟着变，并以原来的中线居中</td></tr>
+            <tr><td>在照片上、选区外按下拖动</td><td class="wrap-ok">从按下的位置重新画一个选区。固定比例下仍按比例</td></tr>
+            <tr><td>松手时选区太小</td><td class="wrap-ok">任一边在屏幕上短于 24 像素，选区复位成当前比例下居中的最大框，自由模式复位成 1:1 最大框</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>选区下方的尺寸按像素计算。JPG、PNG 的预览就是原图，数字就是导出后的实际尺寸。RAW、HEIC 的预览是缩小过的，数字前面带 ≈，按预览图计算，只反映选区的形状和相对大小；真正导出按全分辨率原图裁，完成提示里给出实际像素。</p>
+      <p>导入名称默认是去掉后缀的文件名，可以改成任何名字；清空后按默认名导入。标签和目标文件夹沿用工具栏里的设置，进入裁剪前选好即可。</p>
+      <p>点<span class="ui">取消</span>或按 <kbd>Esc</kbd> 回到浏览，选区不保留。没连上 Eagle 时，<span class="ui">裁剪并导入</span>是灰的。</p>
+    </section>
+
+    <section id="crop-output">
+      <h2>裁剪在内存里完成</h2>
+      <p>点<span class="ui">裁剪并导入</span>后，大师拷贝按下面的顺序处理。整个过程不在存储卡和备份目录里写文件，也不在别处留下裁剪结果。</p>
+      <ol class="steps">
+        <li>取全分辨率原图。JPG、PNG 直接读原文件；RAW、HEIC 用 <code>sips</code> 转成全尺寸 JPEG（质量 95），中间文件在系统临时目录里读完即删。</li>
+        <li>按照片 EXIF 里的方向信息把图转正，保证裁出来的就是屏幕上框住的那一块。</li>
+        <li>在内存里按选区裁剪，编码成 JPEG（质量 92）。</li>
+        <li>把这张 JPEG 直接交给 Eagle，带上导入名称、标签和目标文件夹，备注写「裁剪自」加原文件的完整路径。</li>
+        <li>成功后提示<span class="ui">已导入裁剪图 3840×2560</span>这样的实际像素，照片的 ✂ 计数加一，回到浏览状态。</li>
+      </ol>
+      <ul class="facts">
+        <li><b>多次裁剪</b>同一张照片可以裁很多次，每次都在 Eagle 里新建一张。原图的<span class="ui">已导入</span>状态不影响裁剪。</li>
+        <li><b>不重复转码</b>最近一次用过的全分辨率原图留在内存里，连续裁同一张 RAW 时不用重新转码。文件大小或修改时间变了，就重新读取。</li>
+        <li><b>输出格式</b>裁剪结果一律是 JPEG。PNG 的透明区域不保留。</li>
+        <li><b>最小尺寸</b>裁出来的宽或高不足 4 像素时，提示<span class="ui">裁剪区域过小</span>。</li>
+        <li><b>失败重试</b>失败时显示<span class="ui">导入失败:</span>加原因，停在裁剪状态，选区还在，可以直接再点一次。</li>
+        <li><b>边裁边等</b>裁剪导入进行中，比例、名称和选区都锁住，按钮显示<span class="ui">导入中…</span>；浏览时的<span class="ui">裁剪</span>按钮显示<span class="ui">裁剪导入中…</span>，等这一张完成才能再裁。</li>
+      </ul>
+      <aside class="note"><span class="note-label">细节</span>备注里记下了裁剪时读的是哪个文件。从完成弹窗或联机照片流进来时，这就是备份目录里那张原片的位置。以后在 Eagle 里看到一张裁剪图，顺着备注就能找到原片。</aside>
+    </section>
+
+    <section id="marks">
+      <h2>已导入与裁剪标记</h2>
+      <p>大师拷贝在本次运行里记住你对每张照片做过什么，在三个地方显示：</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>位置</th><th>原图已导入</th><th>裁剪导入过</th></tr></thead>
+          <tbody>
+            <tr><td>挑图网格，格子右上角</td><td><span class="ui">已导入</span></td><td><span class="ui">✂ N</span></td></tr>
+            <tr><td>灯箱顶部，文件名旁</td><td>对勾加<span class="ui">已导入</span></td><td>剪刀加次数</td></tr>
+            <tr><td>联机照片流，卡片状态行</td><td><span class="ui">✓ Eagle</span></td><td><span class="ui">✂ N</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="facts">
+        <li><b>只在内存</b>标记不写文件，退出大师拷贝后清空。</li>
+        <li><b>跟着连接走</b>标记按 API 地址加令牌分开记。换了地址或令牌，界面只显示新连接下的标记；本次运行内换回原来的连接，原来的标记会回来。</li>
+        <li><b>按文件认</b>同一个文件从哪个入口打开，标记都一样。存储卡上的原件和备份目录里的副本是两个文件，各记各的。</li>
+      </ul>
+      <aside class="note warn"><span class="note-label">注意</span>标记不查询 Eagle 资源库。重启大师拷贝后再导入同一张，Eagle 会再收到一次导入；是否出现重复条目，由 Eagle 处理。</aside>
+    </section>
+
+    <section id="shortcuts">
+      <h2>快捷键</h2>
+      <p>灯箱和裁剪都能只用键盘操作。表里的 <kbd>Option</kbd> 在部分键盘上标作 Alt。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>按键</th><th>场景</th><th>作用</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>浏览照片</td><td class="wrap-ok">上一张、下一张，到头停住</td></tr>
+            <tr><td><kbd>Enter</kbd></td><td>浏览照片</td><td class="wrap-ok">进入裁剪</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>浏览照片</td><td class="wrap-ok">关闭灯箱</td></tr>
+            <tr><td><kbd>Enter</kbd></td><td>裁剪中</td><td class="wrap-ok">裁剪并导入</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>裁剪中</td><td class="wrap-ok">取消裁剪，回到浏览</td></tr>
+            <tr><td>方向键</td><td>选区获得焦点</td><td class="wrap-ok">移动选区，每次移动照片宽或高的 1%</td></tr>
+            <tr><td><kbd>Option</kbd> + 方向键</td><td>选区获得焦点</td><td class="wrap-ok">移动选区，每次 5%</td></tr>
+            <tr><td><kbd>Shift</kbd> + 方向键</td><td>选区获得焦点</td><td class="wrap-ok">调整大小，每次 1%：<kbd>→</kbd> <kbd>↓</kbd> 放大，<kbd>←</kbd> <kbd>↑</kbd> 缩小，左上角不动</td></tr>
+            <tr><td><kbd>Shift</kbd> + <kbd>Option</kbd> + 方向键</td><td>选区获得焦点</td><td class="wrap-ok">调整大小，每次 5%</td></tr>
+            <tr><td><kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd></td><td>灯箱打开时</td><td class="wrap-ok">在灯箱里的控件之间前后切换，到头绕回</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>进入裁剪后，按 <kbd>Tab</kbd> 把焦点移到选区上，才能用方向键微调。选区最小缩到照片宽或高的 2%。固定比例下用 <kbd>Shift</kbd> 调大小，另一边按比例跟着变，碰到照片边缘时整体收缩到边界内。</p>
+      <p>焦点在标签框、导入名称、文件夹下拉框或任何按钮上时，方向键和 <kbd>Enter</kbd> 交给这个控件处理，不会翻页、进入裁剪或触发导入。在标签框里打字时按方向键，只会移动光标。<kbd>Esc</kbd> 不受影响，随时可以退出裁剪或关闭灯箱。</p>
+      <aside class="note"><span class="note-label">细节</span>按 <kbd>←</kbd> <kbd>→</kbd> 没反应时，多半是焦点停在某个按钮上。点一下照片再按即可。</aside>
+    </section>
+
+    <section id="token">
+      <h2>令牌与连接安全</h2>
+      <p>API Token 是访问 Eagle 本地 API 的凭据。大师拷贝按敏感信息处理它：</p>
+      <ul class="facts">
+        <li><b>输入</b>Token 输入框按密码显示，屏幕上看不到明文。</li>
+        <li><b>保存</b>和其他设置一起存在 <code>~/Library/Application Support/com.mascopy.mascopy/config.json</code>。这个文件只有你自己的账户能读写。</li>
+        <li><b>发送</b>按 Eagle 本地 API 的约定，令牌放在请求地址的 <code>token</code> 参数里，特殊字符先转义。请求由大师拷贝的后台发出，界面本身不直接联网。</li>
+        <li><b>报错脱敏</b>连不上时，错误信息只说明是哪一类网络问题，不带完整的请求地址。Eagle 返回的说明里如果出现令牌，原文和转义后的写法都替换成 <code>[已隐藏]</code>。</li>
+        <li><b>只支持 http</b>大师拷贝连 Eagle 只走 http，没有内置 https。API 地址填 <code>https://</code> 开头的会连接失败。</li>
+      </ul>
+      <aside class="note warn"><span class="note-label">注意</span>http 不加密，令牌和裁剪图都以明文传输。保持默认的 <code>localhost</code>，这些内容只在本机内部流转；地址指向别的电脑时，它们会经过局域网。</aside>
+      <p>配置文件的权限与写入方式，见<a href="reliability.html">可靠性与隐私</a>。</p>
+    </section>
+
+    <section id="compat">
+      <h2>Eagle 兼容说明</h2>
+      <p>Eagle 是第三方软件。大师拷贝只通过 Eagle 的本地 API 与它通信，不直接读写 Eagle 资源库里的文件。下表列出用到的全部接口，地址都在 API 地址后面加 <code>/api/</code>：</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>用途</th><th>接口</th><th>方式</th><th>最长等待</th></tr></thead>
+          <tbody>
+            <tr><td>读版本号</td><td><code>application/info</code></td><td>GET</td><td>6 秒</td></tr>
+            <tr><td>读文件夹树</td><td><code>folder/list</code></td><td>GET</td><td>6 秒</td></tr>
+            <tr><td>导入原图</td><td><code>item/addFromPath</code></td><td>POST，传文件路径</td><td>30 秒</td></tr>
+            <tr><td>导入裁剪图</td><td><code>item/addFromURL</code></td><td>POST，传 JPEG 的 data URL</td><td>30 秒</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="facts">
+        <li><b>运行要求</b>Eagle 要在运行，本地 API 要能访问。大师拷贝不会启动 Eagle。</li>
+        <li><b>版本</b>状态按钮里的版本号取自 Eagle 自己的回报。大师拷贝不检查版本号。</li>
+        <li><b>原图靠路径</b>导入原图传给 Eagle 的是本机文件路径，Eagle 必须在它所在的电脑上读得到这个路径。</li>
+        <li><b>裁剪图靠内容</b>裁剪图整张随请求发过去，不依赖任何路径。</li>
+        <li><b>界面名称</b>本页提到的 Eagle 菜单和设置位置，以你安装的 Eagle 版本为准。</li>
+      </ul>
+    </section>
+
+    <nav class="pager" aria-label="翻页">
+      <a class="prev" href="tether.html"><span>← 上一章</span>联机拍摄</a>
+      <a class="next" href="reliability.html"><span>下一章 →</span>可靠性与隐私</a>
+    </nav>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div>
+      <a class="brand" href="index.html"><img src="assets/icon.png" alt="" width="26" height="26">大师拷贝</a>
+      <p class="fine">macOS 上的照片与视频整理工具：把存储卡里的素材按拍摄日期备份到本地磁盘或 NAS，支持相机联机拍摄与 Eagle 挑图导入。</p>
+      <p class="fine"><a href="https://github.com/Redwinam/mascopy">GitHub · Redwinam/mascopy</a></p>
+    </div>
+    <div>
+      <h4>功能</h4>
+      <ul>
+        <li><a href="backup.html">SD 卡与大疆备份</a></li>
+        <li><a href="tether.html">联机拍摄</a></li>
+        <li><a href="eagle.html">Eagle 挑图与裁剪</a></li>
+        <li><a href="reliability.html">可靠性与隐私</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>参考</h4>
+      <ul>
+        <li><a href="reference.html">格式、快捷键与系统要求</a></li>
+        <li><a href="https://github.com/Redwinam/mascopy/releases">版本发布记录</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>获取</h4>
+      <ul>
+        <li><a href="index.html#download">下载与安装</a></li>
+        <li><a href="reference.html#requirements">系统要求</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>

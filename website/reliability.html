@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>可靠性与隐私 · 大师拷贝</title>
+  <meta name="description" content="大师拷贝怎样做到拷贝中断不留半成品、不误覆盖、不动源文件，失败后怎样恢复，以及配置与凭据如何留在本机。">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="assets/site.css">
+  <script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("dl-site-theme")==="light"?"light":"dark")}catch(e){}</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="assets/icon.png" alt="" width="26" height="26">大师拷贝<span class="brand-sub">MasCopy</span></a>
+    <nav class="nav" aria-label="主导航">
+      <a href="index.html#chapters">功能</a>
+      <a href="backup.html">备份</a>
+      <a href="tether.html">联机拍摄</a>
+      <a href="eagle.html">Eagle</a>
+      <a href="reliability.html">可靠性</a>
+    </nav>
+    <div class="header-tools">
+      <button class="icon-btn" type="button" data-theme-toggle aria-label="切换到浅色" title="切换到浅色"><svg class="icon only-dark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><svg class="icon only-light" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="index.html#download"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg><span class="btn-download-label">下载</span></a>
+      <button class="icon-btn menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-label="打开导航"><svg class="icon" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap doc">
+  <aside class="doc-nav">
+    <details class="chapter-list">
+      <summary class="tone-live" title="切换章节"><span class="sw"></span><span class="cur">可靠性与隐私</span><span class="pos">4 / 5</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+      <ul>
+        <li><a class="tone-blue" href="backup.html"><span class="sw"></span>SD 卡与大疆备份</a></li>
+        <li><a class="tone-violet" href="tether.html"><span class="sw"></span>联机拍摄</a></li>
+        <li><a class="tone-copper" href="eagle.html"><span class="sw"></span>Eagle 挑图与裁剪</a></li>
+        <li><a class="tone-live" href="reliability.html" aria-current="page"><span class="sw"></span>可靠性与隐私</a></li>
+        <li><a class="tone-neutral" href="reference.html"><span class="sw"></span>格式、快捷键与系统要求</a></li>
+      </ul>
+    </details>
+    <nav class="toc" aria-label="本页目录">
+      <h4>本页</h4>
+      <ul>
+        <li><a href="#principles">五条底线</a></li>
+        <li><a href="#scenarios">出了意外会怎样</a></li>
+        <li><a href="#write-safety">写入：临时文件与独占发布</a></li>
+        <li><a href="#source">源文件只读不删</a></li>
+        <li><a href="#dedupe">逐字节判重</a></li>
+        <li><a href="#checks">扫描与上传的校验</a></li>
+        <li><a href="#recovery">失败隔离与恢复</a></li>
+        <li><a href="#tether">联机拍摄的收件箱与重试</a></li>
+        <li><a href="#privacy">全部在本地运行</a></li>
+        <li><a href="#config">配置文件与凭据</a></li>
+        <li><a href="#limits">已知限制</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main class="doc-main tone-live">
+    <header class="chapter-head">
+      <span class="chapter-label"><svg class="icon" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>可靠性与隐私</span>
+      <h1>中断不留半成品，源文件从不动</h1>
+      <p class="lede">倒卡最怕拔错卡、NAS 掉线、半截文件盖掉好文件。这一章把大师拷贝为这些情况做的设计集中讲清楚：文件怎样写进目标，重复怎样判断，哪些情况会停下来让你重新扫描，失败以后怎样恢复，以及配置和凭据怎样留在你的 Mac 上。</p>
+    </header>
+
+    <section id="principles">
+      <h2>五条底线</h2>
+      <p>大师拷贝把每一次写入都当成随时可能被打断的操作。下面这些规则始终生效，不需要额外设置。</p>
+      <ul class="facts">
+        <li><b>目标里只有完整文件</b>正式文件名出现的那一刻，内容已经全部写完并同步到磁盘。写到一半的数据只存在于隐藏的临时文件里，出错就删掉。</li>
+        <li><b>不静默覆盖</b>发布新文件时，同名文件如果已经存在，这次发布直接失败。只有你打开 <span class="ui">覆盖重复文件</span>，并且两个文件内容确实不同，才会替换原文件。</li>
+        <li><b>源文件只读</b>SD 卡、大疆设备和 EOS Utility 的保存目录，大师拷贝只读取，不修改，不删除。</li>
+        <li><b>情况不对就停</b>源文件在扫描后变了、比较期间变了、目标目录的结构不对，都会停下来提示重新扫描。它不会拿着过时的判断继续写。</li>
+        <li><b>数据留在本机</b>没有账号，不连云端，配置文件只有你的 macOS 用户能读。</li>
+      </ul>
+      <p>后面各节依次展开这些规则，最后一节列出目前做不到的事。</p>
+    </section>
+
+    <section id="scenarios">
+      <h2>出了意外会怎样</h2>
+      <p>倒卡和联机时最常见的几种意外，结果如下。表里说的「已完成」，指已经用正式文件名发布到目标里的文件。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>情况</th><th>目标里会留下什么</th><th>接下来</th></tr></thead>
+          <tbody>
+            <tr><td>上传中点取消</td><td class="wrap-ok">已完成的文件全部保留。正在写的临时文件删除，同名的原文件一个字节都没动。</td><td class="wrap-ok">再点 <span class="ui">开始上传</span>，只处理没完成的文件。</td></tr>
+            <tr><td>拷贝中拔卡</td><td class="wrap-ok">当前文件和后面的文件逐个记为失败，临时文件删除。已完成的保留。</td><td class="wrap-ok">插回存储卡再上传，只补没完成的。</td></tr>
+            <tr><td>NAS 中途掉线</td><td class="wrap-ok">已完成的文件完整。当前文件记为失败，它的临时文件可能留在 NAS 上。</td><td class="wrap-ok">NAS 挂载回原来的位置后再上传。</td></tr>
+            <tr><td>强制退出或断电</td><td class="wrap-ok">已完成的文件完整。正在写的那个文件可能留下一个 <code>.part</code> 临时文件。</td><td class="wrap-ok">重新扫描再上传。临时文件可以手动删掉。</td></tr>
+            <tr><td>源文件被改过</td><td class="wrap-ok">这个文件不写入，记为失败，提示源文件在扫描后发生变化。</td><td class="wrap-ok">按提示重新扫描。</td></tr>
+            <tr><td>联机时目标不可写</td><td class="wrap-ok">照片留在来源处，照片流里标为 <span class="status err">失败</span>。</td><td class="wrap-ok">自动退避重试，目标恢复后接着入库。</td></tr>
+            <tr><td>联机时应用退出</td><td class="wrap-ok">已完整收到、还没入库的照片留在收件箱里。</td><td class="wrap-ok">下次开始 FTP 会话时自动继续入库。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="write-safety">
+      <h2>写入：临时文件与独占发布</h2>
+      <p>SD 卡和大疆备份、联机拍摄入库，用的是同一套写入流程。每个文件先写进同一个日期目录里的隐藏临时文件，写完、核对、落盘之后，才换成正式名字。</p>
+      <ol class="steps">
+        <li><strong>新建临时文件。</strong>在目标日期目录里新建 <code>.mascopy-&lt;进程号&gt;-&lt;序号&gt;.part</code>。文件名以点开头，访达默认不显示。权限是 <code>0600</code>，写入期间只有你的用户能读写。新建时要求这个名字此前不存在，不会打开或截断任何已有文件。</li>
+        <li><strong>分块拷贝。</strong>按 1 MiB 一块从源文件读出、写进临时文件。进度、暂停和取消都在块与块之间生效。</li>
+        <li><strong>核对源文件。</strong>读完后确认读到的字节数等于扫描时的大小，并且源文件的大小、修改时间和文件身份（所在设备与 inode）在拷贝前后完全一致。路径上指向的必须仍是当初打开的那个文件。</li>
+        <li><strong>保留属性。</strong>把源文件的权限、访问时间和修改时间复制到临时文件上。备份出来的照片在访达里显示的修改日期和卡上一样。</li>
+        <li><strong>落盘。</strong>调用 <code>fsync</code>，确认数据已经写到磁盘上，没有只停在系统缓存里。</li>
+        <li><strong>发布。</strong>新文件用 macOS 的 <code>renamex_np</code> 加 <code>RENAME_EXCL</code> 改成正式名字：目标名已经被占用就失败，不会盖过去。只有状态是 <span class="status over">将覆盖</span> 的文件才用原子替换，别的程序看到的要么是旧文件，要么是完整的新文件。</li>
+      </ol>
+      <figure>
+        <pre class="tree"><span class="dir">/Volumes/NAS/照片备份/2026-08-10/</span>
+├─ <span class="new">IMG_0420.CR3</span>              <span class="note">上一个文件，已发布，内容完整</span>
+└─ <span class="skip">.mascopy-4127-3.part</span>      <span class="note">正在写 IMG_0421.CR3，隐藏，仅本人可读写</span>
+      <span class="note">↓ 写完 → 核对源文件 → 复制权限与时间 → fsync</span>
+   <span class="new">IMG_0421.CR3</span>              <span class="note">独占发布；此时同名文件已存在就失败</span></pre>
+        <figcaption><b>一个文件的写入过程。</b>临时文件和正式文件在同一个目录，改名只改目录项，不再搬数据，所以发布是一步完成的。</figcaption>
+      </figure>
+      <p>写入过程中任何一步出错，或者你点了取消，临时文件都会被删除。目标里原来的文件在发布之前一直没被碰过，所以一个 <span class="status over">将覆盖</span> 的文件拷到一半取消，原文件仍然完整。</p>
+      <p>扫描之后，别的电脑可能往 NAS 的同一个日期目录写进同名文件。独占发布让这种情况变成一次明确的失败，提示「发布文件失败（目标可能已存在）」，重新扫描后按新情况判重。</p>
+      <p>同一时间只运行一个上传任务。已有任务在跑时再发起上传，会提示「已有上传任务运行中，请等待其结束」。上传进行时 <span class="ui">返回配置</span> 不可点，配置表单也锁住，避免这一批还没写完就换了目标。</p>
+      <aside class="note warn"><span class="note-label">注意</span>如果进程被强制结束、Mac 断电，或者 NAS 在写入中途断开，应用来不及删除临时文件，它会留在日期目录里。它以 <code>.mascopy-</code> 开头、以 <code>.part</code> 结尾，访达默认看不到，正式文件不受影响。确认没有上传或联机会话在进行时，可以直接删掉。</aside>
+    </section>
+
+    <section id="source">
+      <h2>源文件只读不删</h2>
+      <p>备份的意义在于多出一份副本。大师拷贝在任何模式下都不改动你的原始素材，清卡的时机由你自己决定。</p>
+      <ul class="facts">
+        <li><b>SD 卡与大疆模式</b>扫描和上传都以只读方式打开源文件。拷贝完成后，源文件原样留在卡上。</li>
+        <li><b>推出设备</b>只在你点 <span class="ui">推出设备</span> 时执行，调用系统的 <code>diskutil eject</code> 推出源路径所在的 <code>/Volumes</code> 卷。源路径不在 <code>/Volumes</code> 下时不执行任何操作，弹出「推出失败」说明原因。</li>
+        <li><b>监听文件夹模式</b>永远保留来源文件。大师拷贝无法确认 EOS Utility 已经写完，所以旧版本配置里的「入库后删除」已经作废：界面不再提供，后端收到这个要求也会直接拒绝，提示「监听模式无法确认上游写入已结束，必须保留来源文件」。</li>
+        <li><b>FTP 直传</b>唯一会删除的是收件箱里的副本，而且只在两种情况下删：照片已经入库成功，或者确认目标里已有内容完全相同的文件。删除前还会再确认这份副本在入库期间没被改写；改写过就保留新版本，等下一轮处理。</li>
+        <li><b>Eagle 导入</b><span class="ui">导入 Eagle</span> 把原图路径交给 Eagle，由 Eagle 自己复制一份进资源库。裁剪在内存里完成，存储卡上不写任何文件。</li>
+      </ul>
+      <h3>源和目标必须分开</h3>
+      <p>源和目标重叠时，拷贝可能把刚写出的文件再读进来。大师拷贝在三个地方拦下这种配置：</p>
+      <ul>
+        <li>扫描前，源目录和目标目录不能相同，也不能互相包含。判断用的是解析过符号链接的真实路径，通过别名绕一圈指向同一处也算，提示「源目录与目标目录必须分离，不能相同或互相包含」。</li>
+        <li>上传前，逐个检查源文件的真实路径，落在目标目录里就拒绝整批，提示「源文件位于目标目录内，请重新扫描」。</li>
+        <li>开始联机会话前，监听目录和备份目标同样不能相同或互相包含。</li>
+      </ul>
+      <aside class="note"><span class="note-label">细节</span>联机入库时还有一道保护：如果来源文件和算出来的目标其实是同一个文件，大师拷贝把它标为失败，绝不把它当成「目标里已有相同内容」而删掉来源。</aside>
+    </section>
+
+    <section id="dedupe">
+      <h2>逐字节判重</h2>
+      <p>目标日期目录里已经有同名文件时，大师拷贝会比较两个文件的全部内容。只看文件名和大小，会把「大小刚好相同、内容不同」的两张照片误判成重复；逐字节比较不会。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>目标里的情况</th><th>状态</th><th>结果</th></tr></thead>
+          <tbody>
+            <tr><td>没有同名文件</td><td><span class="status up">将上传</span></td><td class="wrap-ok">用原名写入。</td></tr>
+            <tr><td>同名，内容相同</td><td><span class="status skip">将跳过</span></td><td class="wrap-ok">不写入。上传时再比较一次，确认仍然相同才算跳过完成。</td></tr>
+            <tr><td>同名，内容不同，覆盖打开</td><td><span class="status over">将覆盖</span></td><td class="wrap-ok">发布时原子替换原文件。</td></tr>
+            <tr><td>同名，内容不同，覆盖关闭</td><td><span class="status up">将上传</span></td><td class="wrap-ok">依次试 <code>_1</code>、<code>_2</code>……每个候选名都重新判一遍。候选名上已有相同内容，同样跳过。</td></tr>
+            <tr><td>同名的是文件夹或链接</td><td><span class="status up">将上传</span></td><td class="wrap-ok">当成名字已被占用，换下一个候选名，不会写进文件夹或顺着链接走。</td></tr>
+            <tr><td>同批两个同日同名</td><td><span class="status up">将上传</span></td><td class="wrap-ok">例如来自两个 DCIM 子目录。第二个自动改名 <code>_1</code>，批内比较名字不区分大小写。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figure>
+        <pre class="tree"><span class="dir">/Volumes/NAS/照片备份/2026-08-10/</span>
+├─ <span class="skip">IMG_0406.JPG</span>        <span class="note">目标已有，内容相同，跳过</span>
+├─ IMG_0411.JPG        <span class="note">目标已有，内容不同，原样保留</span>
+└─ <span class="ren">IMG_0411_1.JPG</span>      <span class="note">卡上的同名照片，自动改名写入</span></pre>
+        <figcaption><b>覆盖关闭时的判重结果。</b>已有文件一个都不动，新内容总能找到自己的位置。</figcaption>
+      </figure>
+      <h3>比较期间也要稳定</h3>
+      <p>比较以 1 MiB 为一块。先比大小，大小不同直接判为不同。内容逐块比完之后，还要确认两个文件的大小、修改时间和文件身份在比较期间都没变，路径上指向的也仍是当初打开的那两个文件。任何一项变了，这次比较作废，扫描停下并提示「比较期间文件发生变化，请重新扫描」。</p>
+      <aside class="note"><span class="note-label">细节</span>覆盖只会发生在原名上。开了 <span class="ui">覆盖重复文件</span> 以后，原名被占用且内容不同时替换它；已经改过名的 <code>_1</code>、<code>_2</code> 这些文件永远不会被覆盖。内容相同的照片不管开关开不开都跳过，不会白白重写一遍。</aside>
+    </section>
+
+    <section id="checks">
+      <h2>扫描与上传的校验</h2>
+      <p>扫描和上传之间可能隔了很久，这期间照片可能被删、目录可能被挪，NAS 上也可能多出同名文件。大师拷贝在几个节点上重新确认，检查不过就停下并说明原因。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>时机</th><th>检查什么</th><th>不通过时</th></tr></thead>
+          <tbody>
+            <tr><td>扫描前</td><td class="wrap-ok">源和目标都是已存在的目录，且不相同、不互相包含。</td><td class="wrap-ok">弹出「源路径不可用」「目标路径不可用」，或提示两者必须分离。</td></tr>
+            <tr><td>扫描中</td><td class="wrap-ok">目录能完整遍历，每个文件的大小和修改时间都能读到。</td><td class="wrap-ok">整次扫描失败，提示「无法完整扫描目录」或指出读不到的文件，不给残缺的结果。</td></tr>
+            <tr><td>扫描中</td><td class="wrap-ok">已存在的日期目录如果是符号链接，不能指向目标目录外部。</td><td class="wrap-ok">「日期目录指向目标目录外部，请重新选择目标」。</td></tr>
+            <tr><td>扫描中</td><td class="wrap-ok">判重比较期间两边文件都没变。</td><td class="wrap-ok">「比较期间文件发生变化，请重新扫描」。</td></tr>
+            <tr><td>上传前（整批）</td><td class="wrap-ok">每个目标都恰好在单层 <code>YYYY-MM-DD</code> 日期目录里，路径不含 <code>..</code>；两个源文件不落到同一目标，不区分大小写；源文件不在目标目录里。</td><td class="wrap-ok">整批不开始，提示具体原因，例如「目标必须位于单层日期目录中」「多个源文件不能使用同一目标路径，请重新扫描」。</td></tr>
+            <tr><td>拷贝前</td><td class="wrap-ok">源文件的大小和修改时间与扫描时一致。</td><td class="wrap-ok">这个文件失败：「源文件在扫描后发生变化，请重新扫描」。</td></tr>
+            <tr><td>拷贝前</td><td class="wrap-ok">日期目录是普通目录，不是符号链接。创建日期目录前后各查一次。</td><td class="wrap-ok">这个文件失败：「目标日期目录必须是普通目录」。</td></tr>
+            <tr><td>拷贝中</td><td class="wrap-ok">读到的数据没有超过扫描时的大小。</td><td class="wrap-ok">这个文件失败：「源文件在复制期间增长，请重新扫描」。</td></tr>
+            <tr><td>发布前</td><td class="wrap-ok">源文件大小、修改时间、文件身份都没变，目标路径再校验一遍。</td><td class="wrap-ok">这个文件失败：「源文件在复制期间发生变化，请重新扫描」。</td></tr>
+            <tr><td>发布时</td><td class="wrap-ok">新文件的正式名字没被占用。</td><td class="wrap-ok">这个文件失败：「发布文件失败（目标可能已存在）」。</td></tr>
+            <tr><td>跳过时</td><td class="wrap-ok"><span class="status skip">将跳过</span> 的文件与目标仍然逐字节相同。</td><td class="wrap-ok">这个文件失败：「源文件或重复目标已变化，请重新扫描」。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>扫描阶段和「上传前（整批）」的问题会让整次操作停下，因为扫描结论已经整体不可信。其余各项只影响那一个文件，别的文件照常处理。</p>
+      <p>目标整个不可用时，比如 NAS 在点上传之前就掉了，这一批不会开始，弹出「上传失败」并附上原因。</p>
+      <aside class="note"><span class="note-label">细节</span><span class="ui">快速扫描模式</span> 只改变日期的取法（只看修改时间，跳过 EXIF），上面这些检查一项都不少。</aside>
+    </section>
+
+    <section id="recovery">
+      <h2>失败隔离与恢复</h2>
+      <p>一批几百个文件里有一个出问题，不该让整批白跑。大师拷贝按文件记录结果，每个文件各自成功或失败，互不牵连。</p>
+      <ul class="facts">
+        <li><b>单个失败不中断</b>读卡出错、NAS 写入出错、源文件变了，都只记为这一个文件失败，然后接着处理下一个。表格里这一行显示 <span class="status err">失败</span>，日志里记下文件名和原因。</li>
+        <li><b>部分失败</b>整批处理完后弹出「部分文件未备份」，写明失败的数量和第一条错误，并说明「已完成的文件将保留，重试只处理未完成的文件」。页面停在扫描结果，方便你逐个查看。</li>
+        <li><b>重试只补没完成的</b>再点 <span class="ui">开始上传</span> 或 <span class="ui">上传选中</span> 时，已完成和已跳过的文件自动排除，只处理剩下的。进度的总量也只算这些文件。</li>
+        <li><b>暂停与继续</b>暂停在两个数据块之间生效，最多写完当前这 1 MiB 就停。临时文件保留着，点继续后接着往下写。测速在暂停结束后重新计算，剩余时间不会被暂停的那段拉长。</li>
+        <li><b>取消</b>点取消后，日志显示「正在取消上传，等待文件处理结束…」。当前文件的临时文件删除，已完成的全部保留。只是取消、没有失败时不弹窗，日志里记一行「本次已完成 X 个，跳过 Y 个，失败 0 个；已取消」。</li>
+        <li><b>全部成功</b>每个文件都完成或确认跳过，才弹出「备份完成」并提供 <span class="ui">推出设备</span>。</li>
+      </ul>
+      <figure>
+        <div class="crop"><img src="assets/shots/progress-dark.webp" width="2800" height="230" alt="上传进度条：正在拷贝 IMG_0407.CR3，进度 10.2%，已传 179.5 MB / 1.73 GB，第 9/29 个文件，速度 94.0 MB/s，约 17 秒；右侧是暂停和取消按钮。" loading="lazy"></div>
+        <figcaption><b>上传进度。</b>百分比按字节算，已传与总量不含跳过的文件。右边是暂停和取消，两个操作都在数据块之间生效。</figcaption>
+      </figure>
+      <h3>拔卡与 NAS 掉线</h3>
+      <p>拷贝中拔卡或 NAS 掉线，当前文件和后面的文件都会逐个记为失败，整批很快走完，弹出「部分文件未备份」。已发布的文件完整地留在目标里。NAS 掉线时应用可能来不及删掉那边的临时文件。恢复步骤如下：</p>
+      <ol class="steps">
+        <li>在结果表格里找标着 <span class="status err">失败</span> 的行，或者到 <span class="ui">日志</span> 页签看具体原因。</li>
+        <li>把存储卡插回去，或者重新挂载 NAS。卷名不变时，它们会回到原来的路径。</li>
+        <li>回到 <span class="ui">扫描结果</span> 再点 <span class="ui">开始上传</span>。已完成的自动跳过，只补剩下的。</li>
+        <li>如果提示「源文件在扫描后发生变化，请重新扫描」，点 <span class="ui">返回配置</span> 重新扫描一次。已经在目标里的文件会被识别为 <span class="status skip">将跳过</span>，不会重复拷贝。</li>
+      </ol>
+    </section>
+
+    <section id="tether">
+      <h2>联机拍摄的收件箱与重试</h2>
+      <p>联机拍摄的照片来自网络，传输随时可能断。FTP 直传把接收和入库分成两段，中间用一次原子移动隔开；监听模式等文件静下来再入库。</p>
+      <h3>FTP 收件箱的两段提交</h3>
+      <figure>
+        <pre class="tree"><span class="dir">/Volumes/NAS/棚拍/</span>
+├─ <span class="dir">.mascopy-inbox/</span>                      <span class="note">FTP 根目录，相机登录后就在这里</span>
+│  ├─ <span class="dir">.mascopy-staging/</span>
+│  │  └─ <span class="skip">transfer-…/IMG_0513.JPG</span>        <span class="note">正在接收；中断就留在这里</span>
+│  └─ <span class="dir">.mascopy-completed/</span>
+│     └─ <span class="new">transfer-…/IMG_0512.JPG</span>        <span class="note">已完整收到，马上入库</span>
+└─ <span class="dir">2026-08-10/</span>
+   ├─ <span class="new">IMG_0511.JPG</span>                      <span class="note">已入库，收件箱副本已删除</span>
+   └─ <span class="ren">IMG_0509_1.JPG</span>                    <span class="note">同名不同内容，自动改名</span></pre>
+        <figcaption><b>FTP 收件箱结构。</b>收件箱建在备份目标里。以 <code>.mascopy-</code> 开头的目录对相机不可见。</figcaption>
+      </figure>
+      <ol class="steps">
+        <li>相机开始上传。大师拷贝为这次传输新建一个独立的 <code>transfer-…</code> 目录，放在 <code>.mascopy-staging</code> 里，照片写进这个目录。两次传输即使文件名相同，也各写各的，不会互相覆盖。</li>
+        <li>读到传输结尾后调用 <code>fsync</code>，把数据落到磁盘上。</li>
+        <li>把整个 <code>transfer-…</code> 目录原子移到 <code>.mascopy-completed</code>。这一步完成，照片才算收到。</li>
+        <li>立刻按接收时间入库到 <code>目标/YYYY-MM-DD/</code>，走和备份相同的临时文件与独占发布流程。同名内容相同记为 <span class="status skip">已存在</span>，内容不同改名 <code>_1</code>，从不覆盖。</li>
+        <li>入库成功，或者确认目标里已有相同内容之后，才删除收件箱里的副本和空的 <code>transfer-…</code> 目录。</li>
+      </ol>
+      <ul class="facts">
+        <li><b>传一半断了</b>残片留在 <code>.mascopy-staging</code>，不会入库，也不会被当成完成。大师拷贝不支持 FTP 的断点续传（REST），相机需要整张重传。</li>
+        <li><b>传得很慢</b>FTP 模式不靠「多久没动静」猜测传输结束。照片在半路卡再久，也要等真正传完才入库。</li>
+        <li><b>结束会话</b>点 <span class="ui">结束会话</span> 后，进行中的传输被中断，残片留在暂存区；进行中的入库停下，照片留在收件箱。所有写入和连接收尾、端口释放后，才能开始下一次会话。</li>
+        <li><b>应用重启</b>下次开始 FTP 会话时，<code>.mascopy-completed</code> 里还没入库的照片自动继续入库，不需要相机重传。</li>
+        <li><b>残片与旧文件</b><code>.mascopy-staging</code> 里的残片，以及旧版本直接放在收件箱根目录的文件，都原地保留，不会自动入库，也不会被删除。确认没用后可以手动清理。</li>
+        <li><b>路径安全</b>FTP 客户端看不到、也进不去 <code>.mascopy-</code> 开头的目录。试图用 <code>../</code> 跳出收件箱的请求会被拒绝。收件箱和它的两个内部目录不能是符号链接。</li>
+      </ul>
+      <h3>目标写不进去时自动重试</h3>
+      <p>入库失败时，照片不会丢，它还在收件箱或监听目录里。大师拷贝把这张照片在照片流里标为 <span class="status err">失败</span>，然后按递增的间隔重试。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>项目</th><th>值</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>重试间隔</td><td><code>0.5 → 1 → 2 → 4 → 8 → 16</code> 秒</td><td class="wrap-ok">之后每 16 秒一次，直到成功或结束会话。</td></tr>
+            <tr><td>触发情况</td><td>任何入库错误</td><td class="wrap-ok">例如目标目录不可用、日期目录建不出来、写入或提交失败。</td></tr>
+            <tr><td>错误提示</td><td>同一错误报一次</td><td class="wrap-ok">原因没变时不重复刷屏，原因变了才更新。</td></tr>
+            <tr><td>恢复</td><td>自动</td><td class="wrap-ok">不需要新的文件事件。目标恢复后，下一次重试就入库，卡片变成 <span class="status ok">已入库</span>。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <aside class="note warn"><span class="note-label">注意</span>FTP 模式的收件箱就建在备份目标里。整台 NAS 掉线时，相机那边的传输也会失败，要等 NAS 恢复后由相机重传。已经完整收到的照片留在收件箱，NAS 挂载回原来的位置后自动继续入库。</aside>
+      <h3>监听文件夹模式</h3>
+      <ul class="facts">
+        <li><b>只看新文件</b>只处理会话开始后出现或变化的文件，监听目录里原有的文件不动。</li>
+        <li><b>等它静下来</b>文件的大小、修改时间和文件身份连续 1.2 秒不变，才开始拷贝。拷贝中文件还在变，就放弃这一次，重新等它静下来。空文件不入库。</li>
+        <li><b>保留来源</b>入库后来源文件原样留在监听目录，由你在确认上游保存结束后自己清理。</li>
+        <li><b>不跟随外部链接</b>监听目录里新出现的符号链接如果指向目录外面，直接忽略。</li>
+      </ul>
+    </section>
+
+    <section id="privacy">
+      <h2>全部在本地运行</h2>
+      <p>大师拷贝没有账号，没有云端服务，也不收集使用数据。它只和三样东西打交道：你选的本地目录和 NAS，联机会话期间连进来的相机，以及你在灯箱里配置的 Eagle。</p>
+      <h3>界面被关在应用里</h3>
+      <p>界面跑在系统的 WebView 里，受一份严格的内容安全策略（CSP）约束，能用的系统能力也很少。</p>
+      <ul class="facts">
+        <li><b>只运行自带脚本</b>界面只执行应用包里自带的脚本，不加载任何外部脚本、样式或字体。</li>
+        <li><b>不能对外联网</b>界面发出的请求只能到达应用自己的后端通道。任何外部地址都会被策略拦下。</li>
+        <li><b>图片来源受限</b>图片只能来自应用自身、本地文件通道，以及内存里生成的 <code>data:</code> 和 <code>blob:</code> 图片。</li>
+        <li><b>禁止嵌入</b>不允许 iframe，也不允许插件对象。</li>
+        <li><b>没有 shell 与 fs 插件</b>除 Tauri 的基础能力外，界面只能操作窗口（拖动标题栏、切换标题栏主题）和打开原生的选择文件夹对话框。它不能执行命令，也不能直接读写文件。</li>
+        <li><b>固定的 18 个命令</b>界面和后端之间只有 18 个命令，涵盖配置、扫描、上传、推出、预览、Eagle 和联机，每个命令在后端各自校验参数。</li>
+        <li><b>只调用三个系统程序</b>后端用 <code>sips</code> 转预览，用 <code>diskutil</code> 推出设备，用 <code>open -R</code> 在访达中显示。程序直接启动、参数逐个传入，不经过 shell。</li>
+      </ul>
+      <aside class="note"><span class="note-label">细节</span>为了能预览你所选任意目录里的照片，本地文件通道（Tauri 的 asset 协议）不限定目录。界面只运行自带脚本，这个通道只供应用自己的界面显示图片用。</aside>
+      <h3>Eagle 只连你填的地址</h3>
+      <p>和 Eagle 的通信由应用后端发出，只发往你在灯箱里填的 API 地址，默认是本机的 <code>http://localhost:41595</code>。第一次打开灯箱时才会去连接；不用挑图功能，大师拷贝不会主动连接任何网络地址。</p>
+      <p>导入原图时，大师拷贝只把文件路径交给 Eagle，由 Eagle 读取并复制。裁剪导入时，裁好的 JPEG 直接交给 Eagle，备注里写上「裁剪自」和原图路径。</p>
+      <h3>预览与裁剪不留文件</h3>
+      <ul class="facts">
+        <li><b>JPG 与 PNG</b>预览直接读原图，只读不写。</li>
+        <li><b>RAW 与 HEIC</b>调用 macOS 自带的 <code>sips</code> 转成 JPEG。转换结果先写到系统临时目录，读进内存后立即删除。存储卡和备份目标上不写任何文件，也没有预览缓存目录。</li>
+        <li><b>内存上限</b>RAW 与 HEIC 转出来的大图预览，灯箱最多在内存里保留最近 12 张，更早的自动丢弃。</li>
+        <li><b>裁剪</b>用全分辨率原图在内存里完成，按 EXIF 方向转正后编码成 JPEG，直接推给 Eagle。裁剪结果不落盘。</li>
+        <li><b>退出即清空</b>扫描结果、应用内日志、联机照片流、「已导入」和裁剪计数标记都只在内存里，退出应用就没了。</li>
+      </ul>
+    </section>
+
+    <section id="config">
+      <h2>配置文件与凭据</h2>
+      <p>所有设置存在一个 JSON 文件里：<code>~/Library/Application Support/com.mascopy.mascopy/config.json</code>。改动立即自动保存，不需要手动点保存。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>项目</th><th>做法</th></tr></thead>
+          <tbody>
+            <tr><td>目录权限</td><td class="wrap-ok"><code>0700</code>，只有你的 macOS 用户能进入。</td></tr>
+            <tr><td>文件权限</td><td class="wrap-ok"><code>0600</code>，只有你的用户能读写。每次读取和保存时都会重新收紧一次，旧版本留下的宽松权限在升级后第一次启动就会改正。</td></tr>
+            <tr><td>写入方式</td><td class="wrap-ok">先写同目录下的临时文件并 <code>fsync</code>，再原子替换。保存到一半断电，留下的仍是上一份完整的配置。</td></tr>
+            <tr><td>并发保存</td><td class="wrap-ok">多处同时保存时排队逐个进行，文件里总是某一次完整的内容，目录里也不会多出残留文件。</td></tr>
+            <tr><td>旧配置迁移</td><td class="wrap-ok">首次运行时从旧位置 <code>~/.mascopy-config.json</code> 读入，写到新位置。缺的字段按默认值补齐。旧文件原样保留，之后不再读写，不需要可以自己删掉。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>存了什么</h3>
+      <ul class="facts">
+        <li><b>SD 卡与大疆</b>源目录、目标目录和覆盖开关，两种模式各存一份。</li>
+        <li><b>收藏夹</b>源和目标的常用路径，每个列表最多 8 条。</li>
+        <li><b>Eagle</b>API 地址、令牌和上次选的文件夹。</li>
+        <li><b>联机拍摄</b>联机方式、监听目录、目标目录、FTP 端口、用户名和密码。</li>
+        <li><b>不保存</b><span class="ui">快速扫描模式</span> 和 <span class="ui">忽略缩略图文件夹</span> 两个开关不存，每次启动都回到默认开启。</li>
+      </ul>
+      <h3>Eagle 令牌脱敏</h3>
+      <p>Eagle 本地 API 要求把令牌放在请求地址的参数里。完整的请求地址因此带着令牌，大师拷贝不让它出现在界面上：</p>
+      <ul>
+        <li>连不上 Eagle 时，错误只写「无法连接 Eagle（请确认 Eagle 已启动）」和连接错误的类别，不带请求地址。</li>
+        <li>Eagle 返回 HTTP 错误时，只显示状态码，例如「Eagle 返回 HTTP 401」。</li>
+        <li>Eagle 返回的错误信息里如果出现令牌，原文和 URL 编码后的写法都会替换成 <code>[已隐藏]</code>。</li>
+      </ul>
+      <aside class="note"><span class="note-label">细节</span>联机设置里的 FTP 密码输入框用掩码显示。密码本身怎样保存、在哪里会明文出现，见下一节。</aside>
+    </section>
+
+    <section id="limits">
+      <h2>已知限制</h2>
+      <p>下面这些是目前做不到或需要你留意的地方。</p>
+      <ul class="facts">
+        <li><b>FTP 是明文协议</b>用户名、密码和照片内容在局域网里不加密传输。相机端协议要选 FTP，大师拷贝不支持 FTPS 和 SFTP。</li>
+        <li><b>同一网络都能连</b>会话期间，FTP 服务监听这台 Mac 所有网络接口上的端口（默认 <code>2121</code>，被动端口 <code>50021–50040</code>）。同一网络里知道账号和密码的设备都能连上来上传。默认账号和密码都是 <code>eos</code>，建议改成自己的，并在自己信任的网络里使用。</li>
+        <li><b>FTP 密码明文保存</b>密码以明文存在配置文件里，靠 <code>0600</code> 权限保护。输入框虽然掩码，相机端设置提示为了方便你照着填，会把密码明文显示出来。截图或投屏时留意这一块。</li>
+        <li><b>Eagle 只支持 http</b>API 地址只能用 <code>http://</code>，不支持 https。令牌随请求明文传输，也明文存在配置文件里（<code>0600</code>）。默认地址是本机，数据不离开这台 Mac；把地址改成别的电脑时，令牌会以明文经过局域网。</li>
+        <li><b>未经 Apple 公证</b>安装包只做了 ad-hoc 签名，第一次打开时 macOS 会提示无法验证开发者，需要手动放行，步骤见下方。</li>
+        <li><b>扫描不能取消</b>扫描没有进度条，也没有取消按钮。素材多又关了快速扫描时，只能等它读完。扫描中途出错整次作废。</li>
+        <li><b>没有断点续传</b>FTP 传输中断后，相机需要整张重传。暂存区里的残片不会自动清理。</li>
+      </ul>
+      <h3>第一次打开时放行</h3>
+      <ol class="steps">
+        <li>双击打开大师拷贝，看到无法验证开发者的提示后先关掉。</li>
+        <li>打开 <span class="ui">系统设置 → 隐私与安全性</span>，在页面底部找到关于大师拷贝的提示，点 <span class="ui">仍要打开</span>。</li>
+        <li>也可以在终端执行 <code>xattr -dr com.apple.quarantine /Applications/大师拷贝.app</code>，之后直接打开。</li>
+      </ol>
+      <aside class="note warn"><span class="note-label">注意</span>联机拍摄第一次开始 FTP 会话时，macOS 可能弹出防火墙提示，询问是否允许大师拷贝接受传入连接。选 <span class="ui">允许</span>，相机才能连进来。</aside>
+    </section>
+
+    <nav class="pager" aria-label="翻页">
+      <a class="prev" href="eagle.html"><span>← 上一章</span>Eagle 挑图与裁剪</a>
+      <a class="next" href="reference.html"><span>下一章 →</span>格式、快捷键与系统要求</a>
+    </nav>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div>
+      <a class="brand" href="index.html"><img src="assets/icon.png" alt="" width="26" height="26">大师拷贝</a>
+      <p class="fine">macOS 上的照片与视频整理工具：把存储卡里的素材按拍摄日期备份到本地磁盘或 NAS，支持相机联机拍摄与 Eagle 挑图导入。</p>
+      <p class="fine"><a href="https://github.com/Redwinam/mascopy">GitHub · Redwinam/mascopy</a></p>
+    </div>
+    <div>
+      <h4>功能</h4>
+      <ul>
+        <li><a href="backup.html">SD 卡与大疆备份</a></li>
+        <li><a href="tether.html">联机拍摄</a></li>
+        <li><a href="eagle.html">Eagle 挑图与裁剪</a></li>
+        <li><a href="reliability.html">可靠性与隐私</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>参考</h4>
+      <ul>
+        <li><a href="reference.html">格式、快捷键与系统要求</a></li>
+        <li><a href="https://github.com/Redwinam/mascopy/releases">版本发布记录</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>获取</h4>
+      <ul>
+        <li><a href="index.html#download">下载与安装</a></li>
+        <li><a href="reference.html#requirements">系统要求</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>
