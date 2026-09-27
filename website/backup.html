@@ -121,7 +121,7 @@
         <table class="spec">
           <thead><tr><th>开关</th><th>界面说明</th><th>默认</th><th>作用</th></tr></thead>
           <tbody>
-            <tr><td>覆盖重复文件</td><td class="wrap-ok">相同文件名将被覆盖</td><td>关</td><td class="wrap-ok">目标里已有同名文件、内容又不同时，用新文件替换它；关着时改名另存。内容相同的文件无论开关开不开都跳过。SD 卡模式和 DJI 模式各记一份，重启后保留。</td></tr>
+            <tr><td>覆盖重复文件</td><td class="wrap-ok">关：同名不同内容时另存为 _1<br>开：同名不同内容时覆盖旧文件</td><td>关</td><td class="wrap-ok">目标里已有同名文件、内容又不同时，用新文件替换它；关着时改名另存。内容相同的文件无论开关开不开都跳过。SD 卡模式和 DJI 模式各记一份，重启后保留。</td></tr>
             <tr><td>快速扫描模式</td><td class="wrap-ok">仅对比修改时间 (跳过EXIF)</td><td>开</td><td class="wrap-ok">只用文件修改时间定日期，不读照片 EXIF 和视频创建时间。不记忆，每次启动都是开。</td></tr>
             <tr><td>忽略缩略图文件夹</td><td class="wrap-ok">自动跳过 THMBNL 等缩略图目录</td><td>开</td><td class="wrap-ok">跳过名为 THM、名字里含 THUMB 或 THMBNL 的文件夹。不记忆，每次启动都是开。</td></tr>
           </tbody>
@@ -257,7 +257,7 @@
    └─ <span class="ren">IMG_0421_1.JPG</span>      <span class="note">同名不同内容，改名写入</span></pre>
       <p>09:12 那张排在 16:40 那张前面，所以它保留原名。打开覆盖开关再扫描，<code>IMG_0421.JPG</code> 这一行会变成 <span class="status over">将覆盖</span>：NAS 上原来那张被卡上的替换，不再多出 <code>_1</code>。其余几行不变。</p>
 
-      <aside class="note warn"><span class="note-label">注意</span><span class="ui">覆盖重复文件</span> 的说明写着 <span class="ui">相同文件名将被覆盖</span>，实际只覆盖内容不同的同名文件。内容相同的文件无论开关开不开都跳过，不会重写一遍。覆盖用原子替换完成：新内容完整写好、落盘之后才换掉旧文件，中途失败时旧文件原样保留。</aside>
+      <aside class="note"><span class="note-label">细节</span><span class="ui">覆盖重复文件</span> 只覆盖内容不同的同名文件。内容相同的文件无论开关开不开都跳过，不会重写一遍。覆盖用原子替换完成：新内容完整写好、落盘之后才换掉旧文件，中途失败时旧文件原样保留。</aside>
 
       <h3>日期目录的安全检查</h3>
       <p>目标里某个日期目录如果是指向目标外部的符号链接，扫描直接失败，提示 <span class="ui">日期目录指向目标目录外部，请重新选择目标</span>。上传时还会再查一遍：每个文件都必须落在目标下一层、名字是合法日期、而且不是符号链接的普通文件夹里。</p>
@@ -502,7 +502,7 @@
       <h4>参考</h4>
       <ul>
         <li><a href="reference.html">格式、快捷键与系统要求</a></li>
-        <li><a href="https://github.com/Redwinam/mascopy/releases">版本发布记录</a></li>
+        <li><a href="reference.html#versions">版本历史</a></li>
       </ul>
     </div>
     <div>

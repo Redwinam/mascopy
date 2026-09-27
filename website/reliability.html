@@ -89,7 +89,7 @@
             <tr><td>上传中点取消</td><td class="wrap-ok">已完成的文件全部保留。正在写的临时文件删除，同名的原文件一个字节都没动。</td><td class="wrap-ok">再点 <span class="ui">开始上传</span>，只处理没完成的文件。</td></tr>
             <tr><td>拷贝中拔卡</td><td class="wrap-ok">当前文件和后面的文件逐个记为失败，临时文件删除。已完成的保留。</td><td class="wrap-ok">插回存储卡再上传，只补没完成的。</td></tr>
             <tr><td>NAS 中途掉线</td><td class="wrap-ok">已完成的文件完整。当前文件记为失败，它的临时文件可能留在 NAS 上。</td><td class="wrap-ok">NAS 挂载回原来的位置后再上传。</td></tr>
-            <tr><td>强制退出或断电</td><td class="wrap-ok">已完成的文件完整。正在写的那个文件可能留下一个 <code>.part</code> 临时文件。</td><td class="wrap-ok">重新扫描再上传。临时文件可以手动删掉。</td></tr>
+            <tr><td>强制退出或断电</td><td class="wrap-ok">已完成的文件完整。正在写的那个文件可能留下一个 <code>.part</code> 临时文件。</td><td class="wrap-ok">重新扫描再上传。临时文件一小时后再往这个目录拷贝时自动删除，也可以手动删掉。</td></tr>
             <tr><td>源文件被改过</td><td class="wrap-ok">这个文件不写入，记为失败，提示源文件在扫描后发生变化。</td><td class="wrap-ok">按提示重新扫描。</td></tr>
             <tr><td>联机时目标不可写</td><td class="wrap-ok">照片留在来源处，照片流里标为 <span class="status err">失败</span>。</td><td class="wrap-ok">自动退避重试，目标恢复后接着入库。</td></tr>
             <tr><td>联机时应用退出</td><td class="wrap-ok">已完整收到、还没入库的照片留在收件箱里。</td><td class="wrap-ok">下次开始 FTP 会话时自动继续入库。</td></tr>
@@ -120,7 +120,7 @@
       <p>写入过程中任何一步出错，或者你点了取消，临时文件都会被删除。目标里原来的文件在发布之前一直没被碰过，所以一个 <span class="status over">将覆盖</span> 的文件拷到一半取消，原文件仍然完整。</p>
       <p>扫描之后，别的电脑可能往 NAS 的同一个日期目录写进同名文件。独占发布让这种情况变成一次明确的失败，提示「发布文件失败（目标可能已存在）」，重新扫描后按新情况判重。</p>
       <p>同一时间只运行一个上传任务。已有任务在跑时再发起上传，会提示「已有上传任务运行中，请等待其结束」。上传进行时 <span class="ui">返回配置</span> 不可点，配置表单也锁住，避免这一批还没写完就换了目标。</p>
-      <aside class="note warn"><span class="note-label">注意</span>如果进程被强制结束、Mac 断电，或者 NAS 在写入中途断开，应用来不及删除临时文件，它会留在日期目录里。它以 <code>.mascopy-</code> 开头、以 <code>.part</code> 结尾，访达默认看不到，正式文件不受影响。确认没有上传或联机会话在进行时，可以直接删掉。</aside>
+      <aside class="note warn"><span class="note-label">注意</span>如果进程被强制结束、Mac 断电，或者 NAS 在写入中途断开，应用来不及删除临时文件，它会留在日期目录里。它以 <code>.mascopy-</code> 开头、以 <code>.part</code> 结尾，访达默认看不到，正式文件不受影响。应用重新打开后，第一次往这个日期目录写文件时，会删掉别的进程留下、一小时以上没动过的这类文件；正在写的临时文件时时在更新，不会被误删。确认没有上传或联机会话在进行时，也可以手动删掉。</aside>
     </section>
 
     <section id="source">
@@ -385,7 +385,7 @@
       <h4>参考</h4>
       <ul>
         <li><a href="reference.html">格式、快捷键与系统要求</a></li>
-        <li><a href="https://github.com/Redwinam/mascopy/releases">版本发布记录</a></li>
+        <li><a href="reference.html#versions">版本历史</a></li>
       </ul>
     </div>
     <div>

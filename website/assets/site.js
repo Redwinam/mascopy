@@ -81,23 +81,21 @@
     pre.appendChild(btn);
   });
 
-  // ---------- 下载区：从 GitHub 读最新正式版的版本号、大小与发布日期；读不到就保留静态文字 ----------
+  // ---------- 下载区：从下载服务读当前稳定版的版本号、大小与发布日期；读不到就保留静态文字 ----------
   const releaseVersion = document.querySelector("[data-release-version]");
   if (releaseVersion && "fetch" in window) {
-    fetch("https://api.github.com/repos/Redwinam/mascopy/releases/latest", { headers: { accept: "application/vnd.github+json" } })
+    fetch("https://dl.if9.cool/v1/app/mascopy/stable", { cache: "no-cache" })
       .then((res) => (res.ok ? res.json() : null))
       .then((release) => {
-        if (!release?.tag_name) return;
-        const dmg = (release.assets || []).find((a) => /\.dmg$/i.test(a.name));
-        releaseVersion.textContent = release.tag_name;
+        const mac = release?.downloads?.["darwin-aarch64"];
+        if (!release?.version || !mac) return;
+        releaseVersion.textContent = `v${release.version}`;
         const meta = document.querySelector("[data-release-meta]");
-        const size = dmg?.size ? ` · ${(dmg.size / 1024 / 1024).toFixed(1)} MB` : "";
-        const date = release.published_at ? ` · ${release.published_at.slice(0, 10)} 发布` : "";
-        if (meta) meta.textContent = `macOS 安装包（.dmg）${size}${date}。`;
-        const link = document.querySelector("[data-release-download]");
-        if (link && dmg?.browser_download_url) link.href = dmg.browser_download_url;
+        const size = mac.size ? ` · ${(mac.size / 1024 / 1024).toFixed(1)} MB` : "";
+        const date = release.pub_date ? ` · ${release.pub_date.slice(0, 10)} 发布` : "";
+        if (meta) meta.textContent = `macOS 安装包（.dmg），Apple 芯片${size}${date}。`;
       })
-      .catch(() => { /* GitHub 不可达时保留静态文字与发布页链接 */ });
+      .catch(() => { /* 下载服务不可达时保留静态文字；按钮本身直链稳定版 */ });
   }
 
 })();

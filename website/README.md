@@ -3,7 +3,7 @@
 线上地址：https://mascopy.if9.cool
 
 纯静态站（HTML + 一份 CSS + 一份 JS），结构与组件沿用开发启动器官网，配色取自大师拷贝的图标与界面。
-不依赖任何字体或脚本 CDN；下载区的版本号、大小与下载链接由 `assets/site.js` 从 GitHub Releases 读取，读不到时保留静态文字与发布页链接。
+不依赖任何字体或脚本 CDN；下载按钮直链下载服务的稳定版（`https://dl.if9.cool/v1/app/mascopy/stable/download/darwin-aarch64`），版本号、大小与发布日期由 `assets/site.js` 从 `https://dl.if9.cool/v1/app/mascopy/stable` 读取，读不到时保留静态文字。发新版见仓库 README「发布到下载服务」。
 
 | 路径 | 内容 |
 | --- | --- |

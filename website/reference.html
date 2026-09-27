@@ -178,7 +178,7 @@
           </tbody>
         </table>
       </div>
-      <aside class="note"><span class="note-label">细节</span>裁剪选区的方向键只在选区获得焦点时生效，用 <kbd>Tab</kbd> 把焦点移到选区上即可。焦点停在标签输入框、文件夹下拉框或按钮上时，方向键和 <kbd>Enter</kbd> 交给这些控件处理，灯箱不会翻页。</aside>
+      <aside class="note"><span class="note-label">细节</span>裁剪选区的方向键只在选区获得焦点时生效，用 <kbd>Tab</kbd> 把焦点移到选区上即可。焦点停在标签输入框或文件夹下拉框里时，方向键和 <kbd>Enter</kbd> 交给这些控件处理，灯箱不会翻页；停在按钮上时 <kbd>Enter</kbd> 按下这个按钮，方向键照常翻页。</aside>
     </section>
 
     <section id="mouse">
@@ -267,7 +267,7 @@
             <tr><td>收藏夹</td><td>每列最多 8 条</td><td class="wrap-ok">新加的排最前，重复的合并。SD 源、SD 目标、DJI 源、DJI 目标各一列；联机拍摄的目标收藏沿用备份的目标收藏。</td></tr>
             <tr><td>拷贝与判重</td><td>每次读写 1 MiB</td><td class="wrap-ok">判重逐字节比较，比较期间两边文件都不能发生变化。</td></tr>
             <tr><td>进度刷新</td><td>约 120 毫秒一次</td><td class="wrap-ok">百分比按字节计算，保留 1 位小数；暂停后重新测速。</td></tr>
-            <tr><td>临时文件</td><td><code>.mascopy-&lt;进程号&gt;-&lt;序号&gt;.part</code></td><td class="wrap-ok">写在日期目录里，权限 0600；失败或取消时自动删除。</td></tr>
+            <tr><td>临时文件</td><td><code>.mascopy-&lt;进程号&gt;-&lt;序号&gt;.part</code></td><td class="wrap-ok">写在日期目录里，权限 0600；失败或取消时自动删除。强制退出留下的，一小时后再往这个目录拷贝时自动删除。</td></tr>
             <tr><td>上传任务</td><td>同时 1 个</td><td class="wrap-ok">任务进行中再发起会提示已有上传任务运行中。</td></tr>
           </tbody>
         </table>
@@ -392,10 +392,10 @@
         <li><b>v2.0</b>2025 年 8 月。改用 Electron 重写，2.0.1 增加 DJI 模式。</li>
         <li><b>v2.2</b>2025 年 9 月。增加快速扫描，应用名从 MasCopy 改为大师拷贝；2.2.x 修正了时区导致的日期错误。</li>
         <li><b>v3.0</b>2026 年 1 月。用 Tauri、Rust 与 Vue 3 重写，增加收藏夹。3.0.3 与 3.0.4 增加日期与后缀筛选、推出设备、深色主题、Finder 右键菜单、忽略缩略图目录和应用内提示弹窗。</li>
-        <li><b>v4.0</b>2026 年 8 月打了标签，尚未发布。分块拷贝，支持暂停、继续、取消；临时文件原子发布；勾选部分文件上传；目标路径校验；Eagle 挑图与裁剪导入；联机拍摄（相机 WiFi 直传与监听文件夹）。之后又修正了 FTP 传输完成的判定，加入浅色、深色、跟随系统三段主题开关。</li>
-        <li><b>下一版</b>同名文件逐字节比较内容；视频按容器里的创建时间归档；FTP 收件箱分暂存与已完成两段提交，重启后继续入库；监听模式不再删除来源文件；收紧内容安全策略与配置文件权限；错误信息里隐藏 Eagle 令牌；FTP 密码输入时掩码显示；若干无障碍改进。</li>
+        <li><b>v4.0</b>2026 年 8 月打了标签，没有单独发布安装包，内容并入 4.0.1。分块拷贝，支持暂停、继续、取消；临时文件原子发布；勾选部分文件上传；目标路径校验；Eagle 挑图与裁剪导入；联机拍摄（相机 WiFi 直传与监听文件夹）。之后又修正了 FTP 传输完成的判定，加入浅色、深色、跟随系统三段主题开关。</li>
+        <li><b>v4.0.1</b>2026 年 9 月发布，4.0 之后第一个正式安装包，从这一版起在本站下载。在 4.0 的基础上：同名文件逐字节比较内容；视频按容器里的创建时间归档；FTP 收件箱分暂存与已完成两段提交，重启后继续入库；监听模式不再删除来源文件；收紧内容安全策略与配置文件权限；错误信息里隐藏 Eagle 令牌；FTP 密码输入时掩码显示；灯箱打开后直接可用方向键翻页；强制退出留下的临时文件会自动清理；若干无障碍改进。</li>
       </ul>
-      <aside class="note warn"><span class="note-label">注意</span>目前 GitHub 上最新的正式版是 v3.0.4，4.0 尚未发布。本站各章按 4.0 之后的下一版编写，联机拍摄、Eagle 挑图与裁剪、暂停与继续等功能在 3.0.4 里还没有。各版本的安装包见 <a href="https://github.com/Redwinam/mascopy/releases">GitHub 发布记录</a>。</aside>
+      <aside class="note"><span class="note-label">细节</span>本站各章按 4.0.1 编写。4.0.1 起的安装包在 <a href="index.html#download">本站下载</a>；3.0.4 及更早版本的安装包见 <a href="https://github.com/Redwinam/mascopy/releases">GitHub 发布记录</a>，那些版本还没有联机拍摄、Eagle 挑图与裁剪、暂停与继续。</aside>
     </section>
 
     <nav class="pager" aria-label="翻页">
@@ -425,7 +425,7 @@
       <h4>参考</h4>
       <ul>
         <li><a href="reference.html">格式、快捷键与系统要求</a></li>
-        <li><a href="https://github.com/Redwinam/mascopy/releases">版本发布记录</a></li>
+        <li><a href="reference.html#versions">版本历史</a></li>
       </ul>
     </div>
     <div>
