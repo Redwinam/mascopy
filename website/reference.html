@@ -51,6 +51,7 @@
         <li><a href="#states">界面状态</a></li>
         <li><a href="#defaults">默认值与上限</a></li>
         <li><a href="#requirements">系统要求</a></li>
+        <li><a href="#updates">应用内更新</a></li>
         <li><a href="#config">配置文件</a></li>
         <li><a href="#versions">版本历史</a></li>
       </ul>
@@ -351,6 +352,36 @@
       <pre class="code"><code><span class="p">$ </span>xattr -dr com.apple.quarantine /Applications/大师拷贝.app</code></pre>
     </section>
 
+    <section id="updates">
+      <h2>应用内更新</h2>
+      <p>4.1.0 起，大师拷贝可以在应用里更新自己。入口在标题栏右侧、主题开关左边的 <span class="ui">ⓘ</span> 按钮，点开是 <span class="ui">关于与更新</span>：显示当前版本，可以手动检查更新；有新版时列出更新内容，点 <span class="ui">下载并安装</span>，装好后点 <span class="ui">立即重启</span>。</p>
+      <figure>
+        <div class="crop narrow">
+          <img class="only-dark" src="assets/shots/update-dark.webp" width="1240" height="1000" alt="「关于与更新」弹窗：应用图标、大师拷贝、版本 4.1.0；下面写着「发现新版本 v4.1.1。」，框里是 v4.1.1 的更新内容和发布日期；再往下是勾选着的「自动检查更新」，底部是「下载并安装」按钮。" loading="lazy">
+          <img class="only-light" src="assets/shots/update-light.webp" width="1240" height="1000" alt="「关于与更新」弹窗（浅色主题）。" loading="lazy">
+        </div>
+        <figcaption><b>关于与更新。</b>发现新版本时的样子，版本号与更新内容只是示例。</figcaption>
+      </figure>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>标题栏入口</th><th>含义</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ui">ⓘ</span></td><td class="wrap-ok">没有待处理的更新。</td></tr>
+            <tr><td><span class="ui">新版本</span></td><td class="wrap-ok">自动或手动检查发现了新版本，点开看更新内容。</td></tr>
+            <tr><td><span class="ui">42%</span></td><td class="wrap-ok">正在下载，数字是下载进度；之后短暂显示 <span class="ui">安装中</span>。</td></tr>
+            <tr><td><span class="ui">重启更新</span></td><td class="wrap-ok">新版本已装好，重启后生效。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="facts">
+        <li><b>自动检查</b>启动 20 秒后查一次，之后每 6 小时查一次，Mac 睡眠醒来后会补上。弹窗里取消勾选 <span class="ui">自动检查更新</span> 就不再自动查，手动检查不受影响。自动检查失败时不打扰，手动检查失败会写明原因。</li>
+        <li><b>签名</b>更新包带签名，大师拷贝只接受用它自己的密钥签过的包。签名对不上就停止安装，当前版本原样保留。</li>
+        <li><b>重启</b>下载和安装期间可以照常使用。拷贝或联机会话进行中，<span class="ui">立即重启</span> 不能点，等它们结束再重启。重启是先退出，再重新打开。</li>
+        <li><b>位置</b>更新会原地替换应用。直接在 .dmg 里打开的大师拷贝没法更新，先把它拖进 <span class="ui">应用程序</span>。</li>
+      </ul>
+      <aside class="note"><span class="note-label">细节</span>4.0.1 及更早的版本没有这个功能，要从 <a href="index.html#download">本站下载</a> 4.1.0 手动安装一次，之后的新版本就能在应用里直接更新。</aside>
+    </section>
+
     <section id="config">
       <h2>配置文件</h2>
       <p>所有设置改动后立即自动保存，界面上没有保存按钮。</p>
@@ -394,8 +425,9 @@
         <li><b>v3.0</b>2026 年 1 月。用 Tauri、Rust 与 Vue 3 重写，增加收藏夹。3.0.3 与 3.0.4 增加日期与后缀筛选、推出设备、深色主题、Finder 右键菜单、忽略缩略图目录和应用内提示弹窗。</li>
         <li><b>v4.0</b>2026 年 8 月打了标签，没有单独发布安装包，内容并入 4.0.1。分块拷贝，支持暂停、继续、取消；临时文件原子发布；勾选部分文件上传；目标路径校验；Eagle 挑图与裁剪导入；联机拍摄（相机 WiFi 直传与监听文件夹）。之后又修正了 FTP 传输完成的判定，加入浅色、深色、跟随系统三段主题开关。</li>
         <li><b>v4.0.1</b>2026 年 9 月发布，4.0 之后第一个正式安装包，从这一版起在本站下载。在 4.0 的基础上：同名文件逐字节比较内容；视频按容器里的创建时间归档；FTP 收件箱分暂存与已完成两段提交，重启后继续入库；监听模式不再删除来源文件；收紧内容安全策略与配置文件权限；错误信息里隐藏 Eagle 令牌；FTP 密码输入时掩码显示；灯箱打开后直接可用方向键翻页；强制退出留下的临时文件会自动清理；若干无障碍改进。</li>
+        <li><b>v4.1.0</b>2026 年 9 月。新增 <a href="#updates">应用内更新</a>：标题栏右侧的「关于与更新」可以检查、下载并安装新版本，启动后与每 6 小时自动检查。</li>
       </ul>
-      <aside class="note"><span class="note-label">细节</span>本站各章按 4.0.1 编写。4.0.1 起的安装包在 <a href="index.html#download">本站下载</a>；3.0.4 及更早版本的安装包见 <a href="https://github.com/Redwinam/mascopy/releases">GitHub 发布记录</a>，那些版本还没有联机拍摄、Eagle 挑图与裁剪、暂停与继续。</aside>
+      <aside class="note"><span class="note-label">细节</span>本站各章按 4.1.0 编写。4.0.1 起的安装包在 <a href="index.html#download">本站下载</a>；3.0.4 及更早版本的安装包见 <a href="https://github.com/Redwinam/mascopy/releases">GitHub 发布记录</a>，那些版本还没有联机拍摄、Eagle 挑图与裁剪、暂停与继续。</aside>
     </section>
 
     <nav class="pager" aria-label="翻页">

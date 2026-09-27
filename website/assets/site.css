@@ -265,6 +265,7 @@ figcaption b { color: var(--ink-2); font-weight: 600; }
   overflow: hidden;
   background: var(--surface);
 }
+.crop.narrow { max-width: 620px; }
 
 /* ---------- 首页 · 首屏 ---------- */
 .hero { padding-block: 72px 40px; }
