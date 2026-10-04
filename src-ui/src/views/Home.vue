@@ -112,7 +112,16 @@
 
       <!-- Action Bar -->
       <div class="action-footer glass-panel">
-        <div class="options-group">
+        <div v-if="isScanning" class="scan-inline" role="status" aria-live="polite">
+          <span class="scan-inline-phase">{{ scanProgress.phase === 'compare' ? '校验内容' : scanProgress.phase === 'analyze' ? '检查重名' : '读取素材' }}</span>
+          <span class="scan-inline-file" :title="scanProgress.filename">{{ scanProgress.filename || '正在读取目录…' }}</span>
+          <span class="scan-inline-count">
+            <template v-if="scanProgress.phase === 'compare' && scanProgress.bytes_total">{{ formatBytes(scanProgress.bytes_done) }} / {{ formatBytes(scanProgress.bytes_total) }}</template>
+            <template v-else-if="scanProgress.total">{{ scanProgress.current }} / {{ scanProgress.total }}</template>
+            <template v-else>{{ scanProgress.current || 0 }} 个文件</template>
+          </span>
+        </div>
+        <div v-else class="options-group">
           <label class="toggle-option" :class="{ active: config[currentMode].overwrite_duplicates }">
             <input type="checkbox" v-model="config[currentMode].overwrite_duplicates" @change="saveConfig" />
             <div class="toggle-box">
@@ -120,7 +129,7 @@
             </div>
             <div class="option-text">
               <span class="option-title">覆盖重复文件</span>
-              <span class="option-desc">{{ config[currentMode].overwrite_duplicates ? "同名不同内容时覆盖旧文件" : "同名不同内容时另存为 _1" }}</span>
+              <span class="option-desc">同名不同{{ config[currentMode].verify_duplicates ? '内容' : '大小' }}时{{ config[currentMode].overwrite_duplicates ? '覆盖' : '另存为 _1' }}</span>
             </div>
           </label>
 
@@ -133,7 +142,20 @@
             </div>
             <div class="option-text">
               <span class="option-title">快速扫描模式</span>
-              <span class="option-desc">按修改时间归档；同名文件仍校验内容</span>
+              <span class="option-desc">按修改时间归档，跳过 EXIF</span>
+            </div>
+          </label>
+
+          <div class="divider-vertical"></div>
+
+          <label class="toggle-option" :class="{ active: config[currentMode].verify_duplicates }" title="开启后读取完整文件进行比较；NAS 上的大视频耗时较长。关闭时同名、同大小就跳过，无法识别大小相同但内容不同的文件。">
+            <input type="checkbox" v-model="config[currentMode].verify_duplicates" @change="saveConfig" />
+            <div class="toggle-box">
+              <span class="check-mark" v-if="config[currentMode].verify_duplicates">✓</span>
+            </div>
+            <div class="option-text">
+              <span class="option-title">完整内容校验</span>
+              <span class="option-desc">{{ config[currentMode].verify_duplicates ? '逐字节比较，扫描较慢' : '关闭：同名同大小跳过' }}</span>
             </div>
           </label>
 
@@ -162,16 +184,6 @@
         </button>
       </div>
       </fieldset>
-      <div v-if="isScanning" class="scan-detail glass-panel" role="status" aria-live="polite">
-        <strong>{{ scanProgress.phase === 'compare' ? '正在校验同名文件内容' : scanProgress.phase === 'analyze' ? '正在检查备份目录' : '正在读取素材信息' }}</strong>
-        <span>{{ scanProgress.filename || '正在读取目录…' }}</span>
-        <span v-if="scanProgress.total">{{ scanProgress.current }} / {{ scanProgress.total }} 个文件</span>
-        <span v-else>已找到 {{ scanProgress.current || 0 }} 个文件</span>
-        <template v-if="scanProgress.phase === 'compare' && scanProgress.bytes_total">
-          <progress :value="scanProgress.bytes_done" :max="scanProgress.bytes_total" aria-label="同名文件内容校验进度"></progress>
-          <span>{{ formatBytes(scanProgress.bytes_done) }} / {{ formatBytes(scanProgress.bytes_total) }}；大视频和 NAS 校验需要更多时间</span>
-        </template>
-      </div>
     </div>
 
     <!-- Step 2: Results & Upload -->
@@ -499,7 +511,7 @@ const filesToDisplay = computed(() => {
 });
 
 
-// 上传范围只由显式勾选决定；筛选仅改变当前显示的列表。
+// 默认勾选所有待上传素材；上传范围由勾选决定，筛选仅改变显示。
 const selectedUploadFiles = computed(() => {
   const set = new Set(selectedKeys.value);
   return (scanResult.value || []).filter((f) => (f.status === "upload" || f.status === "overwrite") && !isCompleted(f) && set.has(normalizePath(f.path)));
@@ -802,6 +814,7 @@ async function startScan() {
         sourceDir: modeConfig.source_dir,
         targetDir: modeConfig.target_dir,
         overwriteDuplicates: modeConfig.overwrite_duplicates,
+        verifyDuplicates: !!modeConfig.verify_duplicates,
         mode: snapshot.mode,
         fastMode: fastMode.value,
         ignoreThumbnails: ignoreThumbnails.value,
@@ -810,6 +823,9 @@ async function startScan() {
 
     scanSnapshot.value = snapshot;
     scanResult.value = files;
+    selectedKeys.value = files
+      .filter(file => file.status === "upload" || file.status === "overwrite")
+      .map(file => normalizePath(file.path));
 
     // Initialize selectedDates with all found dates
     const dates = new Set();
@@ -1023,7 +1039,18 @@ function closeNotice() {
 
 <style scoped>
 .selection-summary { font-size: 0.8rem; color: var(--color-text-muted); }
-.scan-detail,
+.scan-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+  min-width: 0;
+  min-height: 2.4rem;
+  font-size: 0.85rem;
+}
+.scan-inline-phase { color: var(--primary-600); font-weight: 600; flex-shrink: 0; }
+.scan-inline-file { color: var(--color-text-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scan-inline-count { color: var(--color-text-muted); margin-left: auto; flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .upload-errors {
   display: flex;
   flex-direction: column;
@@ -1033,7 +1060,6 @@ function closeNotice() {
   overflow-wrap: anywhere;
   font-size: 0.875rem;
 }
-.scan-detail progress { width: 100%; accent-color: var(--primary-600); }
 .upload-errors { color: var(--color-error); margin: 0 0 1rem; }
 .upload-errors-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .config-form {

@@ -15,6 +15,9 @@ pub struct ModeConfig {
     pub target_dir: String,
     #[serde(default)]
     pub overwrite_duplicates: bool,
+    /// Opt-in byte comparison; the default keeps legacy name-and-size scanning fast.
+    #[serde(default)]
+    pub verify_duplicates: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -274,10 +277,15 @@ mod tests {
             config_path: path,
             io_lock: Mutex::new(()),
         };
-        let c = manager.load().unwrap();
+        let mut c = manager.load().unwrap();
         assert!(c.sd.overwrite_duplicates);
+        assert!(!c.sd.verify_duplicates);
         assert_eq!(c.tether.ftp_port, 2121);
         manager.save(&c).unwrap();
         assert_eq!(manager.load().unwrap().sd.source_dir, "old");
+        c.sd.verify_duplicates = true;
+        manager.save(&c).unwrap();
+        assert!(manager.load().unwrap().sd.verify_duplicates);
+        assert!(!manager.load().unwrap().dji.verify_duplicates);
     }
 }

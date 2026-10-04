@@ -9,12 +9,14 @@ const config = ref({
     sd: {
         source_dir: '',
         target_dir: '',
-        overwrite_duplicates: false
+        overwrite_duplicates: false,
+        verify_duplicates: false
     },
     dji: {
         source_dir: '',
         target_dir: '',
-        overwrite_duplicates: false
+        overwrite_duplicates: false,
+        verify_duplicates: false
     },
     favorites: {
         sd_sources: [],
