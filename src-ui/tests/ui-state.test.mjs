@@ -77,6 +77,25 @@ test('scan and upload retain the same snapshot even if shared configuration chan
   assert.equal(captured.find(x => x.command === 'eject_volume').args.path, '/sd');
 });
 
+test('scanning defaults to quick duplicates and sends the explicit full-verification preference', async () => {
+  const scans = [], saved = [];
+  const { state, home } = homeFixture(async (command, args) => {
+    if (command === 'scan_files') { scans.push(args.args); return [file('a.mp4')]; }
+    if (command === 'save_config') saved.push(structuredClone(vue.toRaw(args.config)));
+  });
+  await home.startScan();
+  assert.equal(scans[0].verifyDuplicates, false);
+  state.config.value.sd.verify_duplicates = true;
+  await home.saveConfig();
+  await home.startScan();
+  assert.equal(scans[1].verifyDuplicates, true);
+  assert.equal(scans[1].fastMode, true, 'content verification is independent of EXIF scanning');
+  assert.equal(saved[0].sd.verify_duplicates, true);
+  state.currentMode.value = 'dji';
+  await home.startScan();
+  assert.equal(scans[2].verifyDuplicates, false);
+});
+
 test('cancel keeps upload locked until the worker returns and never displays success', async () => {
   const worker = deferred(); let uploadCalls = 0;
   const { home } = homeFixture(async command => {
@@ -142,7 +161,7 @@ test('file errors are visible while the batch is paused and are not logged twice
 
 test('manual selection uploads exactly the checked files across filters and retains the remaining files', async () => {
   const uploads = [];
-  const items = [file('first.mp4'), file('second.jpg'), file('later.mp4'), file('duplicate.jpg', 'skip')];
+  const items = [{ ...file('first.mp4'), file_type: 'video' }, file('second.jpg'), { ...file('later.mp4'), file_type: 'video' }, file('duplicate.jpg', 'skip')];
   const { state, home } = homeFixture(async (command, args) => {
     if (command === 'scan_files') return items;
     if (command === 'upload_files') {
@@ -151,6 +170,9 @@ test('manual selection uploads exactly the checked files across filters and reta
     }
   });
   await home.startScan();
+  assert.deepEqual(home.selectedKeys.value, ['/sd/first.mp4', '/sd/second.jpg', '/sd/later.mp4']);
+  assert.equal(uploads.length, 0, 'default selection never starts an upload automatically');
+  home.clearSelection();
   await home.startUpload();
   assert.equal(uploads.length, 0, 'an empty selection never uploads the filtered list');
   home.selectedKeys.value = ['/sd/first.mp4', '/sd/second.jpg', '/sd/duplicate.jpg'];

@@ -57,6 +57,8 @@ struct ScanArgs {
     target_dir: String,
     #[serde(default, alias = "overwriteDuplicates")]
     overwrite_duplicates: bool,
+    #[serde(default, alias = "verifyDuplicates")]
+    verify_duplicates: bool,
     #[serde(default)]
     mode: Option<String>,
     #[serde(default, alias = "fastMode")]
@@ -100,6 +102,7 @@ async fn scan_files(args: ScanArgs, window: Window) -> AppResult<Vec<MediaFile>>
             &mut files,
             &target.to_string_lossy(),
             args.overwrite_duplicates,
+            args.verify_duplicates,
             &mut emit,
         )
         .map_err(AppError::Analyze)?;
