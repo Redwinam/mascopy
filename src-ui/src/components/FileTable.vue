@@ -1,7 +1,7 @@
 <template>
   <div class="file-table-container">
-    <div class="table-header-row" v-if="stats">
-      <div class="filter-strip">
+    <div class="table-header-row" v-if="stats || $slots.actions">
+      <div class="filter-strip" v-if="stats">
         <button type="button"
           v-for="(stat, key) in stats" 
           :key="key"
@@ -28,8 +28,8 @@
                 class="row-checkbox"
                 :checked="allVisibleSelected"
                 :indeterminate="someVisibleSelected"
-                :disabled="selectableVisible.length === 0"
-                aria-label="全选或取消当前可选文件" title="全选 / 全不选"
+                :disabled="selectionDisabled || selectableVisible.length === 0"
+                aria-label="全选或取消当前列表的可上传文件" title="只选择当前列表中尚未完成的文件"
                 @change="toggleAll"
               />
             </th>
@@ -44,7 +44,7 @@
           <tr
             v-for="(file, index) in filteredFiles"
             :key="fileKey(file)"
-            :class="{ 'row-selectable': selectable && isSelectable(file), 'row-selected': selectable && isSelected(file) }"
+            :class="{ 'row-selectable': selectable && !selectionDisabled && isSelectable(file), 'row-selected': selectable && isSelected(file) }"
             @contextmenu="openContextMenu(file, $event)"
             @click="onRowClick(file)"
           >
@@ -54,7 +54,7 @@
                 class="row-checkbox"
                 :checked="isSelected(file)"
                 :aria-label="`选择 ${file.filename}`"
-                :disabled="!isSelectable(file)"
+                :disabled="selectionDisabled || !isSelectable(file)"
                 @change="toggleFile(file)"
               />
             </td>
@@ -78,6 +78,10 @@
                 <span v-else :class="['status-badge', resultClass(getProgress(file).status)]">
                   {{ resultLabel(getProgress(file).status) }}
                 </span>
+                <details v-if="getProgress(file).status === 'error' && getProgress(file).error" class="file-error" @click.stop>
+                  <summary>错误详情</summary>
+                  <p>{{ getProgress(file).error }}</p>
+                </details>
               </template>
               <span v-else :class="['status-badge', `status-${file.status}`]">
                 {{ formatStatus(file.status) }}
@@ -137,8 +141,12 @@ const props = defineProps({
     type: Object,
     default: () => ({})
   },
-  // 选择模式：开启后第一列显示勾选框
+  // 在第一列显示勾选框
   selectable: {
+    type: Boolean,
+    default: false
+  },
+  selectionDisabled: {
     type: Boolean,
     default: false
   },
@@ -195,7 +203,7 @@ const someVisibleSelected = computed(
 );
 
 function toggleFile(file) {
-  if (!isSelectable(file)) return;
+  if (props.selectionDisabled || !isSelectable(file)) return;
   const key = fileKey(file);
   const set = new Set(props.selectedKeys);
   if (set.has(key)) {
@@ -207,6 +215,7 @@ function toggleFile(file) {
 }
 
 function toggleAll() {
+  if (props.selectionDisabled) return;
   const set = new Set(props.selectedKeys);
   if (allVisibleSelected.value) {
     selectableVisible.value.forEach(f => set.delete(fileKey(f)));
@@ -728,6 +737,9 @@ function closeNotice() {
 .status-cell {
   min-width: 140px;
 }
+.file-error { margin-top: 0.4rem; color: var(--color-error); font-size: 0.8rem; }
+.file-error summary { cursor: pointer; }
+.file-error p { max-width: 25rem; white-space: normal; overflow-wrap: anywhere; }
 
 .row-progress {
   display: flex;

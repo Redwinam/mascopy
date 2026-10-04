@@ -515,8 +515,11 @@ fn process_file(
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
             Err(e) => return Err(format!("检查目标文件失败: {e}")),
         }
-        let mut staged =
-            crate::storage::StagedFile::new(&dest).map_err(|e| format!("创建暂存文件失败: {e}"))?;
+        let mut staged = match crate::storage::StagedFile::for_media(&dest, false) {
+            Ok(file) => file,
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(e) => return Err(format!("创建目标文件失败: {e}")),
+        };
         let mut input = std::fs::File::open(src).map_err(|e| format!("读取文件失败: {e}"))?;
         if input
             .metadata()

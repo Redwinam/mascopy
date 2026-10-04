@@ -36,6 +36,8 @@ function homeFixture(invoke) {
   return { state, home: load('../src/views/Home.vue', { useAppState: () => state, invoke, listen: async () => () => {} }, [
     'startScan', 'startUpload', 'cancel', 'togglePause', 'isUploading', 'isPaused', 'isCancelling',
     'scanSnapshot', 'showSuccessModal', 'noticeModal', 'scanResult', 'filesToDisplay', 'fileProgress', 'ejectVolume', 'saveConfig',
+    'handleUploadProgress', 'uploadFailures', 'logs',
+    'selectedKeys', 'selectedCount', 'selectedUploadFiles', 'hiddenSelectedCount', 'selectedExtensions', 'fileFilter', 'clearSelection',
   ]) };
 }
 const file = (name, status = 'upload') => ({ path: `/sd/${name}`, target_path: `/backup/${name}`, filename: name,
@@ -112,6 +114,83 @@ test('partial failure retains results; retry excludes completed overwrites', asy
   await home.startUpload(home.filesToDisplay.value);
   assert.deepEqual(uploads[1].map(f => f.filename), ['b.jpg']);
   assert.equal(home.showSuccessModal.value, true);
+});
+
+test('file errors are visible while the batch is paused and are not logged twice on completion', async () => {
+  const worker = deferred();
+  const { home } = homeFixture(async command => {
+    if (command === 'scan_files') return [file('a.mp4'), file('b.mp4')];
+    if (command === 'upload_files') return worker.promise;
+  });
+  await home.startScan();
+  const pending = home.startUpload(home.filesToDisplay.value);
+  const failure = { path: '/sd/a.mp4', filename: 'a.mp4', status: 'error', error: '写入目标文件失败: disk full', file_done: 0, file_total: 10 };
+  home.handleUploadProgress(failure);
+  home.handleUploadProgress({ ...failure, path: '/unrelated.mp4' });
+  await home.togglePause();
+  assert.equal(home.isUploading.value, true);
+  assert.equal(home.isPaused.value, true);
+  assert.equal(home.fileProgress.value[failure.path].error, failure.error);
+  assert.equal(home.uploadFailures.value.length, 1);
+  assert.equal(home.logs.value.filter(log => log.type === 'error').length, 1);
+  worker.resolve({ completed: 0, skipped: 0, failed: [failure], cancelled: true });
+  await pending;
+  assert.equal(home.logs.value.filter(log => log.type === 'error').length, 1);
+  assert.equal(home.fileProgress.value[failure.path].error, failure.error);
+  assert.equal(home.showSuccessModal.value, false);
+});
+
+test('manual selection uploads exactly the checked files across filters and retains the remaining files', async () => {
+  const uploads = [];
+  const items = [file('first.mp4'), file('second.jpg'), file('later.mp4'), file('duplicate.jpg', 'skip')];
+  const { state, home } = homeFixture(async (command, args) => {
+    if (command === 'scan_files') return items;
+    if (command === 'upload_files') {
+      uploads.push(args.files.map(f => f.path));
+      return { completed: args.files.length, completed_paths: args.files.map(f => f.path), skipped: 0, failed: [], cancelled: false };
+    }
+  });
+  await home.startScan();
+  await home.startUpload();
+  assert.equal(uploads.length, 0, 'an empty selection never uploads the filtered list');
+  home.selectedKeys.value = ['/sd/first.mp4', '/sd/second.jpg', '/sd/duplicate.jpg'];
+  home.selectedExtensions.value = ['jpg'];
+  assert.equal(home.selectedCount.value, 2);
+  assert.equal(home.hiddenSelectedCount.value, 1);
+  home.fileFilter.value = 'skip';
+  assert.equal(home.hiddenSelectedCount.value, 2);
+  await home.startUpload();
+  assert.deepEqual(uploads[0], ['/sd/first.mp4', '/sd/second.jpg']);
+  assert.equal(state.currentStep.value, 'results');
+  assert.equal(home.showSuccessModal.value, false);
+  assert.equal(home.scanResult.value.length, 4);
+  assert.equal(home.fileProgress.value['/sd/later.mp4'], undefined);
+  assert.equal(home.selectedCount.value, 0);
+  home.selectedKeys.value = ['/sd/later.mp4'];
+  await home.startUpload();
+  assert.deepEqual(uploads[1], ['/sd/later.mp4']);
+  assert.equal(home.showSuccessModal.value, true);
+});
+
+test('table selection targets visible unfinished files, retains hidden choices, and locks during upload', () => {
+  const props = vue.reactive({ files: [file('a.jpg'), file('b.jpg', 'overwrite'), file('duplicate.jpg', 'skip'), file('done.jpg')],
+    selectedKeys: ['/sd/b.jpg'], filter: 'upload', selectable: true, selectionDisabled: false,
+    progressMap: { '/sd/done.jpg': { status: 'done' } } });
+  const table = load('../src/components/FileTable.vue', {
+    defineProps: () => props,
+    defineEmits: () => (event, value) => { if (event === 'update:selectedKeys') props.selectedKeys = value; },
+  }, ['toggleFile', 'toggleAll', 'allVisibleSelected']);
+  table.toggleAll();
+  assert.deepEqual(props.selectedKeys, ['/sd/b.jpg', '/sd/a.jpg']);
+  assert.equal(table.allVisibleSelected.value, true);
+  table.toggleAll();
+  assert.deepEqual(props.selectedKeys, ['/sd/b.jpg']);
+  table.toggleFile(props.files[2]);
+  table.toggleFile(props.files[3]);
+  assert.deepEqual(props.selectedKeys, ['/sd/b.jpg']);
+  props.selectionDisabled = true;
+  table.toggleAll(); table.toggleFile(props.files[1]);
+  assert.deepEqual(props.selectedKeys, ['/sd/b.jpg']);
 });
 
 test('failed pause/cancel commands retain recoverable task state', async () => {

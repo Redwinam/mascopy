@@ -66,8 +66,21 @@ struct ScanArgs {
 }
 
 #[tauri::command]
-async fn scan_files(args: ScanArgs) -> AppResult<Vec<MediaFile>> {
+async fn scan_files(args: ScanArgs, window: Window) -> AppResult<Vec<MediaFile>> {
     tauri::async_runtime::spawn_blocking(move || {
+        let mut last = std::time::Instant::now();
+        let mut previous = ("", String::new());
+        let mut emit = |payload: scanner::ScanProgress| {
+            let key = (payload.phase, payload.filename.clone());
+            if key != previous
+                || last.elapsed() >= std::time::Duration::from_millis(120)
+                || payload.bytes_done == payload.bytes_total && payload.bytes_total > 0
+            {
+                previous = key;
+                last = std::time::Instant::now();
+                let _ = window.emit("scan-progress", payload);
+            }
+        };
         let (source, target) =
             scanner::validate_roots(Path::new(&args.source_dir), Path::new(&args.target_dir))
                 .map_err(AppError::Scan)?;
@@ -76,16 +89,18 @@ async fn scan_files(args: ScanArgs) -> AppResult<Vec<MediaFile>> {
             return Err(AppError::Scan("未知扫描模式".into()));
         }
         let mut files = Scanner::with_mode(mode)
-            .scan(
+            .scan_with_progress(
                 &source.to_string_lossy(),
                 args.fast_mode.unwrap_or(false),
                 args.ignore_thumbnails.unwrap_or(true),
+                &mut emit,
             )
             .map_err(AppError::Scan)?;
-        Analyzer::analyze(
+        Analyzer::analyze_with_progress(
             &mut files,
             &target.to_string_lossy(),
             args.overwrite_duplicates,
+            &mut emit,
         )
         .map_err(AppError::Analyze)?;
         Ok(files)

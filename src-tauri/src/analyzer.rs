@@ -1,6 +1,6 @@
 use crate::{
-    scanner::MediaFile,
-    storage::{files_equal, unique_name},
+    scanner::{MediaFile, ScanProgress},
+    storage::{files_equal_with_progress, unique_name},
 };
 use chrono::{DateTime, Local};
 use std::{
@@ -9,26 +9,47 @@ use std::{
 };
 pub struct Analyzer;
 impl Analyzer {
+    #[cfg(test)]
     pub fn analyze(
         files: &mut [MediaFile],
         target_dir: &str,
         overwrite_duplicates: bool,
     ) -> Result<(), String> {
+        Self::analyze_with_progress(files, target_dir, overwrite_duplicates, |_| {})
+    }
+
+    pub fn analyze_with_progress(
+        files: &mut [MediaFile],
+        target_dir: &str,
+        overwrite_duplicates: bool,
+        mut emit: impl FnMut(ScanProgress),
+    ) -> Result<(), String> {
         let target_root = Path::new(target_dir)
             .canonicalize()
             .map_err(|e| e.to_string())?;
         let mut used: HashMap<String, HashSet<String>> = HashMap::new();
+        let mut checked_directories = HashSet::new();
         files.sort_by(|a, b| {
             a.date
                 .cmp(&b.date)
                 .then(a.filename.cmp(&b.filename))
                 .then(a.path.cmp(&b.path))
         });
-        for file in files {
+        let total = files.len();
+        for (index, file) in files.iter_mut().enumerate() {
+            let mut progress = ScanProgress {
+                phase: "analyze",
+                filename: file.filename.clone(),
+                current: index + 1,
+                total,
+                ..Default::default()
+            };
+            emit(progress.clone());
             let date: DateTime<Local> = file.date.into();
             let day = date.format("%Y-%m-%d").to_string();
             let directory = target_root.join(&day);
-            if directory.exists()
+            if checked_directories.insert(directory.clone())
+                && directory.exists()
                 && !directory
                     .canonicalize()
                     .map_err(|e| e.to_string())?
@@ -57,8 +78,13 @@ impl Analyzer {
                     Err(e) => return Err(format!("无法检查目标 {}: {e}", candidate.display())),
                     Ok(meta) => {
                         if meta.is_file()
-                            && files_equal(&file.path, &candidate)
-                                .map_err(|e| format!("比较文件失败 {}: {e}", candidate.display()))?
+                            && files_equal_with_progress(&file.path, &candidate, |done, total| {
+                                progress.phase = "compare";
+                                progress.bytes_done = done;
+                                progress.bytes_total = total;
+                                emit(progress.clone());
+                            })
+                            .map_err(|e| format!("比较文件失败 {}: {e}", candidate.display()))?
                         {
                             file.status = "skip".into();
                         } else if meta.is_file() && overwrite_duplicates && attempt == 0 {

@@ -20,17 +20,38 @@ pub struct MediaFile {
 pub struct Scanner {
     mode: String,
 }
+
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct ScanProgress {
+    pub phase: &'static str,
+    pub filename: String,
+    pub current: usize,
+    pub total: usize,
+    pub bytes_done: u64,
+    pub bytes_total: u64,
+}
 impl Scanner {
     pub fn with_mode(mode: &str) -> Self {
         Self {
             mode: mode.to_string(),
         }
     }
+    #[cfg(test)]
     pub fn scan(
         &self,
         source_dir: &str,
         fast_mode: bool,
         ignore_thumbnails: bool,
+    ) -> Result<Vec<MediaFile>, String> {
+        self.scan_with_progress(source_dir, fast_mode, ignore_thumbnails, |_| {})
+    }
+
+    pub fn scan_with_progress(
+        &self,
+        source_dir: &str,
+        fast_mode: bool,
+        ignore_thumbnails: bool,
+        mut emit: impl FnMut(ScanProgress),
     ) -> Result<Vec<MediaFile>, String> {
         let root = Path::new(source_dir);
         let mut files = Vec::new();
@@ -51,6 +72,12 @@ impl Scanner {
             let Some(kind) = media::classify(path, &self.mode) else {
                 continue;
             };
+            emit(ScanProgress {
+                phase: "metadata",
+                filename: entry.file_name().to_string_lossy().into_owned(),
+                current: files.len() + 1,
+                ..Default::default()
+            });
             let meta = std::fs::metadata(path)
                 .map_err(|e| format!("读取文件信息失败 {}: {e}", path.display()))?;
             let modified = meta

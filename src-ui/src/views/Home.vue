@@ -133,7 +133,7 @@
             </div>
             <div class="option-text">
               <span class="option-title">快速扫描模式</span>
-              <span class="option-desc">仅对比修改时间 (跳过EXIF)</span>
+              <span class="option-desc">按修改时间归档；同名文件仍校验内容</span>
             </div>
           </label>
 
@@ -162,6 +162,16 @@
         </button>
       </div>
       </fieldset>
+      <div v-if="isScanning" class="scan-detail glass-panel" role="status" aria-live="polite">
+        <strong>{{ scanProgress.phase === 'compare' ? '正在校验同名文件内容' : scanProgress.phase === 'analyze' ? '正在检查备份目录' : '正在读取素材信息' }}</strong>
+        <span>{{ scanProgress.filename || '正在读取目录…' }}</span>
+        <span v-if="scanProgress.total">{{ scanProgress.current }} / {{ scanProgress.total }} 个文件</span>
+        <span v-else>已找到 {{ scanProgress.current || 0 }} 个文件</span>
+        <template v-if="scanProgress.phase === 'compare' && scanProgress.bytes_total">
+          <progress :value="scanProgress.bytes_done" :max="scanProgress.bytes_total" aria-label="同名文件内容校验进度"></progress>
+          <span>{{ formatBytes(scanProgress.bytes_done) }} / {{ formatBytes(scanProgress.bytes_total) }}；大视频和 NAS 校验需要更多时间</span>
+        </template>
+      </div>
     </div>
 
     <!-- Step 2: Results & Upload -->
@@ -179,6 +189,13 @@
       </Teleport>
 
       <div class="results-content">
+        <div v-if="uploadFailures.length" class="upload-errors glass-panel" role="status" aria-live="polite">
+          <div class="upload-errors-heading">
+            <strong>{{ uploadFailures.length }} 个文件备份失败</strong>
+            <button class="btn btn-secondary" @click="activeView = 'logs'">查看错误日志</button>
+          </div>
+          <span>{{ uploadFailures[uploadFailures.length - 1].filename }}：{{ uploadFailures[uploadFailures.length - 1].error }}</span>
+        </div>
         <div v-if="isUploading" class="upload-status-bar animate-fade-in">
           <div class="inline-progress">
             <div class="progress-text">
@@ -253,45 +270,30 @@
             </div>
           </div>
 
-          <FileTable v-if="filesToDisplay && filesToDisplay.length > 0" :files="filesToDisplay" :progress-map="fileProgress" v-model:filter="fileFilter" :selectable="selectionMode" v-model:selectedKeys="selectedKeys">
+          <FileTable v-if="scanResult && scanResult.length > 0" :files="filesToDisplay" :progress-map="fileProgress" v-model:filter="fileFilter" selectable :selection-disabled="isUploading" v-model:selectedKeys="selectedKeys">
             <template #actions>
-              <div v-if="!isUploading" class="action-buttons">
-                <template v-if="selectionMode">
-                  <button @click="exitSelectionMode" class="btn btn-secondary">退出选择</button>
+              <div class="action-buttons">
+                <span class="selection-summary" role="status" aria-live="polite">
+                  <template v-if="isUploading">上传中，暂时不能修改选择</template>
+                  <template v-else-if="selectedCount">
+                    已选 {{ selectedCount }} 个
+                    <span v-if="hiddenSelectedCount">（{{ hiddenSelectedCount }} 个不在当前列表）</span>
+                  </template>
+                  <template v-else>勾选要上传的文件；表头可全选当前列表</template>
+                </span>
+                <template v-if="!isUploading">
+                  <button @click="openPickerFromResults" class="btn btn-secondary" :disabled="resultsPickerCount === 0" title="画廊模式挑选照片导入 Eagle">挑图导入</button>
+                  <button @click="clearSelection" class="btn btn-secondary" :disabled="selectedCount === 0">清空选择</button>
                   <button @click="startUpload(selectedUploadFiles)" class="btn btn-primary btn-action-upload" :disabled="selectedCount === 0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                     </svg>
-                    上传选中 ({{ selectedCount }})
-                  </button>
-                </template>
-                <template v-else>
-                  <button @click="openPickerFromResults" class="btn btn-secondary" :disabled="resultsPickerCount === 0" title="画廊模式挑选照片导入 Eagle">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    挑图导入
-                  </button>
-                  <button @click="enterSelectionMode" class="btn btn-secondary" :disabled="!filesToDisplay || filesToDisplay.length === 0">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7l-2 2-1-1" />
-                    </svg>
-                    选择文件
-                  </button>
-                  <button @click="startUpload(filesToDisplay)" class="btn btn-primary btn-action-upload" :disabled="!filesToDisplay || filesToDisplay.length === 0">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                    开始上传
+                    上传所选（{{ selectedCount }}）
                   </button>
                 </template>
               </div>
             </template>
           </FileTable>
-          <div v-else-if="scanResult && scanResult.length > 0" class="empty-state">
-            <div class="empty-icon">📅</div>
-            <p>请选择至少一个日期和后缀以查看文件</p>
-          </div>
           <div v-else class="empty-state">
             <div class="empty-icon">🔍</div>
             <p>未找到符合条件的文件</p>
@@ -407,13 +409,15 @@ const progress = ref({
 });
 // 单文件进度，按源文件路径索引：{ [path]: { status, done, total } }
 const fileProgress = ref({});
+const scanProgress = ref({});
+const uploadFailures = ref([]);
+const loggedFailurePaths = new Set();
 const logs = ref([]);
 const activeView = ref("results");
 const fileFilter = ref("all");
 const selectedDates = ref([]);
 const selectedExtensions = ref([]);
-// 选择模式：用户手动勾选要上传的文件（key = 源文件路径）
-const selectionMode = ref(false);
+// 勾选在筛选之间保留，key 为源文件路径。
 const selectedKeys = ref([]);
 // Eagle 挑图：面板数据与返回位置；lastUploadList 记录最近一次上传的文件清单
 const pickerItems = ref([]);
@@ -495,14 +499,19 @@ const filesToDisplay = computed(() => {
 });
 
 
-// 选择模式下实际会上传的文件：当前显示、可上传(将上传/将覆盖)且被勾选
+// 上传范围只由显式勾选决定；筛选仅改变当前显示的列表。
 const selectedUploadFiles = computed(() => {
-  if (!selectionMode.value) return [];
   const set = new Set(selectedKeys.value);
-  return filesToDisplay.value.filter((f) => (f.status === "upload" || f.status === "overwrite") && !isCompleted(f) && set.has(normalizePath(f.path)));
+  return (scanResult.value || []).filter((f) => (f.status === "upload" || f.status === "overwrite") && !isCompleted(f) && set.has(normalizePath(f.path)));
 });
 
 const selectedCount = computed(() => selectedUploadFiles.value.length);
+const hiddenSelectedCount = computed(() => {
+  const visible = new Set(filesToDisplay.value
+    .filter(file => fileFilter.value === "all" || file.status === fileFilter.value)
+    .map(file => normalizePath(file.path)));
+  return selectedUploadFiles.value.filter(file => !visible.has(normalizePath(file.path))).length;
+});
 
 /* ---------- Eagle 挑图入口 ---------- */
 
@@ -552,14 +561,8 @@ function closePicker() {
   currentStep.value = pickerReturnStep.value;
 }
 
-function enterSelectionMode() {
-  selectionMode.value = true;
-  selectedKeys.value = [];
-}
-
-function exitSelectionMode() {
-  selectionMode.value = false;
-  selectedKeys.value = [];
+function clearSelection() {
+  if (!isUploading.value) selectedKeys.value = [];
 }
 
 function toggleDate(date) {
@@ -641,21 +644,16 @@ onMounted(async () => {
   if (!isTauri) return;
 
   try {
-    const unlisten = await listen("upload-progress", (event) => {
-      const p = event.payload;
-      if (!isUploading.value || !activeUploadPaths.has(p.path)) return;
-      progress.value = p;
-      if (p.path) {
-        fileProgress.value = {
-          ...fileProgress.value,
-          [p.path]: {
-            status: p.status,
-            done: p.file_done,
-            total: p.file_total,
-          },
-        };
-      }
+    const unlisten = await listen("scan-progress", (event) => {
+      if (isScanning.value) scanProgress.value = event.payload;
     });
+    if (disposed) unlisten(); else unlisteners.push(unlisten);
+  } catch (e) {
+    addLog("warning", "无法监听扫描进度: " + e);
+  }
+
+  try {
+    const unlisten = await listen("upload-progress", event => handleUploadProgress(event.payload));
     if (disposed) unlisten(); else unlisteners.push(unlisten);
   } catch (e) {
     addLog("warning", "无法监听上传进度事件: " + e);
@@ -787,11 +785,13 @@ async function startScan() {
   scanResult.value = null;
   selectedDates.value = [];
   selectedExtensions.value = [];
-  selectionMode.value = false;
   selectedKeys.value = [];
+  fileFilter.value = "all";
   // 清空上一轮上传的逐文件进度，否则改目标目录后重新扫描时
   // 残留的 skipped/done 记录会按源路径命中，覆盖新的扫描状态
   fileProgress.value = {};
+  scanProgress.value = {};
+  uploadFailures.value = [];
   progress.value = { current: 0, total: 0, filename: "正在扫描..." };
   addLog("info", "开始扫描...");
 
@@ -862,15 +862,33 @@ function isCompleted(file) {
   return ["done", "skipped"].includes(fileProgress.value[normalizePath(file.path)]?.status);
 }
 
+function recordUploadFailure(failure) {
+  const path = normalizePath(failure.path);
+  if (loggedFailurePaths.has(path)) return;
+  loggedFailurePaths.add(path);
+  uploadFailures.value.push(failure);
+  addLog("error", `${failure.filename}: ${failure.error}`);
+}
+
+function handleUploadProgress(p) {
+  const path = normalizePath(p.path);
+  if (!isUploading.value || !activeUploadPaths.has(path)) return;
+  progress.value = p;
+  fileProgress.value[path] = { status: p.status, done: p.file_done, total: p.file_total, error: p.error };
+  if (p.status === "error" && p.error) recordUploadFailure(p);
+}
+
 async function startUpload(files) {
   if (isUploading.value || !scanSnapshot.value) return;
-  const uploadList = (Array.isArray(files) ? files : filesToDisplay.value).filter(f => !isCompleted(f));
+  const uploadList = (Array.isArray(files) ? files : selectedUploadFiles.value).filter(f => !isCompleted(f));
   if (!uploadList.length) return;
   const snapshot = { ...scanSnapshot.value };
   isUploading.value = true;
   activeUploadPaths = new Set(uploadList.map(file => normalizePath(file.path)));
   isPaused.value = false;
   isCancelling.value = false;
+  uploadFailures.value = [];
+  loggedFailurePaths.clear();
   for (const file of uploadList) delete fileProgress.value[normalizePath(file.path)];
   progress.value = {
     current: 0, total: uploadList.length, filename: "准备中...", overall_done: 0,
@@ -888,21 +906,24 @@ async function startUpload(files) {
     const skippedPaths = new Set(outcome.skipped_paths || []);
     for (const file of uploadList) {
       const path = normalizePath(file.path);
-      if (failures.has(path)) fileProgress.value[path] = { status: "error", done: 0, total: file.size };
+      if (failures.has(path)) fileProgress.value[path] = { status: "error", done: 0, total: file.size, error: failures.get(path).error };
       else if (completedPaths.has(path)) fileProgress.value[path] = { status: "done", done: file.size, total: file.size };
       else if (skippedPaths.has(path)) fileProgress.value[path] = { status: "skipped", done: file.size, total: file.size };
       else if (!outcome.cancelled) fileProgress.value[path] = { status: file.status === "skip" ? "skipped" : "done", done: file.size, total: file.size };
     }
-    for (const failure of failed) addLog("error", `${failure.filename}: ${failure.error}`);
+    selectedKeys.value = selectedUploadFiles.value.map(file => normalizePath(file.path));
+    for (const failure of failed) recordUploadFailure(failure);
     if (outcome.cancelled || failed.length) {
       addLog("warning", `本次已完成 ${outcome.completed} 个，跳过 ${outcome.skipped} 个，失败 ${failed.length} 个${outcome.cancelled ? "；已取消" : ""}`);
       if (failed.length) openNotice({ title: "部分文件未备份", message: `有 ${failed.length} 个文件失败。已完成的文件将保留，重试只处理未完成的文件。`, submessage: failed[0].error, type: "warning" });
       return;
     }
-    addLog("success", "上传完成!");
     completedSnapshot.value = snapshot;
+    const remaining = (scanResult.value || []).filter(file =>
+      (file.status === "upload" || file.status === "overwrite") && !isCompleted(file));
+    addLog("success", `本次上传完成，共 ${outcome.completed} 个文件${remaining.length ? `；还有 ${remaining.length} 个文件未上传，可继续勾选` : ""}`);
+    if (remaining.length) return;
     showSuccessModal.value = true;
-    selectionMode.value = false;
     selectedKeys.value = [];
     scanResult.value = null;
     currentStep.value = "config";
@@ -1001,6 +1022,20 @@ function closeNotice() {
 </script>
 
 <style scoped>
+.selection-summary { font-size: 0.8rem; color: var(--color-text-muted); }
+.scan-detail,
+.upload-errors {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  margin-top: 1rem;
+  overflow-wrap: anywhere;
+  font-size: 0.875rem;
+}
+.scan-detail progress { width: 100%; accent-color: var(--primary-600); }
+.upload-errors { color: var(--color-error); margin: 0 0 1rem; }
+.upload-errors-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .config-form {
   display: flex; flex-direction: column; flex: 1; min-height: 0; border: 0; margin: 0; padding: 0;
 }
@@ -1408,6 +1443,8 @@ function closeNotice() {
 .action-buttons {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: var(--space-2);
 }
 

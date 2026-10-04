@@ -24,6 +24,7 @@ pub struct ProgressPayload {
     pub overall_done: u64,
     pub overall_total: u64,
     pub speed: u64,
+    pub error: Option<String>,
 }
 #[derive(Debug, serde::Serialize)]
 pub struct UploadFailure {
@@ -207,6 +208,7 @@ impl UploadSession {
                 overall_done,
                 overall_total,
                 speed: 0,
+                error: None,
             };
             emit(event.clone());
             let result = if file.status == "skip" {
@@ -241,6 +243,13 @@ impl UploadSession {
                     event.status = "cancelled".into();
                 }
                 Err(error) => {
+                    log::error!(
+                        "上传失败 {} -> {}: {}",
+                        file.path.display(),
+                        file.target_path.display(),
+                        error
+                    );
+                    event.error = Some(error.clone());
                     outcome.failed.push(UploadFailure {
                         path: event.path.clone(),
                         filename: file.filename.clone(),
@@ -280,7 +289,8 @@ impl UploadSession {
         fs::create_dir_all(file.target_path.parent().ok_or("目标目录无效")?)
             .map_err(|e| e.to_string())?;
         validate_destination(root, &file.target_path)?;
-        let mut dst = StagedFile::new(&file.target_path).map_err(|e| e.to_string())?;
+        let mut dst = StagedFile::for_media(&file.target_path, file.status == "overwrite")
+            .map_err(|e| format!("创建目标文件失败 {}: {e}", file.target_path.display()))?;
         let mut buf = vec![0; BUFFER_SIZE];
         let base = event.overall_done;
         let mut last = Instant::now();
@@ -295,7 +305,9 @@ impl UploadSession {
                 anchor = Instant::now();
                 anchor_bytes = event.file_done;
             }
-            let n = src.read(&mut buf).map_err(|e| e.to_string())?;
+            let n = src
+                .read(&mut buf)
+                .map_err(|e| format!("读取源文件失败: {e}"))?;
             if n == 0 {
                 break;
             }
@@ -303,7 +315,9 @@ impl UploadSession {
             if event.file_done > file.size {
                 return Err("源文件在复制期间增长，请重新扫描".into());
             }
-            dst.file.write_all(&buf[..n]).map_err(|e| e.to_string())?;
+            dst.file
+                .write_all(&buf[..n])
+                .map_err(|e| format!("写入目标文件失败: {e}"))?;
             event.overall_done = base + event.file_done;
             if last.elapsed() >= EMIT_INTERVAL {
                 event.speed = ((event.file_done - anchor_bytes) as f64
@@ -341,7 +355,7 @@ impl UploadSession {
             );
         }
         dst.commit(&file.target_path, file.status == "overwrite")
-            .map_err(|e| format!("发布文件失败（目标可能已存在）: {e}"))?;
+            .map_err(|e| format!("提交目标文件失败 {}: {e}", file.target_path.display()))?;
         Ok(true)
     }
 }
@@ -378,6 +392,10 @@ mod tests {
         assert_eq!(out.failed.len(), 1);
         assert_eq!(out.completed, 0);
         assert_eq!(events.last().unwrap().status, "error");
+        assert_eq!(
+            events.last().unwrap().error.as_deref(),
+            Some(out.failed[0].error.as_str())
+        );
         assert_eq!(fs::read(dest).unwrap(), b"late destination");
     }
     #[test]
@@ -461,5 +479,48 @@ mod tests {
             .unwrap();
         assert_eq!(out.failed.len(), 1);
         assert_eq!(out.skipped, 0);
+    }
+
+    #[test]
+    #[ignore = "requires MASCOPY_TEST_NAS_DIR; creates and cleans a private test directory"]
+    fn nas_upload_roundtrip_and_cancellation() {
+        let root = std::env::var_os("MASCOPY_TEST_NAS_DIR").expect("NAS test root required");
+        let nas = TestDir::in_root(Path::new(&root));
+        let local = TestDir::new();
+        let bytes = vec![0x5a; 2 * BUFFER_SIZE + 17];
+        fs::write(local.0.join("test.MP4"), &bytes).unwrap();
+        let mut files = Scanner::with_mode("sd")
+            .scan(local.0.to_str().unwrap(), true, true)
+            .unwrap();
+        Analyzer::analyze(&mut files, nas.0.to_str().unwrap(), false).unwrap();
+        let uploader = Arc::new(Uploader::new());
+        let outcome = uploader
+            .start()
+            .unwrap()
+            .run(files.clone(), nas.0.clone(), |_| {})
+            .unwrap();
+        assert_eq!(outcome.completed, 1, "{:?}", outcome.failed);
+        assert_eq!(fs::read(&files[0].target_path).unwrap(), bytes);
+        // A stale scan must never overwrite a file that appeared in the meantime.
+        let outcome = uploader
+            .start()
+            .unwrap()
+            .run(files.clone(), nas.0.clone(), |_| {})
+            .unwrap();
+        assert_eq!(outcome.failed.len(), 1);
+        assert_eq!(fs::read(&files[0].target_path).unwrap(), bytes);
+        let cancelled = files[0].target_path.with_file_name("cancelled.MP4");
+        files[0].target_path = cancelled.clone();
+        let outcome = uploader
+            .start()
+            .unwrap()
+            .run(files, nas.0.clone(), |_| uploader.cancel())
+            .unwrap();
+        assert!(outcome.cancelled);
+        assert!(!cancelled.exists());
+        assert_eq!(
+            fs::read_dir(cancelled.parent().unwrap()).unwrap().count(),
+            1
+        );
     }
 }

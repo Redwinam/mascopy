@@ -1,5 +1,5 @@
-//! Shared, fail-closed publication of complete media and configuration files.
-use std::collections::HashSet;
+//! Atomic publication where supported, with exclusive media creation for SMB mounts.
+use std::collections::{HashMap, HashSet};
 use std::fs::{self, File, Metadata, OpenOptions};
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
@@ -89,6 +89,14 @@ impl SourceStamp {
 }
 
 pub fn files_equal(a: &Path, b: &Path) -> io::Result<bool> {
+    files_equal_with_progress(a, b, |_, _| {})
+}
+
+pub fn files_equal_with_progress(
+    a: &Path,
+    b: &Path,
+    mut progress: impl FnMut(u64, u64),
+) -> io::Result<bool> {
     let mut left = File::open(a)?;
     let mut right = File::open(b)?;
     let left_stamp = SourceStamp::read(&left.metadata()?)?;
@@ -97,6 +105,7 @@ pub fn files_equal(a: &Path, b: &Path) -> io::Result<bool> {
         return Ok(false);
     }
     let mut remaining = left_stamp.len;
+    progress(0, left_stamp.len);
     let mut l = vec![0; 1024 * 1024];
     let mut r = vec![0; l.len()];
     while remaining > 0 {
@@ -107,6 +116,7 @@ pub fn files_equal(a: &Path, b: &Path) -> io::Result<bool> {
             return Ok(false);
         }
         remaining -= count as u64;
+        progress(left_stamp.len - remaining, left_stamp.len);
     }
     if SourceStamp::read(&left.metadata()?)? != left_stamp
         || SourceStamp::read(&right.metadata()?)? != right_stamp
@@ -130,6 +140,8 @@ pub fn unique_name(original: &str, attempt: usize) -> String {
 pub struct StagedFile {
     pub file: File,
     path: PathBuf,
+    direct: bool,
+    committed: bool,
 }
 
 impl StagedFile {
@@ -152,7 +164,14 @@ impl StagedFile {
                 opts.mode(0o600);
             }
             match opts.open(&path) {
-                Ok(file) => return Ok(Self { file, path }),
+                Ok(file) => {
+                    return Ok(Self {
+                        file,
+                        path,
+                        direct: false,
+                        committed: false,
+                    })
+                }
                 Err(e) if e.kind() == io::ErrorKind::AlreadyExists => continue,
                 Err(e) => return Err(e),
             }
@@ -163,19 +182,122 @@ impl StagedFile {
         ))
     }
 
-    pub fn commit(self, destination: &Path, overwrite: bool) -> io::Result<()> {
-        self.file.sync_all()?;
+    /// Some SMB mounts support neither exclusive rename nor hard links. Probe with
+    /// an empty private file before copying media, then use O_EXCL on those mounts.
+    /// This preserves existing files and avoids copying large videos twice over SMB.
+    /// Direct destinations are visible while copying; a killed process may leave a
+    /// partial file, which must never be treated as a duplicate without a byte check.
+    pub fn for_media(destination: &Path, overwrite: bool) -> io::Result<Self> {
+        Self::for_media_with_publisher(destination, overwrite, publish_new)
+    }
+
+    fn for_media_with_publisher(
+        destination: &Path,
+        overwrite: bool,
+        publish: impl FnOnce(&Path, &Path) -> io::Result<()>,
+    ) -> io::Result<Self> {
+        static SUPPORT: OnceLock<Mutex<HashMap<PathBuf, bool>>> = OnceLock::new();
+        let mut stage = Self::new(destination)?;
         if overwrite {
+            return Ok(stage);
+        }
+        let parent = destination.parent().unwrap();
+        let cache = SUPPORT.get_or_init(Default::default);
+        let cached = cache.lock().ok().and_then(|m| m.get(parent).copied());
+        let supported = if let Some(value) = cached {
+            value
+        } else {
+            let probe = Self::new(destination)?;
+            let probe_path = probe.path.clone();
+            drop(probe);
+            let supported = match publish(&stage.path, &probe_path) {
+                Ok(()) => {
+                    stage.path = probe_path;
+                    true
+                }
+                Err(e)
+                    if e.kind() == io::ErrorKind::Unsupported
+                        || cfg!(target_os = "macos")
+                            && matches!(e.raw_os_error(), Some(45 | 102)) =>
+                {
+                    false
+                }
+                Err(e) => return Err(e),
+            };
+            if let Ok(mut map) = cache.lock() {
+                map.insert(parent.to_path_buf(), supported);
+            }
+            if !supported {
+                log::warn!(
+                    "目标不支持独占重命名，使用独占创建方式复制媒体: {}",
+                    parent.display()
+                );
+            }
+            supported
+        };
+        if supported {
+            return Ok(stage);
+        }
+        drop(stage);
+        let mut opts = OpenOptions::new();
+        opts.read(true).write(true).create_new(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            opts.mode(0o600);
+        }
+        Ok(Self {
+            file: opts.open(destination)?,
+            path: destination.to_path_buf(),
+            direct: true,
+            committed: false,
+        })
+    }
+
+    pub fn commit(mut self, destination: &Path, overwrite: bool) -> io::Result<()> {
+        self.file.sync_all()?;
+        if self.direct {
+            if self.path != destination || !self.owns_path() {
+                return Err(io::Error::other("复制期间目标文件被替换，请重新扫描"));
+            }
+        } else if overwrite {
             fs::rename(&self.path, destination)?;
         } else {
             publish_new(&self.path, destination)?;
         }
+        self.committed = true;
         Ok(())
+    }
+
+    fn owns_path(&self) -> bool {
+        let Ok(path_meta) = fs::symlink_metadata(&self.path) else {
+            return false;
+        };
+        let Ok(file_meta) = self.file.metadata() else {
+            return false;
+        };
+        if !path_meta.is_file() {
+            return false;
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::MetadataExt;
+            (path_meta.dev(), path_meta.ino()) == (file_meta.dev(), file_meta.ino())
+        }
+        #[cfg(not(unix))]
+        {
+            // The compatibility path is only needed for macOS SMB mounts. Do not
+            // remove a destination when its identity cannot be proven.
+            false
+        }
     }
 }
 
 impl Drop for StagedFile {
     fn drop(&mut self) {
+        if self.committed || self.direct && !self.owns_path() {
+            return;
+        }
         // Unix allows unlinking an open file; Windows cleanup is retried after close below.
         if fs::remove_file(&self.path).is_err() {
             #[cfg(windows)]
@@ -227,7 +349,10 @@ pub(crate) mod tests {
     pub struct TestDir(pub PathBuf);
     impl TestDir {
         pub fn new() -> Self {
-            let path = std::env::temp_dir().join(format!(
+            Self::in_root(&std::env::temp_dir())
+        }
+        pub fn in_root(root: &Path) -> Self {
+            let path = root.join(format!(
                 "mascopy-test-{}-{}",
                 std::process::id(),
                 NEXT_TEMP.fetch_add(1, Ordering::Relaxed)
@@ -301,5 +426,83 @@ pub(crate) mod tests {
         let dest = dir.0.join("photo");
         drop(StagedFile::new(&dest).unwrap());
         assert_eq!(fs::read_dir(&dir.0).unwrap().count(), 0);
+    }
+
+    fn unsupported(_: &Path, _: &Path) -> io::Result<()> {
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "NAS does not support exclusive rename",
+        ))
+    }
+
+    #[test]
+    fn nas_fallback_copies_without_overwrite_and_probes_only_once() {
+        let dir = TestDir::new();
+        let dest = dir.0.join("movie.mp4");
+        let mut output = StagedFile::for_media_with_publisher(&dest, false, unsupported).unwrap();
+        assert!(output.direct);
+        output.file.write_all(b"complete movie").unwrap();
+        output.commit(&dest, false).unwrap();
+        assert_eq!(fs::read(&dest).unwrap(), b"complete movie");
+        let error = StagedFile::for_media_with_publisher(&dest, false, |_, _| panic!("cached"))
+            .err()
+            .unwrap();
+        assert_eq!(error.kind(), io::ErrorKind::AlreadyExists);
+        assert_eq!(fs::read(&dest).unwrap(), b"complete movie");
+        assert_eq!(fs::read_dir(&dir.0).unwrap().count(), 1);
+    }
+
+    #[test]
+    fn nas_fallback_removes_cancelled_partial_but_preserves_replacement() {
+        let dir = TestDir::new();
+        let dest = dir.0.join("movie.mp4");
+        let mut output = StagedFile::for_media_with_publisher(&dest, false, unsupported).unwrap();
+        output.file.write_all(b"partial").unwrap();
+        drop(output);
+        assert!(!dest.exists());
+        let mut output = StagedFile::for_media_with_publisher(&dest, false, unsupported).unwrap();
+        output.file.write_all(b"partial").unwrap();
+        fs::rename(&dest, dir.0.join("moved")).unwrap();
+        fs::write(&dest, b"another writer").unwrap();
+        assert!(output.commit(&dest, false).is_err());
+        assert_eq!(fs::read(&dest).unwrap(), b"another writer");
+    }
+
+    #[test]
+    fn publication_permission_errors_do_not_enable_fallback() {
+        let dir = TestDir::new();
+        let dest = dir.0.join("movie.mp4");
+        let error = StagedFile::for_media_with_publisher(&dest, false, |_, _| {
+            Err(io::Error::new(io::ErrorKind::PermissionDenied, "denied"))
+        })
+        .err()
+        .unwrap();
+        assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
+        assert!(!dest.exists());
+        assert_eq!(fs::read_dir(&dir.0).unwrap().count(), 0);
+    }
+
+    #[test]
+    fn comparison_reports_byte_progress_without_weakening_equality() {
+        let dir = TestDir::new();
+        let a = dir.0.join("a");
+        let b = dir.0.join("b");
+        let data = vec![7; 2 * 1024 * 1024 + 10];
+        fs::write(&a, &data).unwrap();
+        fs::write(&b, &data).unwrap();
+        let mut progress = Vec::new();
+        assert!(
+            files_equal_with_progress(&a, &b, |done, total| progress.push((done, total))).unwrap()
+        );
+        assert_eq!(progress.first(), Some(&(0, data.len() as u64)));
+        assert_eq!(
+            progress.last(),
+            Some(&(data.len() as u64, data.len() as u64))
+        );
+        assert!(progress.len() > 2);
+        let mut different = data;
+        *different.last_mut().unwrap() = 8;
+        fs::write(&b, different).unwrap();
+        assert!(!files_equal(&a, &b).unwrap());
     }
 }
