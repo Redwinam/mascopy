@@ -34,7 +34,7 @@
     <details class="chapter-list">
       <summary class="tone-live" title="切换章节"><span class="sw"></span><span class="cur">可靠性与隐私</span><span class="pos">4 / 5</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
       <ul>
-        <li><a class="tone-blue" href="backup.html"><span class="sw"></span>SD 卡与大疆备份</a></li>
+        <li><a class="tone-blue" href="backup.html"><span class="sw"></span>存储卡与大疆备份</a></li>
         <li><a class="tone-violet" href="tether.html"><span class="sw"></span>联机拍摄</a></li>
         <li><a class="tone-copper" href="eagle.html"><span class="sw"></span>Eagle 挑图与裁剪</a></li>
         <li><a class="tone-live" href="reliability.html" aria-current="page"><span class="sw"></span>可靠性与隐私</a></li>
@@ -72,7 +72,7 @@
       <ul class="facts">
         <li><b>目标里只有完整文件</b>正式文件名出现的那一刻，内容已经全部写完并同步到磁盘。写到一半的数据只存在于隐藏的临时文件里，出错就删掉。</li>
         <li><b>不静默覆盖</b>发布新文件时，同名文件如果已经存在，这次发布直接失败。只有你打开 <span class="ui">覆盖重复文件</span>，并且两个文件内容确实不同，才会替换原文件。</li>
-        <li><b>源文件只读</b>SD 卡、大疆设备和 EOS Utility 的保存目录，大师拷贝只读取，不修改，不删除。</li>
+        <li><b>源文件只读</b>存储卡、大疆设备和 EOS Utility 的保存目录，大师拷贝只读取，不修改，不删除。</li>
         <li><b>情况不对就停</b>源文件在扫描后变了、比较期间变了、目标目录的结构不对，都会停下来提示重新扫描。它不会拿着过时的判断继续写。</li>
         <li><b>数据留在本机</b>没有账号，不连云端，配置文件只有你的 macOS 用户能读。</li>
       </ul>
@@ -100,7 +100,7 @@
 
     <section id="write-safety">
       <h2>写入：临时文件与独占发布</h2>
-      <p>SD 卡和大疆备份、联机拍摄入库，用的是同一套写入流程。每个文件先写进同一个日期目录里的隐藏临时文件，写完、核对、落盘之后，才换成正式名字。</p>
+      <p>存储卡和大疆备份、联机拍摄入库，用的是同一套写入流程。每个文件先写进同一个日期目录里的隐藏临时文件，写完、核对、落盘之后，才换成正式名字。</p>
       <ol class="steps">
         <li><strong>新建临时文件。</strong>在目标日期目录里新建 <code>.mascopy-&lt;进程号&gt;-&lt;序号&gt;.part</code>。文件名以点开头，访达默认不显示。权限是 <code>0600</code>，写入期间只有你的用户能读写。新建时要求这个名字此前不存在，不会打开或截断任何已有文件。</li>
         <li><strong>分块拷贝。</strong>按 1 MiB 一块从源文件读出、写进临时文件。进度、暂停和取消都在块与块之间生效。</li>
@@ -127,7 +127,7 @@
       <h2>源文件只读不删</h2>
       <p>备份的意义在于多出一份副本。大师拷贝在任何模式下都不改动你的原始素材，清卡的时机由你自己决定。</p>
       <ul class="facts">
-        <li><b>SD 卡与大疆模式</b>扫描和上传都以只读方式打开源文件。拷贝完成后，源文件原样留在卡上。</li>
+        <li><b>存储卡与大疆模式</b>扫描和上传都以只读方式打开源文件。拷贝完成后，源文件原样留在卡上。</li>
         <li><b>推出设备</b>只在你点 <span class="ui">推出设备</span> 时执行，调用系统的 <code>diskutil eject</code> 推出源路径所在的 <code>/Volumes</code> 卷。源路径不在 <code>/Volumes</code> 下时不执行任何操作，弹出「推出失败」说明原因。</li>
         <li><b>监听文件夹模式</b>永远保留来源文件。大师拷贝无法确认 EOS Utility 已经写完，所以旧版本配置里的「入库后删除」已经作废：界面不再提供，后端收到这个要求也会直接拒绝，提示「监听模式无法确认上游写入已结束，必须保留来源文件」。</li>
         <li><b>FTP 直传</b>唯一会删除的是收件箱里的副本，而且只在两种情况下删：照片已经入库成功，或者确认目标里已有内容完全相同的文件。删除前还会再确认这份副本在入库期间没被改写；改写过就保留新版本，等下一轮处理。</li>
@@ -321,7 +321,7 @@
       </div>
       <h3>存了什么</h3>
       <ul class="facts">
-        <li><b>SD 卡与大疆</b>源目录、目标目录和覆盖开关，两种模式各存一份。</li>
+        <li><b>存储卡与大疆</b>源目录、目标目录和覆盖开关，两种模式各存一份。</li>
         <li><b>收藏夹</b>源和目标的常用路径，每个列表最多 8 条。</li>
         <li><b>Eagle</b>API 地址、令牌和上次选的文件夹。</li>
         <li><b>联机拍摄</b>联机方式、监听目录、目标目录、FTP 端口、用户名和密码。</li>
@@ -375,7 +375,7 @@
     <div>
       <h4>功能</h4>
       <ul>
-        <li><a href="backup.html">SD 卡与大疆备份</a></li>
+        <li><a href="backup.html">存储卡与大疆备份</a></li>
         <li><a href="tether.html">联机拍摄</a></li>
         <li><a href="eagle.html">Eagle 挑图与裁剪</a></li>
         <li><a href="reliability.html">可靠性与隐私</a></li>

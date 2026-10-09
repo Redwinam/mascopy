@@ -34,7 +34,7 @@
     <details class="chapter-list">
       <summary class="tone-neutral" title="切换章节"><span class="sw"></span><span class="cur">格式、快捷键与系统要求</span><span class="pos">5 / 5</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
       <ul>
-        <li><a class="tone-blue" href="backup.html"><span class="sw"></span>SD 卡与大疆备份</a></li>
+        <li><a class="tone-blue" href="backup.html"><span class="sw"></span>存储卡与大疆备份</a></li>
         <li><a class="tone-violet" href="tether.html"><span class="sw"></span>联机拍摄</a></li>
         <li><a class="tone-copper" href="eagle.html"><span class="sw"></span>Eagle 挑图与裁剪</a></li>
         <li><a class="tone-live" href="reliability.html"><span class="sw"></span>可靠性与隐私</a></li>
@@ -70,7 +70,7 @@
       <p>三种模式共用一张格式表，各自只收其中一部分。扩展名不区分大小写，<code>IMG_0421.CR3</code> 与 <code>img_0421.cr3</code> 同样识别。表里没有的扩展名，以及当前模式不收的格式，扫描时直接略过，不会出现在结果里。</p>
       <div class="table-wrap">
         <table class="spec">
-          <thead><tr><th>格式</th><th>类型</th><th>SD 卡模式</th><th>DJI 模式</th><th>联机拍摄</th></tr></thead>
+          <thead><tr><th>格式</th><th>类型</th><th>存储卡模式</th><th>大疆模式</th><th>联机拍摄</th></tr></thead>
           <tbody>
             <tr><td>JPG、JPEG</td><td>照片</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
             <tr><td>PNG</td><td>照片</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
@@ -79,7 +79,7 @@
             <tr><td>NEF（尼康 RAW）</td><td>照片</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
             <tr><td>CR2、CR3（佳能 RAW）</td><td>照片</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
             <tr><td>ARW（索尼 RAW）</td><td>照片</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
-            <tr><td>DNG</td><td>照片</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>DNG</td><td>照片</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
             <tr><td>MP4、MOV</td><td>视频</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
             <tr><td>AVI、M4V、3GP、MKV</td><td>视频</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
             <tr><td>CRM（佳能 Cinema RAW Light）</td><td>视频</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
@@ -88,13 +88,13 @@
           </tbody>
         </table>
       </div>
-      <aside class="note"><span class="note-label">细节</span>DJI 模式只收 JPG、MP4、MOV 和大疆特有的 LRF、OSV，不收 DNG。需要备份无人机的 DNG 时，用 SD 卡模式扫描那张卡。</aside>
+      <aside class="note"><span class="note-label">细节</span>大疆模式只收 JPG、DNG、MP4、MOV 和大疆特有的 LRF、OSV。佳能、尼康、索尼的 RAW 要用存储卡模式扫描。</aside>
 
       <h3>扫描时跳过的文件</h3>
       <ul class="facts">
         <li><b>隐藏文件与目录</b>名字以 <code>.</code> 开头的文件和目录整个跳过，包括 macOS 在存储卡上留下的 <code>._</code> 伴生文件。这条规则始终生效，没有开关。</li>
         <li><b>缩略图目录</b>打开 <span class="ui">忽略缩略图文件夹</span> 时（默认打开），跳过名字恰好是 <code>THM</code>，或名字里含 <code>THUMB</code>、<code>THMBNL</code> 的目录，大小写不限。只看目录名，普通照片文件不受影响。</li>
-        <li><b>模式外的格式</b>例如 SD 卡模式下的 LRF、DJI 模式下的 DNG，扫描结果里不会出现。</li>
+        <li><b>模式外的格式</b>例如存储卡模式下的 LRF、大疆模式下的 CR3，扫描结果里不会出现。</li>
         <li><b>读不出的目录</b>遍历途中有目录读取失败，整次扫描失败并提示无法完整扫描目录，不给出残缺的结果。</li>
       </ul>
     </section>
@@ -262,10 +262,10 @@
         <table class="spec">
           <thead><tr><th>项目</th><th>默认值 / 上限</th><th>说明</th></tr></thead>
           <tbody>
-            <tr><td>覆盖重复文件</td><td>关</td><td class="wrap-ok">SD 卡模式与 DJI 模式分别保存。</td></tr>
+            <tr><td>覆盖重复文件</td><td>关</td><td class="wrap-ok">存储卡模式与大疆模式分别保存。</td></tr>
             <tr><td>快速扫描模式</td><td>开</td><td class="wrap-ok">不保存，每次启动都恢复为开。</td></tr>
             <tr><td>忽略缩略图文件夹</td><td>开</td><td class="wrap-ok">不保存，每次启动都恢复为开。</td></tr>
-            <tr><td>收藏夹</td><td>每列最多 8 条</td><td class="wrap-ok">新加的排最前，重复的合并。SD 源、SD 目标、DJI 源、DJI 目标各一列；联机拍摄的目标收藏沿用备份的目标收藏。</td></tr>
+            <tr><td>收藏夹</td><td>每列最多 8 条</td><td class="wrap-ok">新加的排最前，重复的合并。存储卡源、存储卡目标、大疆源、大疆目标各一列；联机拍摄的目标收藏沿用备份的目标收藏。</td></tr>
             <tr><td>拷贝与判重</td><td>每次读写 1 MiB</td><td class="wrap-ok">判重逐字节比较，比较期间两边文件都不能发生变化。</td></tr>
             <tr><td>进度刷新</td><td>约 120 毫秒一次</td><td class="wrap-ok">百分比按字节计算，保留 1 位小数；暂停后重新测速。</td></tr>
             <tr><td>临时文件</td><td><code>.mascopy-&lt;进程号&gt;-&lt;序号&gt;.part</code></td><td class="wrap-ok">写在日期目录里，权限 0600；失败或取消时自动删除。强制退出留下的，一小时后再往这个目录拷贝时自动删除。</td></tr>
@@ -447,7 +447,7 @@
     <div>
       <h4>功能</h4>
       <ul>
-        <li><a href="backup.html">SD 卡与大疆备份</a></li>
+        <li><a href="backup.html">存储卡与大疆备份</a></li>
         <li><a href="tether.html">联机拍摄</a></li>
         <li><a href="eagle.html">Eagle 挑图与裁剪</a></li>
         <li><a href="reliability.html">可靠性与隐私</a></li>

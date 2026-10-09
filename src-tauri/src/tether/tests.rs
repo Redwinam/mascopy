@@ -168,29 +168,16 @@ fn same_size_different_content_is_preserved_and_identical_retry_skips() {
         rescan: false,
         ftp_fed: true,
     };
-    let result = process_file(&src, fingerprint, &opts, &SessionControl::new())
-        .unwrap()
-        .unwrap();
-    assert_eq!(result.status, "done");
+    let error = process_file(&src, fingerprint, &opts, &SessionControl::new()).unwrap_err();
+    assert!(error.contains("文件名保持不变"));
     assert_eq!(
         std::fs::read(date_dir.join("IMG.JPG")).unwrap(),
         b"old image"
     );
-    assert_eq!(std::fs::read(&result.target_path).unwrap(), b"new image");
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        assert_eq!(
-            std::fs::metadata(&result.target_path)
-                .unwrap()
-                .permissions()
-                .mode()
-                & 0o777,
-            0o640
-        );
-    }
-    assert!(!src.exists());
-    std::fs::write(&src, b"new image").unwrap();
+    assert_eq!(std::fs::read(&src).unwrap(), b"new image");
+    assert_eq!(std::fs::read_dir(&date_dir).unwrap().count(), 1);
+    // Once the exact original destination is identical, the ordinary skip rule applies.
+    std::fs::write(date_dir.join("IMG.JPG"), b"new image").unwrap();
     let result = process_file(
         &src,
         Fingerprint::read(&src).unwrap(),
@@ -232,19 +219,21 @@ fn watch_snapshots_never_delete_an_upstream_file_even_with_legacy_move_flag() {
         .unwrap()
         .write_all(b" final part")
         .unwrap();
-    let last = process_file(
+    let error = process_file(
         &source,
         Fingerprint::read(&source).unwrap(),
         &opts,
         &SessionControl::new(),
     )
-    .unwrap()
-    .unwrap();
+    .unwrap_err();
+    assert!(error.contains("文件名保持不变"));
     assert_eq!(std::fs::read(&source).unwrap(), b"first part final part");
-    assert_eq!(std::fs::read(first.target_path).unwrap(), b"first part");
+    assert_eq!(std::fs::read(&first.target_path).unwrap(), b"first part");
     assert_eq!(
-        std::fs::read(last.target_path).unwrap(),
-        b"first part final part"
+        std::fs::read_dir(Path::new(&first.target_path).parent().unwrap())
+            .unwrap()
+            .count(),
+        1
     );
 }
 

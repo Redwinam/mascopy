@@ -75,7 +75,7 @@
             <img class="only-light" src="assets/shots/config-light.webp" width="2800" height="1800" alt="配置页（浅色主题）。" loading="lazy">
           </div>
           <h3>选好来源和目标</h3>
-          <p>左边选存储卡，右边选本地磁盘或已挂载的 NAS。常用路径点一下 ♥ 收进收藏夹，下次直接点选。SD 卡和大疆设备各记一套。</p>
+          <p>左边选存储卡，右边选本地磁盘或已挂载的 NAS。常用路径点一下 ♥ 收进收藏夹，下次直接点选。存储卡和大疆两个模式各记一套。</p>
         </div>
         <div class="flow-step">
           <div class="window">
@@ -87,10 +87,10 @@
         </div>
         <div class="flow-step">
           <div class="window">
-            <img src="assets/shots/done-dark.webp" width="2800" height="1800" alt="备份完成弹窗：所有选中的文件已成功备份到目标目录，按钮有关闭、挑图导入 Eagle 和推出设备。" loading="lazy">
+            <img src="assets/shots/done-dark.webp" width="2800" height="1800" alt="备份完成弹窗：所有选中的文件已成功备份到目标目录。底部右边是关闭和推出设备，左下角的 ⋯ 菜单已展开，里面是挑图导入 Eagle，右边标着这次能挑的 24 张。" loading="lazy">
           </div>
           <h3>拷贝，完成后推出存储卡</h3>
-          <p>随时暂停、继续或取消，进度按字节算并估算剩余时间。全部完成后点「推出设备」，或者直接进入挑图导入 Eagle。</p>
+          <p>随时暂停、继续或取消，进度按字节算并估算剩余时间。全部完成后点「推出设备」；要挑图，点弹窗左下角的「⋯」，选「挑图导入 Eagle」。</p>
         </div>
       </div>
     </div>
@@ -179,7 +179,7 @@
       <div class="states">
         <div class="state"><span class="badge waiting">先写临时文件</span><p>每个文件先写成隐藏的临时文件，写完落盘再改成正式名字。中途失败或取消，临时文件自动删除。</p></div>
         <div class="state"><span class="badge idle">绝不静默覆盖</span><p>发布新文件时如果目标已经存在，直接失败而不是盖过去。只有打开覆盖且内容确实不同，才会替换。</p></div>
-        <div class="state"><span class="badge attn">源文件不动</span><p>SD 卡和大疆素材只读不写，从不删除；监听模式也永远保留来源文件。</p></div>
+        <div class="state"><span class="badge attn">源文件不动</span><p>存储卡和大疆素材只读不写，从不删除；监听模式也永远保留来源文件。</p></div>
         <div class="state"><span class="badge notice">单个失败不拖累整批</span><p>拔卡、NAS 掉线只记为那一个文件失败。重试时只处理没完成的，已完成的原样保留。</p></div>
         <div class="state"><span class="badge running">扫描后有变化会发现</span><p>拷贝前核对源文件的大小和修改时间，拷贝中文件还在变大也会停下，提示重新扫描。</p></div>
         <div class="state"><span class="badge done">一切都在本地</span><p>没有账号，不连云端。配置文件只有你自己能读，RAW 预览和裁剪都不留缓存文件。</p></div>
@@ -197,11 +197,12 @@
       </div>
       <div class="table-wrap">
         <table class="spec">
-          <thead><tr><th>格式</th><th>SD 卡</th><th>大疆</th><th>联机拍摄</th></tr></thead>
+          <thead><tr><th>格式</th><th>存储卡</th><th>大疆</th><th>联机拍摄</th></tr></thead>
           <tbody>
             <tr><td>JPG / JPEG</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
             <tr><td>PNG、HEIC</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
-            <tr><td>RAW：NEF、CR2、CR3、ARW、DNG</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>RAW：NEF、CR2、CR3、ARW</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
+            <tr><td>DNG</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
             <tr><td>HIF（佳能 HEIF）</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
             <tr><td>视频：MP4、MOV</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
             <tr><td>视频：AVI、M4V、3GP、MKV</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
@@ -222,7 +223,7 @@
       </div>
       <div class="chapters five">
         <a class="chapter-card tone-blue" href="backup.html">
-          <div class="chapter-bar"><svg class="icon" viewBox="0 0 24 24"><line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/></svg>SD 卡与大疆备份</div>
+          <div class="chapter-bar"><svg class="icon" viewBox="0 0 24 24"><line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/></svg>存储卡与大疆备份</div>
           <div class="chapter-body">
             <h3>扫描、归档、判重、拷贝、推出</h3>
             <ul>
@@ -315,7 +316,7 @@
           <ol class="steps">
             <li>打开 .dmg，把「大师拷贝」拖进「应用程序」。</li>
             <li>第一次打开时 macOS 会提示无法验证开发者（安装包未经 Apple 公证）。到「系统设置 → 隐私与安全性」底部点「仍要打开」；也可以在终端执行 <code>xattr -dr com.apple.quarantine /Applications/大师拷贝.app</code>。</li>
-            <li>插上存储卡，选「SD卡模式」或「DJI模式」，左边选卡上的目录，右边选备份位置。</li>
+            <li>插上存储卡，选「存储卡导入」或「大疆导入」，左边选卡上的目录，右边选备份位置。</li>
             <li>点「开始扫描」，确认列表后点「开始上传」。</li>
           </ol>
         </div>
@@ -334,7 +335,7 @@
     <div>
       <h4>功能</h4>
       <ul>
-        <li><a href="backup.html">SD 卡与大疆备份</a></li>
+        <li><a href="backup.html">存储卡与大疆备份</a></li>
         <li><a href="tether.html">联机拍摄</a></li>
         <li><a href="eagle.html">Eagle 挑图与裁剪</a></li>
         <li><a href="reliability.html">可靠性与隐私</a></li>

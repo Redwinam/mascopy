@@ -34,7 +34,7 @@
     <details class="chapter-list">
       <summary class="tone-violet" title="切换章节"><span class="sw"></span><span class="cur">联机拍摄</span><span class="pos">2 / 5</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
       <ul>
-        <li><a class="tone-blue" href="backup.html"><span class="sw"></span>SD 卡与大疆备份</a></li>
+        <li><a class="tone-blue" href="backup.html"><span class="sw"></span>存储卡与大疆备份</a></li>
         <li><a class="tone-violet" href="tether.html" aria-current="page"><span class="sw"></span>联机拍摄</a></li>
         <li><a class="tone-copper" href="eagle.html"><span class="sw"></span>Eagle 挑图与裁剪</a></li>
         <li><a class="tone-live" href="reliability.html"><span class="sw"></span>可靠性与隐私</a></li>
@@ -78,7 +78,7 @@
 
     <section id="modes">
       <h2>两种联机方式</h2>
-      <p>点顶部的 <span class="ui">联机拍摄</span> 页签，先在两张模式卡片里选一张。两种方式最后都把照片整理进同一种日期目录，区别只在照片怎么到达 Mac。</p>
+      <p>点顶栏的 <span class="ui">联机拍摄</span>，先在两张模式卡片里选一张。两种方式最后都把照片整理进同一种日期目录，区别只在照片怎么到达 Mac。</p>
       <ul class="facts">
         <li><b>📶 相机 WiFi 直传</b>卡片副标题写着 <span class="ui">R5 Mark II 机身 FTP 直连本软件，无需其他软件</span>。大师拷贝在 Mac 上开一个 FTP 服务器，相机拍完通过局域网把照片推过来。这是默认模式。</li>
         <li><b>🔌 监听文件夹</b>副标题写着 <span class="ui">配合 EOS Utility 联机拍摄（USB 或 WiFi 均可）</span>。照片先由 EOS Utility 存进它的保存目标文件夹，大师拷贝盯着这个文件夹，把新出现的照片拷进备份目录。</li>
@@ -98,7 +98,7 @@
         </table>
       </div>
       <h3>收哪些文件</h3>
-      <p>联机拍摄接受的格式比 SD 卡模式多两种：佳能的 HIF 和 Cinema RAW Light 的 CRM。完整列表如下，扩展名不分大小写：</p>
+      <p>联机拍摄接受的格式比存储卡模式多两种：佳能的 HIF 和 Cinema RAW Light 的 CRM。完整列表如下，扩展名不分大小写：</p>
       <ul>
         <li>照片：JPG、JPEG、PNG、HEIC、HIF，RAW 格式 NEF、CR2、CR3、ARW、DNG。</li>
         <li>视频：MP4、MOV、AVI、M4V、3GP、MKV、CRM。</li>
@@ -122,7 +122,7 @@
         </table>
       </div>
       <p>目录旁边有两个按钮：<span class="ui">选择目录</span> 打开 macOS 原生的文件夹对话框，♥ <span class="ui">加入收藏</span> 把当前备份目标收进收藏夹。</p>
-      <p>备份目标下面的 <span class="ui">收藏夹</span> 一行，复用 SD 卡模式和大疆模式里收藏过的备份位置。每个收藏以小片显示路径的最后三段，比如 <code>/Volumes/NAS/照片备份/棚拍</code> 显示成 <code>NAS/照片备份/棚拍</code>；鼠标悬停看完整路径，点一下就选中。在联机页签里新收藏的位置存进 SD 卡模式的目标收藏夹，列表最多 8 条，新加的排最前。</p>
+      <p>备份目标下面的 <span class="ui">收藏夹</span> 一行，复用存储卡模式和大疆模式里收藏过的备份位置。每个收藏以小片显示路径的最后三段，比如 <code>/Volumes/NAS/照片备份/棚拍</code> 显示成 <code>NAS/照片备份/棚拍</code>；鼠标悬停看完整路径，点一下就选中。在联机拍摄里新收藏的位置存进存储卡模式的目标收藏夹，列表最多 8 条，新加的排最前。</p>
       <h3>开始会话</h3>
       <p>备份目标选好、端口合法，监听模式下再选好监听目录，<span class="ui">开始联机会话</span> 才能点。点下去按钮变成 <span class="ui">启动中…</span>，表单暂时锁住。启动成功后配置区收起，换成会话状态条；启动失败时，原因显示在按钮左边，表单解锁，改好再点。</p>
       <h3>启动失败时</h3>
@@ -153,7 +153,7 @@
         <li>服务器地址填 <code>192.168.31.218</code>，端口填 <code>2121</code>。</li>
         <li>用户名填 <code>eos</code>，密码填 <code>eos</code>。改过的话，以提示里显示的为准。</li>
         <li>被动模式设为启用。</li>
-        <li>自动传输设为启用。传输类型可以选「仅 JPEG」，RAW 留在存储卡里，收工后用 SD 卡模式整卡备份。</li>
+        <li>自动传输设为启用。传输类型可以选「仅 JPEG」，RAW 留在存储卡里，收工后用存储卡模式整卡备份。</li>
         <li>把这套设置存成相机里的预设。只要 Mac 的地址不变，以后开会话、开相机就能直接传。</li>
         <li>拍一张试试。照片流里出现这张照片，标着 <span class="status ok">已入库</span>，就说明通了。</li>
       </ol>
@@ -164,7 +164,7 @@
 
     <section id="network">
       <h2>本机地址与网卡过滤</h2>
-      <p>相机要知道 Mac 的地址才能连上来。一台 Mac 往往同时有好几个地址：WiFi 一个，网线一个，代理软件、VPN、虚拟机还会各自加几个。大师拷贝打开联机页签时读取本机所有 IPv4 地址，先去掉相机肯定连不到的，再把最可能的排到第一位，填进相机端设置提示的服务器地址。</p>
+      <p>相机要知道 Mac 的地址才能连上来。一台 Mac 往往同时有好几个地址：WiFi 一个，网线一个，代理软件、VPN、虚拟机还会各自加几个。大师拷贝打开联机拍摄时读取本机所有 IPv4 地址，先去掉相机肯定连不到的，再把最可能的排到第一位，填进相机端设置提示的服务器地址。</p>
       <div class="table-wrap">
         <table class="spec">
           <thead><tr><th>过滤掉的</th><th>范围</th><th>一般是什么</th></tr></thead>
@@ -180,7 +180,7 @@
       <p>剩下的地址按三条规则排序：私网地址（<code>10.x</code>、<code>172.16</code> 到 <code>172.31</code>、<code>192.168.x</code>）排在前面；其次是名字以 <code>en</code> 开头的物理网卡，也就是 WiFi 和有线网口；其余按接口名排序。</p>
       <p>过滤后还剩不止一个地址时，提示底部多出一行：<span class="ui">已自动过滤代理/虚拟网卡地址；若相机连不上，可尝试备选 IP：…</span>，后面列出其他候选。比如 Mac 同时连着 WiFi 和网线，另一个网口的地址就会列在这里。截图里的备选是 <code>10.0.0.12</code>。</p>
       <ul class="facts">
-        <li><b>什么时候检测</b>每次打开联机拍摄页签时检测一次。换了网络，切到别的页签再切回来，就会重新检测。</li>
+        <li><b>什么时候检测</b>每次打开联机拍摄时检测一次。换了网络，切到别的模式再切回来，就会重新检测。</li>
         <li><b>会话里以状态条为准</b>点开始时大师拷贝会再取一次首选地址，显示在会话状态条上。会话期间，相机端设置提示里的服务器地址也换成这个值。</li>
         <li><b>备选地址同样可用</b>FTP 服务器监听本机所有网络接口。首选地址不对时，相机改填备选地址就能连，不用重开会话。</li>
         <li><b>一个都没找到</b>会话开始前，提示里显示 <span class="ui">（本机局域网 IP）</span>；会话开始后状态条显示 <code>127.0.0.1</code>。这时相机肯定连不上，先检查 Mac 有没有连上局域网。</li>
@@ -198,7 +198,7 @@
         <li><b>清空记录</b>清掉照片流里的所有卡片，计数归零。只清列表，已经入库的文件原样留在备份目录里。照片流为空时按钮不可点。</li>
         <li><b>结束会话</b>关掉 FTP 服务器或停止监听，等进行中的写入收尾后回到配置区。收尾的具体顺序见 <a href="#recovery">掉线重试与结束会话</a>。</li>
       </ul>
-      <p>会话在后台运行，和当前页签无关。拍摄中切到 <span class="ui">SD卡模式</span> 或 <span class="ui">DJI模式</span> 页签，照片照常入库，照片流照常更新；切回来时状态条和照片流都还在。</p>
+      <p>会话在后台运行，和顶栏当前选的模式无关。拍摄中切到 <span class="ui">存储卡导入</span> 或 <span class="ui">大疆导入</span>，照片照常入库，照片流照常更新；切回来时状态条和照片流都还在。会话进行中，顶栏 <span class="ui">联机拍摄</span> 卡片右上角亮红点，切到导入页也能看到会话没停。</p>
       <p>WiFi 直传模式下，相机端设置提示在会话中继续显示在状态条下方，方便现场再给另一台相机配置。结束会话失败时，状态条下方会出现 <span class="ui">结束会话失败：…</span> 附原因，会话保持运行，可以再点一次。</p>
       <aside class="note warn"><span class="note-label">注意</span>会话和照片流只存在内存里。退出或重启大师拷贝后照片流清空，会话也不会自动恢复，需要重新点 <span class="ui">开始联机会话</span>。已经入库的文件不受影响；WiFi 直传收件箱里已完整收到、还没入库的照片，下次会话会接着处理。</aside>
     </section>
@@ -309,7 +309,7 @@
         <li><b>递归监听</b>子文件夹里的新文件也会被发现。EOS Utility 按日期建子文件夹也没关系，入库时一样按大师拷贝的日期规则归档。</li>
         <li><b>等文件写完</b>文件的大小、修改时间和文件身份连续 1.2 秒都不变，才开始拷贝。文件身份指磁盘上的 inode，同名文件被整个换掉也能察觉。0 字节的文件不处理。</li>
         <li><b>拷贝中还在变就重来</b>拷贝期间源文件又被改写，这次拷贝作废，临时文件删除，重新等 1.2 秒再拷。</li>
-        <li><b>只管新文件</b>只处理会话开始后新出现或被改动的文件。会话开始前已经在文件夹里的照片不会补拷；需要的话，用 SD 卡模式扫描这个文件夹。</li>
+        <li><b>只管新文件</b>只处理会话开始后新出现或被改动的文件。会话开始前已经在文件夹里的照片不会补拷；需要的话，用存储卡模式扫描这个文件夹。</li>
         <li><b>保留文件属性</b>入库的文件保留源文件的权限和修改时间。</li>
         <li><b>不跟随外部链接</b>监听目录里指向外部位置的符号链接会被忽略。</li>
         <li><b>上游改写后再入库</b>已入库的文件如果又被 EOS Utility 改写，新版本会当作新文件再入库一次，按重名规则改名，比如 <code>IMG_0518_1.CR3</code>。</li>
@@ -324,7 +324,7 @@
         <li><b>日期取修改时间</b>联机入库不读 EXIF。WiFi 直传模式下，文件的修改时间就是 Mac 收完这张照片的时间；监听模式下，是 EOS Utility 写入文件的时间。日期按 Mac 本机时区换算。</li>
         <li><b>同名、内容相同</b>逐字节比较，完全相同就记为 <span class="status skip">已存在</span>，不再写一份。WiFi 直传模式下，收件箱里的这份副本随后删除。</li>
         <li><b>同名、内容不同</b>依次尝试 <code>IMG_0516_1.JPG</code>、<code>IMG_0516_2.JPG</code>……每个候选名都重新判一次，候选名下的文件内容相同，同样记为已存在。</li>
-        <li><b>从不覆盖</b>联机入库没有覆盖选项，SD 卡模式的 <span class="ui">覆盖重复文件</span> 开关对这里不起作用。</li>
+        <li><b>从不覆盖</b>联机入库没有覆盖选项，存储卡模式的 <span class="ui">覆盖重复文件</span> 开关对这里不起作用。</li>
         <li><b>日期文件夹必须是普通目录</b>日期文件夹如果是符号链接，入库失败，提示 <span class="ui">日期目录必须是目标目录内的普通目录，不能是符号链接</span>。</li>
       </ul>
       <pre class="tree"><span class="dir">/Volumes/NAS/棚拍/</span>
@@ -335,7 +335,7 @@
    ├─ <span class="skip">IMG_0516.JPG</span>        <span class="note">相机重传了同一张，记为已存在，不多写一份</span>
    └─ <span class="ren">IMG_0516_1.JPG</span>      <span class="note">同名但内容不同，自动改名</span></pre>
       <p>同名不同内容，常见于两台相机的文件编号撞在一起，或者相机的文件编号归零之后。</p>
-      <aside class="note warn"><span class="note-label">注意</span>联机归档按接收时间，不按照片里的拍摄时间。跨午夜拍摄时，前后两张可能分进两天的文件夹；相机积压了一批照片隔天才传完，也会归到传完的那天。SD 卡模式的日期规则不同（见 <a href="backup.html#archive">SD 卡与大疆备份</a>），所以同一张照片的 JPEG 联机入库、RAW 收工后插卡备份，有可能落在不同的日期文件夹里。</aside>
+      <aside class="note warn"><span class="note-label">注意</span>联机归档按接收时间，不按照片里的拍摄时间。跨午夜拍摄时，前后两张可能分进两天的文件夹；相机积压了一批照片隔天才传完，也会归到传完的那天。存储卡模式的日期规则不同（见 <a href="backup.html#archive">存储卡与大疆备份</a>），所以同一张照片的 JPEG 联机入库、RAW 收工后插卡备份，有可能落在不同的日期文件夹里。</aside>
     </section>
 
     <section id="recovery">
@@ -355,7 +355,7 @@
         </table>
       </div>
       <p>重试一直持续到会话结束。备份位置恢复后，下一次重试就会成功，卡片变成 <span class="status ok">已入库</span>，相机不用重传，你也不用做任何操作。间隔封顶 16 秒，所以恢复之后最多等十几秒。</p>
-      <aside class="note warn"><span class="note-label">注意</span>收件箱也建在备份目标里。NAS 整个断开时，相机那边的上传也会失败，相机会报传输错误。已经提交进收件箱的照片等 NAS 回来后自动入库；没传成的照片还在相机存储卡上，NAS 恢复后在相机上重新传输，或者收工后用 SD 卡模式备份。</aside>
+      <aside class="note warn"><span class="note-label">注意</span>收件箱也建在备份目标里。NAS 整个断开时，相机那边的上传也会失败，相机会报传输错误。已经提交进收件箱的照片等 NAS 回来后自动入库；没传成的照片还在相机存储卡上，NAS 恢复后在相机上重新传输，或者收工后用存储卡模式备份。</aside>
       <h3>结束会话</h3>
       <p>点 <span class="ui">结束会话</span> 后，大师拷贝按下面的顺序收尾：</p>
       <ol class="steps">
@@ -387,13 +387,13 @@
         <li>把默认的 <code>eos</code> / <code>eos</code> 换掉，用一个不和其他账户共用的密码，相机端同步改。</li>
         <li>只在自己信得过的局域网里开会话，别在酒店、展会这类公共 WiFi 上开。</li>
         <li>拍完就点 <span class="ui">结束会话</span>，端口随之关闭。</li>
-        <li>共享屏幕前先切到别的页签，免得相机端设置提示里的密码被看到。</li>
+        <li>共享屏幕前先切到别的模式，免得相机端设置提示里的密码被看到。</li>
       </ul>
       <p>应用整体的写入安全、权限与隐私设计，见 <a href="reliability.html">可靠性与隐私</a>。</p>
     </section>
 
     <nav class="pager" aria-label="翻页">
-      <a class="prev" href="backup.html"><span>← 上一章</span>SD 卡与大疆备份</a>
+      <a class="prev" href="backup.html"><span>← 上一章</span>存储卡与大疆备份</a>
       <a class="next" href="eagle.html"><span>下一章 →</span>Eagle 挑图与裁剪</a>
     </nav>
   </main>
@@ -409,7 +409,7 @@
     <div>
       <h4>功能</h4>
       <ul>
-        <li><a href="backup.html">SD 卡与大疆备份</a></li>
+        <li><a href="backup.html">存储卡与大疆备份</a></li>
         <li><a href="tether.html">联机拍摄</a></li>
         <li><a href="eagle.html">Eagle 挑图与裁剪</a></li>
         <li><a href="reliability.html">可靠性与隐私</a></li>

@@ -69,11 +69,11 @@
             <td class="text-muted date-cell">{{ formatDate(file.date) }}</td>
             <td class="status-cell">
               <template v-if="getProgress(file)">
-                <div v-if="getProgress(file).status === 'uploading'" class="row-progress">
+                <div v-if="['uploading', 'verifying'].includes(getProgress(file).status)" class="row-progress">
                   <div class="row-progress-track">
                     <div class="row-progress-fill" :style="{ width: filePercent(file) + '%' }"></div>
                   </div>
-                  <span class="row-progress-label">{{ filePercent(file).toFixed(0) }}%</span>
+                  <span class="row-progress-label">{{ getProgress(file).status === 'verifying' ? '校验 ' : '' }}{{ filePercent(file).toFixed(0) }}%</span>
                 </div>
                 <span v-else :class="['status-badge', resultClass(getProgress(file).status)]">
                   {{ resultLabel(getProgress(file).status) }}
@@ -166,6 +166,7 @@ const stats = computed(() => {
     upload: props.files.filter(f => f.status === 'upload').length,
     overwrite: props.files.filter(f => f.status === 'overwrite').length,
     skip: props.files.filter(f => f.status === 'skip').length,
+    conflict: props.files.filter(f => f.status === 'conflict').length,
   };
 });
 
@@ -380,7 +381,7 @@ function getTargetDir(path) {
   return dir ? dir + separator : '';
 }
 
-// 实际写入磁盘的目标文件名（去重时可能被改成 _1/_2，与源文件名不同）
+// 目标必须保留源文件原名。
 function getTargetName(path, fallback) {
   if (!path) return fallback || '';
   const parts = String(path).split(/[/\\]/).filter(Boolean);
@@ -392,6 +393,7 @@ function getLabel(key) {
     all: '全部',
     upload: '将上传',
     overwrite: '将覆盖',
+    conflict: '同名冲突',
     skip: '将跳过'
   };
   return labels[key] || key;
@@ -414,6 +416,7 @@ function formatStatus(status) {
   const statusMap = {
     upload: '将上传',
     overwrite: '将覆盖',
+    conflict: '同名冲突',
     skip: '将跳过',
     pending: '未处理'
   };
@@ -714,6 +717,7 @@ function closeNotice() {
   color: var(--primary-700);
 }
 
+.status-conflict,
 .status-overwrite {
   background: var(--warning-soft);
   color: var(--color-warning);
@@ -770,7 +774,8 @@ function closeNotice() {
   font-weight: 600;
   color: var(--primary-600);
   flex-shrink: 0;
-  width: 34px;
+  min-width: 34px;
+  white-space: nowrap;
   text-align: right;
 }
 

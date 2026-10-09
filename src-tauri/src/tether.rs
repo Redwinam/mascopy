@@ -472,19 +472,14 @@ fn process_file(
         return Err("日期目录必须是目标目录内的普通目录，不能是符号链接".into());
     }
     let original = src.file_name().ok_or("文件名无效")?.to_string_lossy();
-    for attempt in 0.. {
+    for _ in 0..3 {
         if control.is_stopped() {
             return Err("会话已停止".into());
         }
         if Fingerprint::read(src).ok() != Some(expected) {
             return Ok(None);
         }
-        let name = if attempt == 0 {
-            original.to_string()
-        } else {
-            crate::storage::unique_name(&original, attempt)
-        };
-        let dest = date_dir.join(name);
+        let dest = date_dir.join(original.as_ref());
         if let (Ok(source), Ok(destination)) = (src.canonicalize(), dest.canonicalize()) {
             if source == destination {
                 return Err("源文件已位于目标位置，不能将其作为重复文件删除".into());
@@ -510,7 +505,10 @@ fn process_file(
                     payload.target_path = dest.to_string_lossy().to_string();
                     return Ok(Some(payload));
                 }
-                continue;
+                return Err(format!(
+                    "同名文件冲突 {}：已有内容不同，已保留源文件。文件名保持不变，请处理冲突后重试",
+                    dest.display()
+                ));
             }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
             Err(e) => return Err(format!("检查目标文件失败: {e}")),
@@ -584,7 +582,7 @@ fn process_file(
         payload.target_path = dest.to_string_lossy().to_string();
         return Ok(Some(payload));
     }
-    unreachable!()
+    Err("目标反复出现同名文件，请处理冲突后重试；文件名保持不变".into())
 }
 
 /// 判断是否为相机可达的真实局域网地址。

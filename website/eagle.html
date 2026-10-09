@@ -34,7 +34,7 @@
     <details class="chapter-list">
       <summary class="tone-copper" title="切换章节"><span class="sw"></span><span class="cur">Eagle 挑图与裁剪</span><span class="pos">3 / 5</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
       <ul>
-        <li><a class="tone-blue" href="backup.html"><span class="sw"></span>SD 卡与大疆备份</a></li>
+        <li><a class="tone-blue" href="backup.html"><span class="sw"></span>存储卡与大疆备份</a></li>
         <li><a class="tone-violet" href="tether.html"><span class="sw"></span>联机拍摄</a></li>
         <li><a class="tone-copper" href="eagle.html" aria-current="page"><span class="sw"></span>Eagle 挑图与裁剪</a></li>
         <li><a class="tone-live" href="reliability.html"><span class="sw"></span>可靠性与隐私</a></li>
@@ -76,25 +76,25 @@
 
     <section id="entry">
       <h2>从哪里开始挑图</h2>
-      <p>挑图有三个入口。前两个在备份流程里，打开一整页挑图网格；第三个在联机拍摄的照片流里，点一张照片直接放大。三个入口最后都进到同一个灯箱，导入和裁剪的用法完全一样。</p>
+      <p>挑图有三个入口。前两个在备份流程里，收在 <span class="ui">⋯</span> 菜单中，打开一整页挑图网格；第三个在联机拍摄的照片流里，点一张照片直接放大。三个入口最后都进到同一个灯箱，导入和裁剪的用法完全一样。</p>
       <div class="table-wrap">
         <table class="spec">
           <thead><tr><th>入口</th><th>挑哪些照片</th><th>读哪一份文件</th><th>看完回到</th></tr></thead>
           <tbody>
-            <tr><td>扫描结果页的<span class="ui">挑图导入</span></td><td class="wrap-ok">当前日期筛选和后缀筛选下的全部照片</td><td class="wrap-ok">备份位置里已经有的（<span class="status skip">将跳过</span>的，或本次已拷完、已跳过的）读备份副本；其余读存储卡上的原件</td><td>扫描结果</td></tr>
-            <tr><td>备份完成弹窗的<span class="ui">🖼️ 挑图导入 Eagle (N)</span></td><td class="wrap-ok">本次上传完成的照片，加上备份位置里本来就有、这次跳过的照片</td><td class="wrap-ok">全部读备份目录里的副本</td><td>配置页</td></tr>
+            <tr><td>扫描结果页 <span class="ui">⋯</span> 菜单里的<span class="ui">挑图导入 Eagle</span></td><td class="wrap-ok">当前日期筛选和后缀筛选下的全部照片</td><td class="wrap-ok">备份位置里已经有的（<span class="status skip">将跳过</span>的，或本次已拷完、已跳过的）读备份副本；其余读存储卡上的原件</td><td>扫描结果</td></tr>
+            <tr><td>备份完成弹窗 <span class="ui">⋯</span> 菜单里的<span class="ui">挑图导入 Eagle</span></td><td class="wrap-ok">本次上传完成的照片，加上备份位置里本来就有、这次跳过的照片</td><td class="wrap-ok">全部读备份目录里的副本</td><td>配置页</td></tr>
             <tr><td>联机拍摄的照片流</td><td class="wrap-ok"><span class="status ok">已入库</span> 和 <span class="status skip">已存在</span> 的照片</td><td class="wrap-ok">备份目录里的副本</td><td>照片流</td></tr>
           </tbody>
         </table>
       </div>
-      <p>只有照片进挑图：JPG、JPEG、PNG、HEIC、HIF，以及 NEF、CR2、CR3、ARW、DNG 这几种 RAW。视频不出现在网格里。当前范围里一张照片都没有时，入口按钮是灰的。完成弹窗按钮括号里的 N 就是能挑的照片数。</p>
+      <p>只有照片进挑图：JPG、JPEG、PNG、HEIC、HIF，以及 NEF、CR2、CR3、ARW、DNG 这几种 RAW。视频不出现在网格里。当前范围里一张照片都没有时，菜单项是灰的，说明文字换成原因，例如<span class="ui">当前列表里没有照片</span>。菜单项右边的数字就是能挑的照片数。</p>
       <p>结果页的挑图范围跟随上方的<span class="ui">日期筛选</span>和<span class="ui">后缀筛选</span>。同时拍了 RAW 和 JPG 时，在后缀里只留 CR3，网格里同一个画面就不会出现两次。状态条上的 <span class="status up">将上传</span> <span class="status over">将覆盖</span> <span class="status skip">将跳过</span> 只过滤表格，不影响挑图范围。</p>
       <figure>
         <div class="window">
-          <img src="assets/shots/done-dark.webp" width="2800" height="1800" alt="备份完成弹窗：标题「🎉 备份完成」，正文「所有选中的文件已成功备份到目标目录。」和「现在您可以安全地移除源设备。」，底部三个按钮：关闭、🖼️ 挑图导入 Eagle (26)、推出设备。" loading="lazy">
+          <img src="assets/shots/done-dark.webp" width="2800" height="1800" alt="备份完成弹窗：标题「🎉 备份完成」，正文「所有选中的文件已成功备份到目标目录。」和「现在您可以安全地移除源设备。」；底部右边是关闭和推出设备，左下角的 ⋯ 菜单已展开，菜单项「挑图导入 Eagle」下写着「在画廊里挑选刚备份的照片」，右边标着 24。" loading="lazy">
           <svg class="lights" viewBox="0 0 1400 900" aria-hidden="true"><circle cx="26" cy="31" r="6" fill="#ff5f57"/><circle cx="46" cy="31" r="6" fill="#febc2e"/><circle cx="66" cy="31" r="6" fill="#28c840"/></svg>
         </div>
-        <figcaption><b>备份完成弹窗。</b>中间的按钮进入挑图，括号里的 26 是这次能挑的照片数。</figcaption>
+        <figcaption><b>备份完成弹窗。</b>挑图收在左下角的 ⋯ 菜单里，菜单项右边的 24 是这次能挑的照片数。</figcaption>
       </figure>
       <aside class="note"><span class="note-label">细节</span>从完成弹窗进来的挑图读的全是备份目录里的副本，存储卡可以先拔下来。从结果页进来时，已经在备份位置里的照片同样读副本，只有还没拷过去的照片才读存储卡。</aside>
     </section>
@@ -372,7 +372,7 @@
     <div>
       <h4>功能</h4>
       <ul>
-        <li><a href="backup.html">SD 卡与大疆备份</a></li>
+        <li><a href="backup.html">存储卡与大疆备份</a></li>
         <li><a href="tether.html">联机拍摄</a></li>
         <li><a href="eagle.html">Eagle 挑图与裁剪</a></li>
         <li><a href="reliability.html">可靠性与隐私</a></li>
