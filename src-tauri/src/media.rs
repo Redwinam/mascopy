@@ -11,7 +11,7 @@ const FORMATS: &[(&str, &str, bool, bool, bool)] = &[
     ("cr2", "photo", true, false, true),
     ("cr3", "photo", true, false, true),
     ("arw", "photo", true, false, true),
-    ("dng", "photo", true, false, true),
+    ("dng", "photo", true, true, true),
     ("mp4", "video", true, true, true),
     ("mov", "video", true, true, true),
     ("avi", "video", true, false, true),
@@ -55,6 +55,7 @@ mod tests {
             }
         }
         assert_eq!(classify(Path::new("IMG.LRF"), "dji"), Some("video"));
+        assert_eq!(classify(Path::new("DJI_0001.DNG"), "dji"), Some("photo"));
         assert_eq!(classify(Path::new("IMG.HIF"), "tether"), Some("photo"));
         assert_eq!(classify(Path::new("IMG.JPG"), "unknown"), None);
     }

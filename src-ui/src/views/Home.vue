@@ -12,12 +12,12 @@
               <span class="badge-icon">📂</span>
               <span class="badge-text">源目录</span>
             </div>
-            <div class="mode-indicator">{{ currentMode === "sd" ? "SD卡模式" : "DJI模式" }}</div>
+            <div class="mode-indicator">{{ currentMode === "sd" ? "存储卡导入" : "大疆导入" }}</div>
           </div>
 
           <div class="card-body">
             <FileSelector
-              :title="`选择${currentMode === 'sd' ? 'SD卡' : 'DJI设备'}路径`"
+              :title="`选择${currentMode === 'sd' ? '存储卡' : '大疆设备'}路径`"
               :path="config[currentMode].source_dir"
               @update:path="updateSource"
               @addFavorite="addSourceFavorite"

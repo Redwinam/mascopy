@@ -10,12 +10,11 @@
       <div data-tauri-drag-region></div>
       
       <div class="header-center" id="header-center-slot">
-        <TabView
+        <ModeSwitcher
           v-if="currentStep === 'config'"
-          :tabs="modeTabs"
+          v-model="currentMode"
           :disabled="configLocked"
-          v-model:activeTab="currentMode"
-          class="header-tabs"
+          :live="tetherActive"
           data-no-drag
           data-tauri-no-drag
         />
@@ -35,7 +34,7 @@
 
 <script setup>
 import Home from './views/Home.vue';
-import TabView from './components/TabView.vue';
+import ModeSwitcher from './components/ModeSwitcher.vue';
 import ThemeToggle from './components/ThemeToggle.vue';
 import AppUpdate from './components/AppUpdate.vue';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -49,13 +48,7 @@ const isTauri =
     window.__TAURI_INTERNALS__?.invoke !== undefined);
 const appWindow = isTauri ? getCurrentWindow() : null;
 
-const { currentMode, currentStep, configLocked } = useAppState();
-
-const modeTabs = [
-  { id: 'sd', label: 'SD卡模式' },
-  { id: 'dji', label: 'DJI模式' },
-  { id: 'tether', label: '联机拍摄' }
-];
+const { currentMode, currentStep, configLocked, tetherActive } = useAppState();
 
 async function onHeaderPointerDown(event) {
   if (event.button !== 0) return;
@@ -73,7 +66,8 @@ async function onHeaderPointerDown(event) {
   align-items: center;
   position: relative;
   padding: 0 var(--space-6);
-  height: 64px;
+  /* 模式卡片带说明文字，比普通页签高；红绿灯位置在 tauri.conf.json 里跟着居中 */
+  height: 76px;
   z-index: 100;
   background: linear-gradient(180deg, var(--surface-overlay-strong), var(--surface-overlay-soft));
   border-bottom: 1px solid var(--divider-color);

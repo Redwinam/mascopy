@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>SD 卡与大疆备份 · 大师拷贝</title>
-  <meta name="description" content="SD 卡与大疆素材备份：扫描规则、按拍摄日期归档、逐字节判重、筛选与勾选上传、暂停与取消、失败重试和推出设备。">
+  <title>存储卡与大疆备份 · 大师拷贝</title>
+  <meta name="description" content="存储卡与大疆素材备份：扫描规则、按拍摄日期归档、逐字节判重、筛选与勾选上传、暂停与取消、失败重试和推出设备。">
   <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="stylesheet" href="assets/site.css">
   <script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("dl-site-theme")==="light"?"light":"dark")}catch(e){}</script>
@@ -32,9 +32,9 @@
 <div class="wrap doc">
   <aside class="doc-nav">
     <details class="chapter-list">
-      <summary class="tone-blue" title="切换章节"><span class="sw"></span><span class="cur">SD 卡与大疆备份</span><span class="pos">1 / 5</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+      <summary class="tone-blue" title="切换章节"><span class="sw"></span><span class="cur">存储卡与大疆备份</span><span class="pos">1 / 5</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
       <ul>
-        <li><a class="tone-blue" href="backup.html" aria-current="page"><span class="sw"></span>SD 卡与大疆备份</a></li>
+        <li><a class="tone-blue" href="backup.html" aria-current="page"><span class="sw"></span>存储卡与大疆备份</a></li>
         <li><a class="tone-violet" href="tether.html"><span class="sw"></span>联机拍摄</a></li>
         <li><a class="tone-copper" href="eagle.html"><span class="sw"></span>Eagle 挑图与裁剪</a></li>
         <li><a class="tone-live" href="reliability.html"><span class="sw"></span>可靠性与隐私</a></li>
@@ -46,7 +46,7 @@
       <ul>
         <li><a href="#flow">一次备份的流程</a></li>
         <li><a href="#config">配置页</a></li>
-        <li><a href="#dji">DJI 模式</a></li>
+        <li><a href="#dji">大疆模式</a></li>
         <li><a href="#scan">扫描收哪些文件</a></li>
         <li><a href="#dates">拍摄日期怎么定</a></li>
         <li><a href="#archive">归档目录与判重</a></li>
@@ -62,7 +62,7 @@
 
   <main class="doc-main tone-blue">
     <header class="chapter-head">
-      <span class="chapter-label"><svg class="icon" viewBox="0 0 24 24"><line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/></svg>SD 卡与大疆备份</span>
+      <span class="chapter-label"><svg class="icon" viewBox="0 0 24 24"><line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/></svg>存储卡与大疆备份</span>
       <h1>插上存储卡，先看清每个文件去哪</h1>
       <p class="lede">这一章讲从插卡到推出的整条备份流程：选来源和目标，扫描收哪些文件、日期怎么定，文件归档到哪里、同名文件怎么处理，以及上传时的进度、暂停、取消和失败重试。相机存储卡和大疆设备各有一个模式，用法相同，收的格式不同。</p>
     </header>
@@ -78,9 +78,9 @@
 
     <section id="flow">
       <h2>一次备份的流程</h2>
-      <p>大师拷贝把一次倒卡分成三个画面：配置、扫描结果、挑图。顶栏中间的页签跟着画面变。配置画面显示 <span class="ui">SD卡模式</span> <span class="ui">DJI模式</span> <span class="ui">联机拍摄</span> 三个页签；进入结果画面后换成 <span class="ui">扫描结果</span> 和 <span class="ui">日志</span>，右上角多出 <span class="ui">返回配置</span>。</p>
+      <p>大师拷贝把一次倒卡分成三个画面：配置、扫描结果、挑图。顶栏中间的内容跟着画面变。配置画面显示三张模式卡片：<span class="ui">存储卡导入</span> 和 <span class="ui">大疆导入</span> 放在一起，虚线另一侧是紫色的 <span class="ui">联机拍摄</span>。每张卡片带图标和一行说明，选中的那张整张高亮。进入结果画面后换成 <span class="ui">扫描结果</span> 和 <span class="ui">日志</span> 两个页签，右上角多出 <span class="ui">返回配置</span>。</p>
       <ol class="steps">
-        <li>在顶栏选 <span class="ui">SD卡模式</span> 或 <span class="ui">DJI模式</span>。</li>
+        <li>在顶栏选 <span class="ui">存储卡导入</span> 或 <span class="ui">大疆导入</span>。</li>
         <li>在左边的源目录卡片里点 <span class="ui">选择目录</span>，选中存储卡或卡上的某个文件夹，例如 <code>/Volumes/EOS_DIGITAL</code>。</li>
         <li>在右边的目标目录卡片里选备份位置，例如已经挂载的 <code>/Volumes/NAS/照片备份</code>。</li>
         <li>按需要调整底栏的三个开关，点 <span class="ui">开始扫描</span>。</li>
@@ -90,7 +90,7 @@
       </ol>
       <p>整个过程不改动存储卡上的任何文件。扫描只读取文件信息，上传只从卡上读数据，所有写入都发生在目标目录里。</p>
       <ul class="facts">
-        <li><b>扫描中</b>按钮变成 <span class="ui">扫描中...</span> 并转圈。配置表单和顶栏的模式页签同时锁住，扫描到一半不能改路径或切模式。</li>
+        <li><b>扫描中</b>按钮变成 <span class="ui">扫描中...</span> 并转圈。配置表单和顶栏的模式卡片同时锁住，扫描到一半不能改路径或切模式。</li>
         <li><b>上传中</b><span class="ui">返回配置</span> 不可点，结果页的操作按钮暂时隐藏。可以切到 <span class="ui">日志</span> 页签看逐条记录。</li>
         <li><b>日志</b>每条记录带时分秒，信息、成功、警告、错误分别用蓝、绿、黄、红标出。日志只保存在本次运行里，退出应用后清空；也可以点 <span class="ui">清空日志</span> 手动清掉。</li>
       </ul>
@@ -109,7 +109,7 @@
       <p>配置页左右两张卡片，中间一个箭头，意思是从左拷到右。</p>
 
       <h3>源目录</h3>
-      <p>左边卡片的角标是 <span class="ui">📂 源目录</span>，右上角显示当前模式。标题写着 <span class="ui">选择SD卡路径</span>，DJI 模式下是 <span class="ui">选择DJI设备路径</span>。还没选路径时，这里提示 <span class="ui">请选择包含照片/视频的文件夹</span>。</p>
+      <p>左边卡片的角标是 <span class="ui">📂 源目录</span>，右上角显示当前模式。标题写着 <span class="ui">选择存储卡路径</span>，大疆模式下是 <span class="ui">选择大疆设备路径</span>。还没选路径时，这里提示 <span class="ui">请选择包含照片/视频的文件夹</span>。</p>
       <p>点 <span class="ui">选择目录</span> 会打开 macOS 自带的文件夹选择框。可以选整张卡的根目录 <code>/Volumes/EOS_DIGITAL</code>，也可以只选其中一个文件夹，例如 <code>/Volumes/EOS_DIGITAL/DCIM/100CANON</code>。扫描会进入所选文件夹下的每一层子文件夹。旁边的心形按钮 <span class="ui">加入收藏</span> 把当前路径收进下方的收藏夹。</p>
 
       <h3>目标目录</h3>
@@ -121,7 +121,7 @@
         <table class="spec">
           <thead><tr><th>开关</th><th>界面说明</th><th>默认</th><th>作用</th></tr></thead>
           <tbody>
-            <tr><td>覆盖重复文件</td><td class="wrap-ok">关：同名不同内容时另存为 _1<br>开：同名不同内容时覆盖旧文件</td><td>关</td><td class="wrap-ok">目标里已有同名文件、内容又不同时，用新文件替换它；关着时改名另存。内容相同的文件无论开关开不开都跳过。SD 卡模式和 DJI 模式各记一份，重启后保留。</td></tr>
+            <tr><td>覆盖重复文件</td><td class="wrap-ok">关：同名不同内容时另存为 _1<br>开：同名不同内容时覆盖旧文件</td><td>关</td><td class="wrap-ok">目标里已有同名文件、内容又不同时，用新文件替换它；关着时改名另存。内容相同的文件无论开关开不开都跳过。存储卡模式和大疆模式各记一份，重启后保留。</td></tr>
             <tr><td>快速扫描模式</td><td class="wrap-ok">仅对比修改时间 (跳过EXIF)</td><td>开</td><td class="wrap-ok">只用文件修改时间定日期，不读照片 EXIF 和视频创建时间。不记忆，每次启动都是开。</td></tr>
             <tr><td>忽略缩略图文件夹</td><td class="wrap-ok">自动跳过 THMBNL 等缩略图目录</td><td>开</td><td class="wrap-ok">跳过名为 THM、名字里含 THUMB 或 THMBNL 的文件夹。不记忆，每次启动都是开。</td></tr>
           </tbody>
@@ -132,16 +132,17 @@
     </section>
 
     <section id="dji">
-      <h2>DJI 模式</h2>
-      <p>顶栏切到 <span class="ui">DJI模式</span>，界面和 SD 卡模式一样，标题换成 <span class="ui">选择DJI设备路径</span>，右上角显示 <span class="ui">DJI模式</span>。两个模式各管各的：源目录、目标目录、覆盖开关、源收藏、目标收藏都分开保存。上午用 SD 卡模式倒相机卡，下午切到 DJI 模式倒无人机或 Osmo 的卡，两边的路径都不用重选。</p>
-      <p>两个模式的差别在于收哪些格式。DJI 模式只收大疆设备常见的几种文件：</p>
+      <h2>大疆模式</h2>
+      <p>顶栏切到 <span class="ui">大疆导入</span>，界面和存储卡模式一样，标题换成 <span class="ui">选择大疆设备路径</span>，右上角显示 <span class="ui">大疆导入</span>。两个模式各管各的：源目录、目标目录、覆盖开关、源收藏、目标收藏都分开保存。上午用存储卡模式倒相机卡，下午切到大疆模式倒 Osmo 或无人机的卡，两边的路径都不用重选。</p>
+      <p>两个模式的差别在于收哪些格式。大疆模式只收大疆设备常见的几种文件：</p>
       <div class="table-wrap">
         <table class="spec">
-          <thead><tr><th>格式</th><th>SD 卡模式</th><th>DJI 模式</th></tr></thead>
+          <thead><tr><th>格式</th><th>存储卡模式</th><th>大疆模式</th></tr></thead>
           <tbody>
             <tr><td>JPG / JPEG</td><td class="yes">✓</td><td class="yes">✓</td></tr>
             <tr><td>PNG、HEIC</td><td class="yes">✓</td><td class="no">—</td></tr>
-            <tr><td>RAW：NEF、CR2、CR3、ARW、DNG</td><td class="yes">✓</td><td class="no">—</td></tr>
+            <tr><td>RAW：NEF、CR2、CR3、ARW</td><td class="yes">✓</td><td class="no">—</td></tr>
+            <tr><td>DNG</td><td class="yes">✓</td><td class="yes">✓</td></tr>
             <tr><td>视频：MP4、MOV</td><td class="yes">✓</td><td class="yes">✓</td></tr>
             <tr><td>视频：AVI、M4V、3GP、MKV</td><td class="yes">✓</td><td class="no">—</td></tr>
             <tr><td>LRF（大疆低清代理）</td><td class="no">—</td><td class="yes">✓</td></tr>
@@ -150,9 +151,9 @@
         </table>
       </div>
       <ul class="facts">
-        <li><b>LRF</b>大疆设备录像时和正片一起生成的低分辨率代理文件。DJI 模式把它和正片一起按日期归档，文件名和正片一样保持原样，剪辑时按主文件名就能对上。</li>
+        <li><b>LRF</b>大疆设备录像时和正片一起生成的低分辨率代理文件。大疆模式把它和正片一起按日期归档，文件名和正片一样保持原样，剪辑时按主文件名就能对上。</li>
         <li><b>OSV</b>Osmo 360 拍的全景视频文件，按视频处理，和 MP4、MOV 一样读取容器里的创建时间。</li>
-        <li><b>DNG</b>DJI 模式不收 DNG。需要大疆机器拍的 DNG 时，改用 <span class="ui">SD卡模式</span> 扫描同一张卡：DNG、JPG、MP4、MOV 都会收进来，LRF 和 OSV 不会。</li>
+        <li><b>DNG</b>大疆设备拍的 RAW 照片。和 JPG 一样读 EXIF 里的拍摄时间归档。</li>
         <li><b>大小写</b>扩展名不区分大小写，<code>.MP4</code> 和 <code>.mp4</code> 一样处理。</li>
       </ul>
       <p>联机拍摄另有一套格式规则，多收佳能的 HIF 和 CRM，见 <a href="tether.html">联机拍摄</a>。各模式的完整格式表也收在 <a href="reference.html">格式、快捷键与系统要求</a>。</p>
@@ -180,7 +181,7 @@
 
       <h3>扫描期间与扫描之后</h3>
       <p>按钮显示 <span class="ui">扫描中...</span> 并转圈。扫描没有进度条，也不能中途取消，只能等它结束。关掉快速扫描后要逐个打开文件读取 EXIF 和视频头，文件多的卡会慢一些。</p>
-      <p>扫描完成后自动切到结果页，日志记一行 <span class="ui">扫描完成，共找到 N 个文件</span>。一个文件都没找到时，结果页显示 🔍 <span class="ui">未找到符合条件的文件</span>。遇到这种情况，先确认模式和源目录选对了，比如用 DJI 模式扫一张只有 CR3 的相机卡，就会一个都找不到。</p>
+      <p>扫描完成后自动切到结果页，日志记一行 <span class="ui">扫描完成，共找到 N 个文件</span>。一个文件都没找到时，结果页显示 🔍 <span class="ui">未找到符合条件的文件</span>。遇到这种情况，先确认模式和源目录选对了，比如用大疆模式扫一张只有 CR3 的相机卡，就会一个都找不到。</p>
     </section>
 
     <section id="dates">
@@ -435,8 +436,8 @@
         <li><b>选用</b>点收藏夹里的某条路径，它立即填进上面的选择框。</li>
         <li><b>移除</b>鼠标移到某条收藏上，右边出现 <span class="ui">×</span>，点它移除。用键盘把焦点移到这一条时也会出现。</li>
         <li><b>上限</b>每个列表最多 8 条。第 9 条加进来时，排在最后的那条被移出。</li>
-        <li><b>分开保存</b>SD 卡的源、SD 卡的目标、大疆的源、大疆的目标，一共四个列表，互不影响。</li>
-        <li><b>和联机拍摄共用</b>联机拍摄选备份目标时，会同时列出 SD 卡和大疆两边的目标收藏；在联机拍摄页面新加的目标收藏，存进 SD 卡的目标列表。</li>
+        <li><b>分开保存</b>存储卡的源、存储卡的目标、大疆的源、大疆的目标，一共四个列表，互不影响。</li>
+        <li><b>和联机拍摄共用</b>联机拍摄选备份目标时，会同时列出存储卡和大疆两边的目标收藏；在联机拍摄页面新加的目标收藏，存进存储卡的目标列表。</li>
       </ul>
 
       <h3>配置自动保存</h3>
@@ -445,8 +446,8 @@
         <table class="spec">
           <thead><tr><th>分组</th><th>保存的内容</th></tr></thead>
           <tbody>
-            <tr><td>SD 卡模式</td><td class="wrap-ok">源目录、目标目录、覆盖重复文件</td></tr>
-            <tr><td>DJI 模式</td><td class="wrap-ok">源目录、目标目录、覆盖重复文件</td></tr>
+            <tr><td>存储卡模式</td><td class="wrap-ok">源目录、目标目录、覆盖重复文件</td></tr>
+            <tr><td>大疆模式</td><td class="wrap-ok">源目录、目标目录、覆盖重复文件</td></tr>
             <tr><td>收藏夹</td><td class="wrap-ok">上面说的四个列表</td></tr>
             <tr><td>Eagle</td><td class="wrap-ok">API 地址、令牌、上次选的文件夹</td></tr>
             <tr><td>联机拍摄</td><td class="wrap-ok">联机方式、FTP 端口、用户名、密码、监听目录、备份目标</td></tr>
@@ -467,7 +468,7 @@
         <li><b>覆盖只覆盖内容不同的同名文件</b>开关说明写着 <span class="ui">相同文件名将被覆盖</span>，内容相同的文件照样跳过；<code>_1</code>、<code>_2</code> 这些候选名也不会被覆盖。</li>
         <li><b>开关在扫描时生效</b>扫描之后再改覆盖或扫描开关，要重新扫描才会反映到状态里。</li>
         <li><b>部分格式按修改时间归档</b>CR3 的 EXIF 可能读不出来，AVI、MKV 没有容器创建时间，这些文件都按修改时间定日期。</li>
-        <li><b>格式按模式区分</b>DJI 模式不收 DNG；SD 卡模式不收 LRF、OSV，也不收只在联机拍摄里支持的 HIF 和 CRM。</li>
+        <li><b>格式按模式区分</b>大疆模式只收 JPG、DNG、MP4、MOV、LRF、OSV；存储卡模式不收 LRF、OSV，也不收只在联机拍摄里支持的 HIF 和 CRM。</li>
         <li><b>目录结构固定</b>只有 <code>YYYY-MM-DD</code> 一层，不能自定义目录格式或命名规则。</li>
         <li><b>推出入口有限</b>只有全部成功时的完成弹窗里有 <span class="ui">推出设备</span>，而且只能推出 <code>/Volumes/</code> 下的设备。</li>
         <li><b>日志不存盘</b>日志只保存在本次运行里，退出应用后清空。</li>
@@ -492,7 +493,7 @@
     <div>
       <h4>功能</h4>
       <ul>
-        <li><a href="backup.html">SD 卡与大疆备份</a></li>
+        <li><a href="backup.html">存储卡与大疆备份</a></li>
         <li><a href="tether.html">联机拍摄</a></li>
         <li><a href="eagle.html">Eagle 挑图与裁剪</a></li>
         <li><a href="reliability.html">可靠性与隐私</a></li>
