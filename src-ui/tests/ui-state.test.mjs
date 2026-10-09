@@ -36,7 +36,7 @@ function homeFixture(invoke) {
   return { state, home: load('../src/views/Home.vue', { useAppState: () => state, invoke, listen: async () => () => {} }, [
     'startScan', 'startUpload', 'cancel', 'togglePause', 'isUploading', 'isPaused', 'isCancelling',
     'scanSnapshot', 'showSuccessModal', 'noticeModal', 'scanResult', 'filesToDisplay', 'fileProgress', 'ejectVolume', 'saveConfig',
-    'handleUploadProgress', 'uploadFailures', 'logs',
+    'handleUploadProgress', 'uploadFailures', 'logs', 'uploadPickerItems',
     'selectedKeys', 'selectedCount', 'selectedUploadFiles', 'hiddenSelectedCount', 'selectedExtensions', 'fileFilter', 'clearSelection',
   ]) };
 }
@@ -133,6 +133,42 @@ test('partial failure retains results; retry excludes completed overwrites', asy
   await home.startUpload(home.filesToDisplay.value);
   assert.deepEqual(uploads[1].map(f => f.filename), ['b.jpg']);
   assert.equal(home.showSuccessModal.value, true);
+});
+
+test('same-name conflicts stay visible and never enter the upload selection', async () => {
+  const uploads = [];
+  const { home } = homeFixture(async (command, args) => {
+    if (command === 'scan_files') return [file('a.jpg'), file('b.jpg', 'conflict')];
+    if (command === 'upload_files') {
+      uploads.push(args.files.map(f => ({ ...f })));
+      return { completed: 1, completed_paths: ['/sd/a.jpg'], skipped: 0, failed: [], cancelled: false };
+    }
+  });
+  await home.startScan();
+  assert.deepEqual(home.selectedKeys.value, ['/sd/a.jpg']);
+  await home.startUpload();
+  assert.deepEqual(uploads[0].map(f => f.target_path), ['/backup/a.jpg']);
+  assert.equal(home.showSuccessModal.value, false);
+  assert.equal(home.scanResult.value[1].target_path, '/backup/b.jpg');
+  assert.equal(home.scanResult.value[1].status, 'conflict');
+  assert.deepEqual(home.uploadPickerItems().map(f => f.path), ['/backup/a.jpg']);
+});
+
+test('comparison progress and a verified skip preserve the exact original target', async () => {
+  const worker = deferred();
+  const { home } = homeFixture(async command => {
+    if (command === 'scan_files') return [file('a.jpg')];
+    if (command === 'upload_files') return worker.promise;
+  });
+  await home.startScan();
+  const pending = home.startUpload();
+  home.handleUploadProgress({ path: '/sd/a.jpg', status: 'verifying', file_done: 5, file_total: 10 });
+  assert.equal(home.scanResult.value[0].target_path, '/backup/a.jpg');
+  assert.equal(home.fileProgress.value['/sd/a.jpg'].status, 'verifying');
+  worker.resolve({ completed: 0, skipped: 1, skipped_paths: ['/sd/a.jpg'], failed: [], cancelled: false });
+  await pending;
+  assert.equal(home.showSuccessModal.value, true);
+  assert.deepEqual(home.uploadPickerItems().map(f => f.path), ['/backup/a.jpg']);
 });
 
 test('file errors are visible while the batch is paused and are not logged twice on completion', async () => {

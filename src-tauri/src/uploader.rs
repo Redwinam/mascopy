@@ -1,6 +1,6 @@
 use crate::{
     scanner::MediaFile,
-    storage::{files_equal, SourceStamp, StagedFile},
+    storage::{files_equal_with_control, SourceStamp, StagedFile},
 };
 use std::collections::HashSet;
 use std::fs::{self, File};
@@ -40,6 +40,12 @@ pub struct UploadOutcome {
     pub cancelled: bool,
     pub completed_paths: Vec<String>,
     pub skipped_paths: Vec<String>,
+}
+
+enum FileResult {
+    Copied,
+    Skipped,
+    Cancelled,
 }
 #[derive(Default)]
 struct Control {
@@ -156,6 +162,9 @@ fn validate_plan(files: &[MediaFile], root: &Path) -> Result<(), String> {
             return Err("无效的上传状态，请重新扫描".into());
         }
         validate_destination(root, &file.target_path)?;
+        if file.target_path.file_name() != file.path.file_name() {
+            return Err("目标文件名必须与源文件名完全一致，请重新扫描".into());
+        }
         if !destinations.insert(file.target_path.to_string_lossy().to_lowercase()) {
             return Err("多个源文件不能使用同一目标路径，请重新扫描".into());
         }
@@ -211,34 +220,25 @@ impl UploadSession {
                 error: None,
             };
             emit(event.clone());
-            let result = if file.status == "skip" {
-                files_equal(&file.path, &file.target_path)
-                    .map_err(|e| e.to_string())
-                    .and_then(|equal| {
-                        if equal {
-                            Ok(true)
-                        } else {
-                            Err("源文件或重复目标已变化，请重新扫描".into())
-                        }
-                    })
-            } else {
-                self.copy_file(file, &root, &mut event, &mut emit)
-            };
+            let result = self.copy_file(file, &root, &mut event, &mut emit);
             match result {
-                Ok(true) => {
-                    if file.status == "skip" {
-                        outcome.skipped += 1;
-                        outcome.skipped_paths.push(event.path.clone());
-                        event.status = "skipped".into();
-                    } else {
-                        outcome.completed += 1;
-                        outcome.completed_paths.push(event.path.clone());
+                Ok(FileResult::Skipped) => {
+                    outcome.skipped += 1;
+                    outcome.skipped_paths.push(event.path.clone());
+                    event.status = "skipped".into();
+                    event.file_done = file.size;
+                    if file.status != "skip" {
                         overall_done = before + file.size;
-                        event.status = "done".into();
-                        event.file_done = file.size;
                     }
                 }
-                Ok(false) => {
+                Ok(FileResult::Copied) => {
+                    outcome.completed += 1;
+                    outcome.completed_paths.push(event.path.clone());
+                    overall_done = before + file.size;
+                    event.status = "done".into();
+                    event.file_done = file.size;
+                }
+                Ok(FileResult::Cancelled) => {
                     outcome.cancelled = true;
                     event.status = "cancelled".into();
                 }
@@ -274,7 +274,7 @@ impl UploadSession {
         root: &Path,
         event: &mut ProgressPayload,
         emit: &mut impl FnMut(ProgressPayload),
-    ) -> Result<bool, String> {
+    ) -> Result<FileResult, String> {
         let mut src = File::open(&file.path).map_err(|e| e.to_string())?;
         let meta = src.metadata().map_err(|e| e.to_string())?;
         let stamp = SourceStamp::read(&meta).map_err(|e| e.to_string())?;
@@ -286,11 +286,45 @@ impl UploadSession {
             return Err("源文件在扫描后发生变化，请重新扫描".into());
         }
         validate_destination(root, &file.target_path)?;
+        if file.status == "skip" {
+            return match self.compare_target(file, event, emit)? {
+                Some(true) => Ok(FileResult::Skipped),
+                Some(false) => Err("源文件或重复目标已变化，请重新扫描".into()),
+                None => Ok(FileResult::Cancelled),
+            };
+        }
         fs::create_dir_all(file.target_path.parent().ok_or("目标目录无效")?)
             .map_err(|e| e.to_string())?;
         validate_destination(root, &file.target_path)?;
+        if !self.uploader.proceed() {
+            return Ok(FileResult::Cancelled);
+        }
+        if file.status != "overwrite" {
+            match fs::symlink_metadata(&file.target_path) {
+                Ok(meta) => {
+                    if meta.is_file() && meta.len() == file.size {
+                        match self.compare_target(file, event, emit)? {
+                            Some(true) => return Ok(FileResult::Skipped),
+                            Some(false) => {}
+                            None => return Ok(FileResult::Cancelled),
+                        }
+                    }
+                    return Err("目标存在同名但不完整或内容不同的文件，文件名保持不变。请返回配置，开启「覆盖重复文件」后重新扫描，并仅选择需修复的文件；程序不会自动改名另存".into());
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                Err(e) => return Err(format!("无法检查目标 {}: {e}", file.target_path.display())),
+            }
+        }
         let mut dst = StagedFile::for_media(&file.target_path, file.status == "overwrite")
-            .map_err(|e| format!("创建目标文件失败 {}: {e}", file.target_path.display()))?;
+            .map_err(|e| {
+                format!(
+                    "创建原名目标失败 {}: {e}。请检查目标占用或覆盖设置，程序不会改名另存",
+                    file.target_path.display()
+                )
+            })?;
+        event.status = "uploading".into();
+        event.file_done = 0;
+        emit(event.clone());
         let mut buf = vec![0; BUFFER_SIZE];
         let base = event.overall_done;
         let mut last = Instant::now();
@@ -299,7 +333,7 @@ impl UploadSession {
         loop {
             let pause_started = Instant::now();
             if !self.uploader.proceed() {
-                return Ok(false);
+                return Ok(FileResult::Cancelled);
             }
             if pause_started.elapsed() > Duration::from_millis(50) {
                 anchor = Instant::now();
@@ -330,7 +364,7 @@ impl UploadSession {
             }
         }
         if !self.uploader.proceed() {
-            return Ok(false);
+            return Ok(FileResult::Cancelled);
         }
         if event.file_done != stamp.len
             || SourceStamp::read(&src.metadata().map_err(|e| e.to_string())?)
@@ -355,8 +389,58 @@ impl UploadSession {
             );
         }
         dst.commit(&file.target_path, file.status == "overwrite")
-            .map_err(|e| format!("提交目标文件失败 {}: {e}", file.target_path.display()))?;
-        Ok(true)
+            .map_err(|e| {
+                if e.kind() == std::io::ErrorKind::AlreadyExists {
+                    "复制期间出现同名目标，原文件已保留；请重试校验；内容不同需明确选择覆盖，文件名保持不变"
+                        .into()
+                } else {
+                    format!(
+                        "提交目标文件失败 {}: {e}。请确认目标磁盘已连接且可写后重试",
+                        file.target_path.display()
+                    )
+                }
+            })?;
+        Ok(FileResult::Copied)
+    }
+
+    fn compare_target(
+        &self,
+        file: &MediaFile,
+        event: &mut ProgressPayload,
+        emit: &mut impl FnMut(ProgressPayload),
+    ) -> Result<Option<bool>, String> {
+        let mut last = Instant::now();
+        let result = files_equal_with_control(&file.path, &file.target_path, |done, _| {
+            if !self.uploader.proceed() {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::Interrupted,
+                    "已取消校验",
+                ));
+            }
+            event.status = "verifying".into();
+            event.file_done = done;
+            event.speed = 0;
+            if done == 0 || done == file.size || last.elapsed() >= EMIT_INTERVAL {
+                emit(event.clone());
+                last = Instant::now();
+            }
+            // Also honor cancellation requested by the progress callback.
+            if !self.uploader.proceed() {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::Interrupted,
+                    "已取消校验",
+                ));
+            }
+            Ok(())
+        });
+        match result {
+            Ok(equal) => Ok(Some(equal)),
+            Err(e) if e.kind() == std::io::ErrorKind::Interrupted => Ok(None),
+            Err(e) => Err(format!(
+                "校验已有目标失败 {}: {e}。请确认磁盘连接后重试",
+                file.target_path.display()
+            )),
+        }
     }
 }
 #[cfg(test)]
@@ -376,28 +460,83 @@ mod tests {
         (files, target)
     }
     #[test]
-    fn failed_destination_is_a_failed_result_and_preserves_existing_file() {
+    fn retry_preserves_original_name_and_requires_explicit_overwrite_for_conflicts() {
         let dir = TestDir::new();
-        let (files, target) = fixture(&dir);
+        let (mut files, target) = fixture(&dir);
         let dest = files[0].target_path.clone();
         fs::create_dir_all(dest.parent().unwrap()).unwrap();
-        fs::write(&dest, b"late destination").unwrap();
         let uploader = Arc::new(Uploader::new());
+        for bytes in [b"partial".as_slice(), b"other!".as_slice()] {
+            fs::write(&dest, bytes).unwrap();
+            let out = uploader
+                .start()
+                .unwrap()
+                .run(files.clone(), target.clone(), |_| {})
+                .unwrap();
+            assert_eq!(out.failed.len(), 1);
+            assert!(out.failed[0].error.contains("文件名保持不变"));
+            assert_eq!(out.completed, 0);
+            assert_eq!(fs::read(&dest).unwrap(), bytes);
+            assert_eq!(fs::read_dir(dest.parent().unwrap()).unwrap().count(), 1);
+        }
+        files[0].status = "overwrite".into();
+        let out = uploader
+            .start()
+            .unwrap()
+            .run(files.clone(), target.clone(), |_| {})
+            .unwrap();
+        assert_eq!(out.completed, 1);
+        assert_eq!(fs::read(&dest).unwrap(), b"source");
+        files[0].status = "upload".into();
         let mut events = Vec::new();
         let out = uploader
             .start()
             .unwrap()
             .run(files, target, |p| events.push(p))
             .unwrap();
-        assert_eq!(out.failed.len(), 1);
+        assert_eq!(out.skipped, 1);
         assert_eq!(out.completed, 0);
-        assert_eq!(events.last().unwrap().status, "error");
-        assert_eq!(
-            events.last().unwrap().error.as_deref(),
-            Some(out.failed[0].error.as_str())
-        );
-        assert_eq!(fs::read(dest).unwrap(), b"late destination");
+        assert!(events.iter().any(|p| p.status == "verifying"));
+        assert_eq!(events.last().unwrap().overall_done, 6);
+        assert_eq!(fs::read_dir(dest.parent().unwrap()).unwrap().count(), 1);
     }
+
+    #[test]
+    fn renamed_targets_are_rejected_before_writing() {
+        let dir = TestDir::new();
+        let (mut files, target) = fixture(&dir);
+        files[0].target_path = files[0].target_path.with_file_name("photo_1.JPG");
+        let result = Arc::new(Uploader::new())
+            .start()
+            .unwrap()
+            .run(files, target.clone(), |_| {});
+        assert!(result.unwrap_err().contains("文件名必须与源文件名完全一致"));
+        assert_eq!(fs::read_dir(target).unwrap().count(), 0);
+    }
+
+    #[test]
+    fn cancellation_during_retry_comparison_preserves_existing_file() {
+        let dir = TestDir::new();
+        let (files, target) = fixture(&dir);
+        let dest = files[0].target_path.clone();
+        fs::create_dir_all(dest.parent().unwrap()).unwrap();
+        fs::write(&dest, b"source").unwrap();
+        let uploader = Arc::new(Uploader::new());
+        let out = uploader
+            .start()
+            .unwrap()
+            .run(files, target, |p| {
+                if p.status == "verifying" {
+                    uploader.cancel();
+                }
+            })
+            .unwrap();
+        assert!(out.cancelled);
+        assert_eq!(out.skipped, 0);
+        assert_eq!(fs::read(&dest).unwrap(), b"source");
+        assert_eq!(fs::read_dir(dest.parent().unwrap()).unwrap().count(), 1);
+    }
+
     #[test]
     fn cancellation_owns_the_worker_until_it_finishes() {
         let dir = TestDir::new();
@@ -507,10 +646,33 @@ mod tests {
             .unwrap()
             .run(files.clone(), nas.0.clone(), |_| {})
             .unwrap();
-        assert_eq!(outcome.failed.len(), 1);
+        assert!(outcome.failed.is_empty());
+        assert_eq!(outcome.skipped, 1);
+        assert_eq!(fs::read(&files[0].target_path).unwrap(), bytes);
+        fs::write(&files[0].target_path, b"partial").unwrap();
+        let conflict = uploader
+            .start()
+            .unwrap()
+            .run(files.clone(), nas.0.clone(), |_| {})
+            .unwrap();
+        assert_eq!(conflict.failed.len(), 1);
+        assert_eq!(fs::read(&files[0].target_path).unwrap(), b"partial");
+        files[0].status = "overwrite".into();
+        let recovered = uploader
+            .start()
+            .unwrap()
+            .run(files.clone(), nas.0.clone(), |_| {})
+            .unwrap();
+        assert!(recovered.failed.is_empty(), "{:?}", recovered.failed);
+        assert_eq!(recovered.completed, 1);
         assert_eq!(fs::read(&files[0].target_path).unwrap(), bytes);
         let cancelled = files[0].target_path.with_file_name("cancelled.MP4");
         files[0].target_path = cancelled.clone();
+        files[0].path = local.0.join("cancelled.MP4");
+        files[0].filename = "cancelled.MP4".into();
+        files[0].modified = None;
+        files[0].status = "upload".into();
+        fs::write(&files[0].path, &bytes).unwrap();
         let outcome = uploader
             .start()
             .unwrap()

@@ -97,6 +97,18 @@ pub fn files_equal_with_progress(
     b: &Path,
     mut progress: impl FnMut(u64, u64),
 ) -> io::Result<bool> {
+    files_equal_with_control(a, b, |done, total| {
+        progress(done, total);
+        Ok(())
+    })
+}
+
+/// The caller can pause/cancel long comparisons without accepting a partial check.
+pub fn files_equal_with_control(
+    a: &Path,
+    b: &Path,
+    mut progress: impl FnMut(u64, u64) -> io::Result<()>,
+) -> io::Result<bool> {
     let mut left = File::open(a)?;
     let mut right = File::open(b)?;
     let left_stamp = SourceStamp::read(&left.metadata()?)?;
@@ -105,7 +117,7 @@ pub fn files_equal_with_progress(
         return Ok(false);
     }
     let mut remaining = left_stamp.len;
-    progress(0, left_stamp.len);
+    progress(0, left_stamp.len)?;
     let mut l = vec![0; 1024 * 1024];
     let mut r = vec![0; l.len()];
     while remaining > 0 {
@@ -116,7 +128,7 @@ pub fn files_equal_with_progress(
             return Ok(false);
         }
         remaining -= count as u64;
-        progress(left_stamp.len - remaining, left_stamp.len);
+        progress(left_stamp.len - remaining, left_stamp.len)?;
     }
     if SourceStamp::read(&left.metadata()?)? != left_stamp
         || SourceStamp::read(&right.metadata()?)? != right_stamp
@@ -126,15 +138,6 @@ pub fn files_equal_with_progress(
         return Err(io::Error::other("比较期间文件发生变化，请重新扫描"));
     }
     Ok(true)
-}
-
-pub fn unique_name(original: &str, attempt: usize) -> String {
-    let path = Path::new(original);
-    let stem = path.file_stem().unwrap_or_default().to_string_lossy();
-    match path.extension().filter(|ext| !ext.is_empty()) {
-        Some(ext) => format!("{stem}_{attempt}.{}", ext.to_string_lossy()),
-        None => format!("{stem}_{attempt}"),
-    }
 }
 
 pub struct StagedFile {
@@ -299,13 +302,20 @@ impl Drop for StagedFile {
             return;
         }
         // Unix allows unlinking an open file; Windows cleanup is retried after close below.
-        if fs::remove_file(&self.path).is_err() {
+        if let Err(error) = fs::remove_file(&self.path) {
             #[cfg(windows)]
             if let Ok(replacement) = File::open("NUL") {
                 let file = std::mem::replace(&mut self.file, replacement);
                 drop(file);
-                let _ = fs::remove_file(&self.path);
+                if fs::remove_file(&self.path).is_ok() {
+                    return;
+                }
             }
+            log::warn!(
+                "未完成文件清理失败，请检查占用并按原文件名处理 {}: {}",
+                self.path.display(),
+                error
+            );
         }
     }
 }

@@ -86,7 +86,7 @@
         <li>按需要调整底栏的三个开关，点 <span class="ui">开始扫描</span>。</li>
         <li>扫描完成后自动进入结果页。按日期、后缀筛选，确认每个文件的目标位置和状态。</li>
         <li>点 <span class="ui">开始上传</span> 拷贝当前筛选下的全部文件，或者点 <span class="ui">选择文件</span> 只勾选一部分。</li>
-        <li>全部成功后弹出 <span class="ui">🎉 备份完成</span>。可以直接 <span class="ui">推出设备</span>，也可以进入挑图，把照片导入 Eagle。</li>
+        <li>全部成功后弹出 <span class="ui">🎉 备份完成</span>。可以直接 <span class="ui">推出设备</span>，也可以从弹窗左下角的 <span class="ui">⋯</span> 菜单进入挑图，把照片导入 Eagle。</li>
       </ol>
       <p>整个过程不改动存储卡上的任何文件。扫描只读取文件信息，上传只从卡上读数据，所有写入都发生在目标目录里。</p>
       <ul class="facts">
@@ -304,11 +304,11 @@
       <p>两项都针对存储卡上的源文件。操作失败时弹出 <span class="ui">无法在 Finder 中显示文件</span> 或 <span class="ui">复制路径失败</span>，并附上原因。</p>
 
       <h3>结果页的按钮</h3>
-      <p>状态条右边有三个按钮：</p>
+      <p>状态条右边是两个按钮，最右边是 <span class="ui">⋯</span> 菜单：</p>
       <ul class="facts">
-        <li><b>挑图导入</b>把当前筛选下的照片放进挑图网格，放大看、导入 Eagle。已经在目标里的照片（<span class="status skip">将跳过</span> 的，或者这次已上传的）从目标读取，存储卡拔掉也能看；其余照片从卡上读。当前视图里一张照片都没有时不可点。详见 <a href="eagle.html">Eagle 挑图与裁剪</a>。</li>
         <li><b>选择文件</b>进入勾选模式，只上传其中一部分，见下一节。</li>
         <li><b>开始上传</b>上传当前日期和后缀筛选下的全部文件。</li>
+        <li><b>⋯ 菜单</b>里是 <span class="ui">挑图导入 Eagle</span>，把当前筛选下的照片放进挑图网格，放大看、导入 Eagle。已经在目标里的照片（<span class="status skip">将跳过</span> 的，或者这次已上传的）从目标读取，存储卡拔掉也能看；其余照片从卡上读。菜单项右边是能挑的照片数；当前视图里一张照片都没有时这一项是灰的。详见 <a href="eagle.html">Eagle 挑图与裁剪</a>。</li>
       </ul>
     </section>
 
@@ -394,15 +394,15 @@
       <h3>全部成功</h3>
       <figure>
         <div class="window">
-          <img src="assets/shots/done-dark.webp" width="2800" height="1800" alt="备份完成弹窗：标题是备份完成，正文写着所有选中的文件已成功备份到目标目录，现在您可以安全地移除源设备；底部三个按钮是关闭、挑图导入 Eagle (26) 和推出设备。" loading="lazy">
+          <img src="assets/shots/done-dark.webp" width="2800" height="1800" alt="备份完成弹窗：标题是备份完成，正文写着所有选中的文件已成功备份到目标目录，现在您可以安全地移除源设备；底部右边是关闭和推出设备两个按钮，左下角的 ⋯ 菜单展开着，里面是挑图导入 Eagle，右边标着 24。" loading="lazy">
           <svg class="lights" viewBox="0 0 1400 900" aria-hidden="true"><circle cx="26" cy="31" r="6" fill="#ff5f57"/><circle cx="46" cy="31" r="6" fill="#febc2e"/><circle cx="66" cy="31" r="6" fill="#28c840"/></svg>
         </div>
         <figcaption><b>备份完成。</b>弹窗背后已经回到配置页，下一张卡可以接着倒。</figcaption>
       </figure>
-      <p>没有失败、也没有取消时，日志记 <span class="ui">上传完成!</span>，弹出 <span class="ui">🎉 备份完成</span>，正文是 <span class="ui">所有选中的文件已成功备份到目标目录。</span> 和 <span class="ui">现在您可以安全地移除源设备。</span>。弹窗底部三个按钮：</p>
+      <p>没有失败、也没有取消时，日志记 <span class="ui">上传完成!</span>，弹出 <span class="ui">🎉 备份完成</span>，正文是 <span class="ui">所有选中的文件已成功备份到目标目录。</span> 和 <span class="ui">现在您可以安全地移除源设备。</span>。弹窗底部从左到右是 <span class="ui">⋯</span> 菜单、关闭和推出设备：</p>
       <ul class="facts">
+        <li><b>⋯ 菜单</b>里是 <span class="ui">挑图导入 Eagle</span>，右边的数字是这次扫描里已经上传或确认已存在的照片数，视频不算。点它直接进入挑图网格，照片从目标目录读取。一张照片都没有时这一项是灰的，写着 <span class="ui">本次没有可挑选的照片</span>。菜单打开时按 <kbd>Esc</kbd> 只收起菜单，不关弹窗。</li>
         <li><b>关闭</b>关掉弹窗。也可以按 <kbd>Esc</kbd>、点右上角的叉，或者点弹窗外面。</li>
-        <li><b>🖼️ 挑图导入 Eagle (N)</b>N 是这次扫描里已经上传或确认已存在的照片数，视频不算。点它直接进入挑图网格，照片从目标目录读取。一张照片都没有时不可点。</li>
         <li><b>推出设备</b>推出这次的来源设备，见本节最后。</li>
       </ul>
       <p>弹窗背后，应用已经回到配置页，这次的扫描结果随之清空。路径和开关都还在，插上下一张卡直接点 <span class="ui">开始扫描</span> 就行。</p>

@@ -129,7 +129,7 @@
             </div>
             <div class="option-text">
               <span class="option-title">覆盖重复文件</span>
-              <span class="option-desc">同名不同{{ config[currentMode].verify_duplicates ? '内容' : '大小' }}时{{ config[currentMode].overwrite_duplicates ? '覆盖' : '另存为 _1' }}</span>
+              <span class="option-desc">同名不同{{ config[currentMode].verify_duplicates ? '内容' : '大小' }}时{{ config[currentMode].overwrite_duplicates ? '按原名覆盖' : '标记冲突，保留原名' }}</span>
             </div>
           </label>
 
@@ -201,6 +201,10 @@
       </Teleport>
 
       <div class="results-content">
+        <div v-if="conflictCount" class="upload-errors glass-panel" role="status">
+          <strong>{{ conflictCount }} 个同名文件需要处理</strong>
+          <span>文件名保持不变。确认需要修复原文件时，请返回配置开启「覆盖重复文件」并重新扫描，再仅勾选需要修复的文件。</span>
+        </div>
         <div v-if="uploadFailures.length" class="upload-errors glass-panel" role="status" aria-live="polite">
           <div class="upload-errors-heading">
             <strong>{{ uploadFailures.length }} 个文件备份失败</strong>
@@ -294,7 +298,6 @@
                   <template v-else>勾选要上传的文件；表头可全选当前列表</template>
                 </span>
                 <template v-if="!isUploading">
-                  <button @click="openPickerFromResults" class="btn btn-secondary" :disabled="resultsPickerCount === 0" title="画廊模式挑选照片导入 Eagle">挑图导入</button>
                   <button @click="clearSelection" class="btn btn-secondary" :disabled="selectedCount === 0">清空选择</button>
                   <button @click="startUpload(selectedUploadFiles)" class="btn btn-primary btn-action-upload" :disabled="selectedCount === 0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -302,6 +305,7 @@
                     </svg>
                     上传所选（{{ selectedCount }}）
                   </button>
+                  <MoreMenu :items="resultsMenuItems" @select="openPickerFromResults()" />
                 </template>
               </div>
             </template>
@@ -337,10 +341,8 @@
         <p class="success-submessage">现在您可以安全地移除源设备。</p>
       </div>
       <template #footer>
+        <MoreMenu class="footer-more" :items="uploadMenuItems" placement="top-start" @select="openPickerFromUpload()" />
         <button class="btn btn-secondary" @click="showSuccessModal = false">关闭</button>
-        <button class="btn btn-secondary" @click="openPickerFromUpload" :disabled="uploadPickerCount === 0" title="画廊模式挑选刚备份的照片导入 Eagle">
-          🖼️ 挑图导入 Eagle{{ uploadPickerCount > 0 ? ` (${uploadPickerCount})` : "" }}
-        </button>
         <button class="btn btn-primary" @click="ejectVolume">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -384,7 +386,9 @@ import FileTable from "../components/FileTable.vue";
 import LogViewer from "../components/LogViewer.vue";
 import Modal from "../components/Modal.vue";
 import EaglePicker from "../components/EaglePicker.vue";
+import MoreMenu from "../components/MoreMenu.vue";
 import TetherPanel from "../components/TetherPanel.vue";
+import { Images } from "lucide-vue-next";
 import { useAppState } from "../composables/useAppState.js";
 
 import { normalizePath, basename, mediaDayKey, extensionInfo as getFileExtensionInfo, mergeTetherFile } from "../utils/media.js";
@@ -517,6 +521,8 @@ const selectedUploadFiles = computed(() => {
   return (scanResult.value || []).filter((f) => (f.status === "upload" || f.status === "overwrite") && !isCompleted(f) && set.has(normalizePath(f.path)));
 });
 
+const conflictCount = computed(() => (scanResult.value || []).filter(file => file.status === "conflict").length);
+
 const selectedCount = computed(() => selectedUploadFiles.value.length);
 const hiddenSelectedCount = computed(() => {
   const visible = new Set(filesToDisplay.value
@@ -550,6 +556,13 @@ function uploadPickerItems() {
 const uploadPickerCount = computed(() => uploadPickerItems().length);
 
 const resultsPickerCount = computed(() => (filesToDisplay.value || []).filter(isPhoto).length);
+
+// 挑图属于次要操作，收进「⋯」菜单
+function pickerMenuItem(count, description, disabledHint) {
+  return { key: "eagle-picker", icon: Images, label: "挑图导入 Eagle", description, disabledHint, badge: count || "", disabled: count === 0 };
+}
+const resultsMenuItems = computed(() => [pickerMenuItem(resultsPickerCount.value, "在画廊里挑选当前列表的照片", "当前列表里没有照片")]);
+const uploadMenuItems = computed(() => [pickerMenuItem(uploadPickerCount.value, "在画廊里挑选刚备份的照片", "本次没有可挑选的照片")]);
 
 function openPickerFromUpload() {
   pickerItems.value = uploadPickerItems();
@@ -931,13 +944,13 @@ async function startUpload(files) {
     for (const failure of failed) recordUploadFailure(failure);
     if (outcome.cancelled || failed.length) {
       addLog("warning", `本次已完成 ${outcome.completed} 个，跳过 ${outcome.skipped} 个，失败 ${failed.length} 个${outcome.cancelled ? "；已取消" : ""}`);
-      if (failed.length) openNotice({ title: "部分文件未备份", message: `有 ${failed.length} 个文件失败。已完成的文件将保留，重试只处理未完成的文件。`, submessage: failed[0].error, type: "warning" });
+      if (failed.length) openNotice({ title: "部分文件未备份", message: `有 ${failed.length} 个文件失败。请确认目标磁盘已连接且可写后重试。重试只处理未完成的文件；同名冲突需要处理占用，或明确选择覆盖后重新扫描。所有文件保留原名。`, submessage: failed[0].error, type: "warning" });
       return;
     }
     completedSnapshot.value = snapshot;
     const remaining = (scanResult.value || []).filter(file =>
-      (file.status === "upload" || file.status === "overwrite") && !isCompleted(file));
-    addLog("success", `本次上传完成，共 ${outcome.completed} 个文件${remaining.length ? `；还有 ${remaining.length} 个文件未上传，可继续勾选` : ""}`);
+      file.status === "conflict" || ((file.status === "upload" || file.status === "overwrite") && !isCompleted(file)));
+    addLog("success", `本次上传完成，共 ${outcome.completed} 个文件${outcome.skipped ? `，校验一致并跳过 ${outcome.skipped} 个` : ""}${remaining.length ? `；还有 ${remaining.length} 个文件待处理` : ""}`);
     if (remaining.length) return;
     showSuccessModal.value = true;
     selectedKeys.value = [];
@@ -1472,6 +1485,10 @@ function closeNotice() {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--space-2);
+}
+
+.footer-more {
+  margin-right: auto;
 }
 
 .btn-action-upload {

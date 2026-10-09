@@ -1,6 +1,6 @@
 use crate::{
     scanner::{MediaFile, ScanProgress},
-    storage::{files_equal_with_progress, unique_name},
+    storage::files_equal_with_progress,
 };
 use chrono::{DateTime, Local};
 use std::{
@@ -59,55 +59,41 @@ impl Analyzer {
                 return Err("日期目录指向目标目录外部，请重新选择目标".into());
             }
             let names = used.entry(day).or_default();
-            let mut attempt = 0;
-            loop {
-                let name = if attempt == 0 {
-                    file.filename.clone()
-                } else {
-                    unique_name(&file.filename, attempt)
-                };
-                let identity = name.to_lowercase();
-                if names.contains(&identity) {
-                    attempt += 1;
-                    continue;
-                }
-                let candidate = directory.join(&name);
-                match std::fs::symlink_metadata(&candidate) {
-                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                        file.status = "upload".into();
-                    }
-                    Err(e) => return Err(format!("无法检查目标 {}: {e}", candidate.display())),
-                    Ok(meta) => {
-                        if meta.is_file()
-                            && meta.len() == file.size
-                            && (!verify_duplicates
-                                || files_equal_with_progress(
-                                    &file.path,
-                                    &candidate,
-                                    |done, total| {
-                                        progress.phase = "compare";
-                                        progress.bytes_done = done;
-                                        progress.bytes_total = total;
-                                        emit(progress.clone());
-                                    },
-                                )
-                                .map_err(|e| {
-                                    format!("比较文件失败 {}: {e}", candidate.display())
-                                })?)
-                        {
-                            file.status = "skip".into();
-                        } else if meta.is_file() && overwrite_duplicates && attempt == 0 {
-                            file.status = "overwrite".into();
-                        } else {
-                            attempt += 1;
-                            continue;
-                        }
-                    }
-                }
-                file.target_path = candidate;
-                names.insert(identity);
-                break;
+            let name = &file.filename;
+            if file.path.file_name().and_then(|n| n.to_str()) != Some(name.as_str()) {
+                return Err("源文件名不一致，请重新扫描".into());
             }
+            if !names.insert(name.to_lowercase()) {
+                return Err(format!(
+                    "同一日期下有多个同名源文件：{name}。文件名不能更改，请分别选择来源或目标目录"
+                ));
+            }
+            let candidate = directory.join(name);
+            file.status = match std::fs::symlink_metadata(&candidate) {
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => "upload",
+                Err(e) => return Err(format!("无法检查目标 {}: {e}", candidate.display())),
+                Ok(meta) => {
+                    if meta.is_file()
+                        && meta.len() == file.size
+                        && (!verify_duplicates
+                            || files_equal_with_progress(&file.path, &candidate, |done, total| {
+                                progress.phase = "compare";
+                                progress.bytes_done = done;
+                                progress.bytes_total = total;
+                                emit(progress.clone());
+                            })
+                            .map_err(|e| format!("比较文件失败 {}: {e}", candidate.display()))?)
+                    {
+                        "skip"
+                    } else if meta.is_file() && overwrite_duplicates {
+                        "overwrite"
+                    } else {
+                        "conflict"
+                    }
+                }
+            }
+            .into();
+            file.target_path = candidate;
         }
         Ok(())
     }
@@ -137,8 +123,8 @@ mod tests {
         assert_fast_skip(&mut files, &target);
         Analyzer::analyze_with_progress(&mut files, target.to_str().unwrap(), false, true, |_| {})
             .unwrap();
-        assert_eq!(files[0].status, "upload");
-        assert_eq!(files[0].target_path.file_name().unwrap(), "movie_1.MP4");
+        assert_eq!(files[0].status, "conflict");
+        assert_eq!(files[0].target_path.file_name().unwrap(), "movie.MP4");
         // Fast analysis must not open either media file: only the scanned size and
         // target metadata are needed, even if the source becomes unavailable.
         std::fs::remove_file(&original).unwrap();
@@ -146,7 +132,7 @@ mod tests {
         std::fs::write(&existing, b"different length").unwrap();
         Analyzer::analyze_with_progress(&mut files, target.to_str().unwrap(), false, false, |_| {})
             .unwrap();
-        assert_eq!(files[0].status, "upload");
+        assert_eq!(files[0].status, "conflict");
         Analyzer::analyze_with_progress(&mut files, target.to_str().unwrap(), true, false, |_| {})
             .unwrap();
         assert_eq!(files[0].status, "overwrite");
@@ -188,35 +174,24 @@ mod tests {
         );
     }
     #[test]
-    fn equal_length_different_data_and_batch_overwrites_are_preserved() {
+    fn same_day_source_name_collisions_never_get_renamed_or_overwritten() {
         let dir = TestDir::new();
         let source = dir.0.join("source");
         let target = dir.0.join("target");
-        std::fs::create_dir_all(&source).unwrap();
+        std::fs::create_dir_all(source.join("a")).unwrap();
+        std::fs::create_dir_all(source.join("b")).unwrap();
         std::fs::create_dir_all(&target).unwrap();
-        std::fs::write(source.join("a.JPG"), b"AAAA").unwrap();
-        std::fs::write(source.join("b.JPG"), b"BBBB").unwrap();
+        std::fs::write(source.join("a/same.JPG"), b"AAAA").unwrap();
+        std::fs::write(source.join("b/same.JPG"), b"BBBB").unwrap();
         let mut files = crate::scanner::Scanner::with_mode("sd")
             .scan(source.to_str().unwrap(), true, true)
             .unwrap();
-        let date = files[0].date;
-        for f in &mut files {
-            f.filename = "same.JPG".into();
-            f.date = date;
+        files[1].date = files[0].date;
+        for overwrite in [false, true] {
+            let error =
+                Analyzer::analyze(&mut files, target.to_str().unwrap(), overwrite).unwrap_err();
+            assert!(error.contains("文件名不能更改"));
         }
-        let day = DateTime::<Local>::from(date).format("%Y-%m-%d").to_string();
-        std::fs::create_dir_all(target.join(&day)).unwrap();
-        let existing = target.join(day).join("same.JPG");
-        std::fs::write(&existing, b"CCCC").unwrap();
-        Analyzer::analyze(&mut files, target.to_str().unwrap(), false).unwrap();
-        assert!(files.iter().all(|f| f.status == "upload"));
-        assert_ne!(files[0].target_path, files[1].target_path);
-        Analyzer::analyze(&mut files, target.to_str().unwrap(), true).unwrap();
-        assert_eq!(files[0].status, "overwrite");
-        assert_eq!(files[1].status, "upload");
-        assert_ne!(files[0].target_path, files[1].target_path);
-        std::fs::copy(&files[0].path, &existing).unwrap();
-        Analyzer::analyze(&mut files, target.to_str().unwrap(), false).unwrap();
-        assert_eq!(files[0].status, "skip");
+        assert_eq!(std::fs::read_dir(target).unwrap().count(), 0);
     }
 }
