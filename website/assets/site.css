@@ -436,7 +436,7 @@ figcaption b { color: var(--ink-2); font-weight: 600; }
 .split.reverse { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
 .split.reverse > :first-child { order: 2; }
 @media (max-width: 900px) {
-  .split, .split.reverse { grid-template-columns: 1fr; gap: 28px; }
+  .split, .split.reverse { grid-template-columns: minmax(0, 1fr); gap: 28px; }
   .split.reverse > :first-child { order: 0; }
 }
 .split h2 { font-size: clamp(26px, 3vw, 36px); letter-spacing: -0.02em; margin-bottom: 14px; }
