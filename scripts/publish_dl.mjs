@@ -160,7 +160,7 @@ export async function publishDl({ rootDir, args = [], env = process.env, run = s
     notes = subjects.length ? subjects.map(subject => `- ${subject}`).join('\n') : '维护更新。'
   }
 
-  // 只要这一步真正用得到的；缺的值在同一个 /bin/sh 里接连 op read，值之间用 0x1E 分隔，只起一次 op 会话
+  // 只要这一步真正用得到的；缺的值在同一个 /bin/sh 里接连 zhima read，值之间用 0x1E 分隔，只起一次开发库读取
   const needed = [
     ...(opts['skip-build'] ? [] : ['TAURI_SIGNING_PRIVATE_KEY', 'TAURI_SIGNING_PRIVATE_KEY_PASSWORD']),
     ...(opts['skip-upload'] ? [] : ['DL_RELEASE_TOKEN']),
@@ -170,8 +170,8 @@ export async function publishDl({ rootDir, args = [], env = process.env, run = s
   if (missing.length) {
     log(`从 1Password 读取 ${missing.join('、')}（可能弹出一次解锁）…`)
     const refs = missing.map(name => OP_REFS[name])
-    const script = refs.map((_, i) => `op read --no-newline "$${i + 1}"`).join(" && printf '\\036' && ")
-    const values = checked('/bin/sh', ['-c', script, 'op-read', ...refs], { stdio: ['inherit', 'pipe', 'inherit'] }).split('\x1e')
+    const script = refs.map((_, i) => `"$HOME/Developer/bin/芝麻/zhima" read --no-newline "$${i + 1}"`).join(" && printf '\\036' && ")
+    const values = checked('/bin/sh', ['-c', script, 'zhima-read', ...refs], { stdio: ['inherit', 'pipe', 'inherit'] }).split('\x1e')
     if (values.length !== missing.length) throw new Error('从 1Password 读到的值个数不对，已停止')
     missing.forEach((name, i) => { secrets[name] = values[i] })
   }
